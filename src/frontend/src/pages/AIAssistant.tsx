@@ -2,19 +2,27 @@ import { GlassCard } from "@/components/GlassCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNetworkStore } from "@/store/networkStore";
+import type { PredictiveAlert, SLARecord } from "@/types/network";
 import {
   Activity,
+  AlertCircle,
   AlertTriangle,
   Bot,
   Check,
   ChevronRight,
   Copy,
+  ExternalLink,
+  Map as MapIcon,
   MessageSquare,
   Plus,
   Send,
+  Shield,
   Sparkles,
+  TrendingUp,
   User,
   Wifi,
+  Workflow,
+  Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,6 +34,7 @@ interface Message {
   role: "user" | "ai";
   content: string;
   timestamp: number;
+  actionCards?: ActionCard[];
 }
 
 interface ChatSession {
@@ -36,9 +45,17 @@ interface ChatSession {
   messageCount: number;
 }
 
+interface ActionCard {
+  label: string;
+  icon: React.ElementType;
+  query: string;
+}
+
 type StoreState = {
   devices: ReturnType<typeof useNetworkStore.getState>["devices"];
   alerts: ReturnType<typeof useNetworkStore.getState>["alerts"];
+  slaRecords: SLARecord[];
+  predictiveAlerts: PredictiveAlert[];
 };
 
 // ── Mock session history ──────────────────────────────────────────────────────
@@ -151,26 +168,148 @@ function renderMarkdown(text: string): React.ReactNode[] {
   });
 }
 
+// ── Action cards config ───────────────────────────────────────────────────────
+
+const DEFAULT_ACTION_CARDS: ActionCard[] = [
+  { label: "View on Map", icon: MapIcon, query: "Show topology overview" },
+  { label: "Check SLA", icon: Shield, query: "SLA status overview" },
+  { label: "Run Diagnostic", icon: Workflow, query: "Diagnose network health" },
+];
+
 // ── AI Response Engine ────────────────────────────────────────────────────────
 
-function buildResponse(input: string, store: StoreState): string {
+function buildResponse(
+  input: string,
+  store: StoreState,
+): { content: string; actionCards: ActionCard[] } {
   const q = input.toLowerCase();
-  const { devices, alerts } = store;
+  const { devices, alerts, slaRecords, predictiveAlerts } = store;
   const activeAlerts = alerts.filter((a) => !a.resolved);
   const faultyDevices = devices.filter((d) => d.status === "faulty");
   const warnDevices = devices.filter((d) => d.status === "warning");
   const olts = devices.filter((d) => d.type === "OLT");
   const onts = devices.filter((d) => d.type === "ONT");
   const splitters = devices.filter((d) => d.type === "Splitter");
+  const slaBreaches = slaRecords.filter((s) => s.status === "breach");
+  const atRisk = predictiveAlerts
+    .filter((a) => a.status === "active")
+    .sort((a, b) => b.riskScore - a.riskScore)
+    .slice(0, 3);
+
+  const actionCards: ActionCard[] = DEFAULT_ACTION_CARDS;
+
+  if (/sla|service level|breach|assurance/.test(q)) {
+    if (slaBreaches.length === 0) {
+      return {
+        content:
+          "**All SLA agreements are currently compliant.** No breaches detected. All customers are receiving service within contracted parameters.\n\nMonitor the **SLA Dashboard** for real-time tracking of latency, packet loss, and uptime metrics per customer.",
+        actionCards: [
+          {
+            label: "SLA Dashboard",
+            icon: Shield,
+            query: "SLA status overview",
+          },
+          {
+            label: "Network Health",
+            icon: Activity,
+            query: "Network health summary",
+          },
+          {
+            label: "View Topology",
+            icon: MapIcon,
+            query: "Show topology overview",
+          },
+        ],
+      };
+    }
+    const list = slaBreaches
+      .map(
+        (s) =>
+          `- **${s.customerName}** (${s.region}): uptime ${String(s.uptime)}%, latency ${String(s.latency)}ms`,
+      )
+      .join("\n");
+    return {
+      content: `**${String(slaBreaches.length)} SLA BREACH(ES) detected:**\n\n${list}\n\nImmediate actions:\n- Escalate to regional NOC team\n- Dispatch field engineers to affected areas\n- Review \`traffic shaping\` policies for impacted customers\n- Document breach timeline for compliance reporting`,
+      actionCards: [
+        { label: "SLA Dashboard", icon: Shield, query: "SLA status overview" },
+        {
+          label: "Run Diagnostic",
+          icon: Workflow,
+          query: "Diagnose network health",
+        },
+        {
+          label: "View on Map",
+          icon: MapIcon,
+          query: "Show topology overview",
+        },
+      ],
+    };
+  }
+
+  if (/predictive|at.risk|predict|forecast|risk/.test(q)) {
+    if (atRisk.length === 0) {
+      return {
+        content:
+          "**No high-risk devices identified.** Predictive analysis shows all monitored devices are operating within safe parameters. Continue scheduled maintenance as planned.",
+        actionCards: actionCards,
+      };
+    }
+    const list = atRisk
+      .map(
+        (a) =>
+          `- **${a.deviceName}**: risk score **${String(a.riskScore)}/100** — ${a.failureType.replace(/-/g, " ")}, ETA ${String(a.predictedETA)}h`,
+      )
+      .join("\n");
+    return {
+      content: `**Predictive Intelligence Alert — ${String(atRisk.length)} high-risk device(s):**\n\n${list}\n\nRecommended pre-emptive actions:\n- Schedule maintenance for devices with risk score > 70\n- Pre-position spare modules for **device-failure** predictions\n- Run \`OTDR\` baseline on fiber-cut candidates\n- Check **signal trend** charts for degradation patterns`,
+      actionCards: [
+        {
+          label: "Predictive Dashboard",
+          icon: TrendingUp,
+          query: "Predictive risk analysis",
+        },
+        {
+          label: "Run OTDR",
+          icon: Zap,
+          query: "Explain OTDR testing procedure",
+        },
+        {
+          label: "View on Map",
+          icon: MapIcon,
+          query: "Show topology overview",
+        },
+      ],
+    };
+  }
 
   if (/fault|alarm|alert|critical|incident/.test(q)) {
     if (activeAlerts.length === 0) {
-      return "**No active faults detected.** All network elements are operating within normal parameters. Continue periodic monitoring every 15 minutes as per NOC SOP.";
+      return {
+        content:
+          "**No active faults detected.** All network elements are operating within normal parameters. Continue periodic monitoring every 15 minutes as per NOC SOP.",
+        actionCards: actionCards,
+      };
     }
     const list = activeAlerts
+      .slice(0, 6)
       .map((a) => `- **${a.deviceName}**: ${a.issueType}`)
       .join("\n");
-    return `**${activeAlerts.length} active fault(s) detected:**\n\n${list}\n\nRecommended action: dispatch field team to inspect physical layer on **critical** alarms first. Use \`OTDR\` to pinpoint fiber break location. Check \`RX power\` levels against threshold (-8 to -27 dBm).`;
+    return {
+      content: `**${String(activeAlerts.length)} active fault(s) detected:**\n\n${list}\n\nRecommended action: dispatch field team to inspect physical layer on **critical** alarms first. Use \`OTDR\` to pinpoint fiber break location. Check \`RX power\` levels against threshold (-8 to -27 dBm).`,
+      actionCards: [
+        {
+          label: "View on Map",
+          icon: MapIcon,
+          query: "Show topology overview",
+        },
+        {
+          label: "Run Diagnostic",
+          icon: Workflow,
+          query: "Diagnose network health",
+        },
+        { label: "Check SLA", icon: Shield, query: "SLA status overview" },
+      ],
+    };
   }
 
   if (/signal|dbm|optical power|rx power|receive/.test(q)) {
@@ -179,9 +318,12 @@ function buildResponse(input: string, store: StoreState): string {
     );
     const weakDesc =
       weak.length > 0
-        ? `**${weak.length} device(s)** currently below threshold: ${weak.map((d) => `\`${d.name}\` at ${String(d.signalStrength)} dBm`).join(", ")}. Inspect connectors, check splice points, and verify splitter ratio.`
+        ? `**${String(weak.length)} device(s)** currently below threshold: ${weak.map((d) => `\`${d.name}\` at ${String(d.signalStrength)} dBm`).join(", ")}. Inspect connectors, check splice points, and verify splitter ratio.`
         : "All monitored devices currently within acceptable signal range.";
-    return `**Optical signal thresholds** for GPON networks:\n- **Excellent**: -8 to -20 dBm\n- **Acceptable**: -20 to -27 dBm (PASS)\n- **Marginal**: -27 to -30 dBm (WARN)\n- **Fault**: below -30 dBm (FAIL)\n\n${weakDesc}`;
+    return {
+      content: `**Optical signal thresholds** for GPON networks:\n- **Excellent**: -8 to -20 dBm\n- **Acceptable**: -20 to -27 dBm (PASS)\n- **Marginal**: -27 to -30 dBm (WARN)\n- **Fault**: below -30 dBm (FAIL)\n\n${weakDesc}`,
+      actionCards: actionCards,
+    };
   }
 
   if (/\bolt\b/.test(q)) {
@@ -191,12 +333,18 @@ function buildResponse(input: string, store: StoreState): string {
           `- **${o.name}** — ${o.status}, ${String(o.ports)} ports, uptime ${String(o.uptime ?? "N/A")}%, signal ${String(o.signalStrength ?? "N/A")} dBm`,
       )
       .join("\n");
-    return `**Optical Line Terminals (OLTs)** — you have **${String(olts.length)} OLT(s)** deployed:\n\n${oltList}\n\nOLTs manage downstream wavelength \`1490nm\` and upstream \`1310nm\`. Each port supports up to 64 ONTs via passive splitter cascades.`;
+    return {
+      content: `**Optical Line Terminals (OLTs)** — you have **${String(olts.length)} OLT(s)** deployed:\n\n${oltList}\n\nOLTs manage downstream wavelength \`1490nm\` and upstream \`1310nm\`. Each port supports up to 64 ONTs via passive splitter cascades.`,
+      actionCards: actionCards,
+    };
   }
 
   if (/\bont\b/.test(q)) {
     const faultyOnts = onts.filter((o) => o.status !== "active");
-    return `**Optical Network Terminals (ONTs)** — you have **${String(onts.length)} ONTs** deployed, ${String(devices.filter((d) => d.type === "ONT" && d.status === "active").length)} online, ${String(faultyOnts.length)} with issues.\n\nONTs operate at \`1490nm\` downstream and \`1310nm\` upstream. Acceptable RX range is **-8 to -27 dBm**. If an ONT is offline, first check physical power, then verify \`OMCI\` provisioning, and finally measure RX power with an optical power meter.`;
+    return {
+      content: `**Optical Network Terminals (ONTs)** — you have **${String(onts.length)} ONTs** deployed, ${String(devices.filter((d) => d.type === "ONT" && d.status === "active").length)} online, ${String(faultyOnts.length)} with issues.\n\nONTs operate at \`1490nm\` downstream and \`1310nm\` upstream. Acceptable RX range is **-8 to -27 dBm**.`,
+      actionCards: actionCards,
+    };
   }
 
   if (/splitter|split ratio|passive/.test(q)) {
@@ -206,38 +354,102 @@ function buildResponse(input: string, store: StoreState): string {
           `- **${s.name}** — status: ${s.status}, signal: ${String(s.signalStrength)} dBm`,
       )
       .join("\n");
-    return `**Passive Optical Splitters** introduce insertion loss based on split ratio:\n- **1:2** → 3.5 dB loss\n- **1:4** → 7.2 dB loss\n- **1:8** → 10.5 dB loss\n- **1:16** → 13.8 dB loss\n- **1:32** → 17.1 dB loss\n\nCurrent splitters in network:\n${splitterList}\n\nAlways factor cumulative splitter loss into your **power budget** calculation.`;
+    return {
+      content: `**Passive Optical Splitters** introduce insertion loss based on split ratio:\n- **1:2** → 3.5 dB loss\n- **1:4** → 7.2 dB loss\n- **1:8** → 10.5 dB loss\n- **1:16** → 13.8 dB loss\n- **1:32** → 17.1 dB loss\n\nCurrent splitters in network:\n${splitterList}`,
+      actionCards: actionCards,
+    };
   }
 
   if (/topology|network map|architecture|structure/.test(q)) {
-    return `**Current network topology:**\n- **${String(olts.length)}** OLT(s) — core aggregation layer\n- **${String(splitters.length)}** Passive Splitter(s) — distribution layer\n- **${String(onts.length)}** ONT(s) — subscriber premises layer\n- **${String(devices.filter((d) => d.type === "JJB").length)}** Joint Junction Box(es)\n- **${String(devices.filter((d) => d.type === "Switch").length)}** Aggregation Switch(es)\n\nTotal: **${String(devices.length)} network elements**. Use the **Topology** page for an interactive graph showing the OLT to Splitter to ONT hierarchy with live status overlays.`;
+    return {
+      content: `**Current network topology:**\n- **${String(olts.length)}** OLT(s) — core aggregation layer\n- **${String(splitters.length)}** Passive Splitter(s) — distribution layer\n- **${String(onts.length)}** ONT(s) — subscriber premises layer\n- **${String(devices.filter((d) => d.type === "JJB").length)}** Joint Junction Box(es)\n- **${String(devices.filter((d) => d.type === "Switch").length)}** Aggregation Switch(es)\n\nTotal: **${String(devices.length)} network elements**.`,
+      actionCards: [
+        {
+          label: "View Topology",
+          icon: MapIcon,
+          query: "Show topology overview",
+        },
+        {
+          label: "Device Inventory",
+          icon: Activity,
+          query: "OLT status overview",
+        },
+        { label: "Check SLA", icon: Shield, query: "SLA status overview" },
+      ],
+    };
   }
 
   if (/diagnos|check|troubleshoot|investigate/.test(q)) {
-    return "**Systematic diagnostic procedure:**\n- Step 1: Check `physical layer` — inspect fiber connectors for contamination (IEC 61300-3-35)\n- Step 2: Measure **RX power** at ONT with optical power meter — must be > -27 dBm\n- Step 3: Run **OTDR trace** to identify reflections, breaks, or high-loss events\n- Step 4: Verify `OMCI` provisioning on OLT CLI — check ONT registration status\n- Step 5: Review **alarm history** in monitoring dashboard for pattern analysis\n- Step 6: Escalate to L2 if physical layer is confirmed clean";
-  }
-
-  if (/bandwidth|throughput|speed|capacity|traffic/.test(q)) {
-    return "**Bandwidth management** in GPON/XGS-PON systems:\n- GPON downstream: **2.488 Gbps** shared per PON port (typically across 32-64 ONTs)\n- XGS-PON: **10 Gbps** symmetric per port\n- Use **DBA (Dynamic Bandwidth Allocation)** profiles on OLT to guarantee `T-CONT` bandwidth per ONT\n- Monitor **upstream BER** — threshold is `1e-6`; values above this indicate impairment. Check the **Monitoring** dashboard for live throughput metrics.";
-  }
-
-  if (/otdr|optical time domain|reflectometer/.test(q)) {
-    return "**OTDR (Optical Time Domain Reflectometer)** is the primary diagnostic tool for fiber characterization:\n- Injects a short `laser pulse` into the fiber and analyzes backscattered light\n- Identifies **splice points**, **connectors**, **fiber breaks**, and **bend losses** with distance accuracy +/-1m\n- **OTDR events** to investigate: reflections > +0.5 dB (connector issue), loss > 0.5 dB (splice or break)\n- Always test from both ends (**bi-directional OTDR**) for accurate loss values\n- Store baseline traces in your **fiber plant documentation** system for future comparison";
-  }
-
-  if (/power budget|budget calculator|link budget/.test(q)) {
-    return "**Power Budget formula:**\n`Budget (dB) = TX_power - RX_sensitivity`\n\nExample: TX = +2 dBm, RX sensitivity = -27 dBm gives **29 dB budget**\n\n**Loss components to subtract:**\n- Fiber: `0.35 dB/km x length`\n- Connectors: `0.5 dB x count`\n- Splitter: based on split ratio (1:8 = 10.5 dB)\n- Splices: `0.1 dB x count`\n\nAlways maintain a **3 dB safety margin**. Navigate to **Tools > Power Budget Calculator** to run this calculation interactively.";
+    return {
+      content:
+        "**Systematic diagnostic procedure:**\n- Step 1: Check `physical layer` — inspect fiber connectors for contamination\n- Step 2: Measure **RX power** at ONT with optical power meter — must be > -27 dBm\n- Step 3: Run **OTDR trace** to identify reflections, breaks, or high-loss events\n- Step 4: Verify `OMCI` provisioning on OLT CLI\n- Step 5: Review **alarm history** in monitoring dashboard\n- Step 6: Escalate to L2 if physical layer is confirmed clean",
+      actionCards: [
+        {
+          label: "View on Map",
+          icon: MapIcon,
+          query: "Show topology overview",
+        },
+        {
+          label: "Run Workflow",
+          icon: Workflow,
+          query: "Explain OTDR testing procedure",
+        },
+        { label: "Check SLA", icon: Shield, query: "SLA status overview" },
+      ],
+    };
   }
 
   if (/health|status|overview|summary/.test(q)) {
-    return `**Network Health Summary:**\n- Total devices: **${String(devices.length)}**\n- Online: **${String(devices.filter((d) => d.status === "active").length)}** devices\n- Faulty: **${String(faultyDevices.length)}** device(s) need attention\n- Warning: **${String(warnDevices.length)}** device(s) in degraded state\n- Active alerts: **${String(activeAlerts.length)}** open incident(s)\n\nOverall network health is **${activeAlerts.length === 0 ? "NOMINAL" : "DEGRADED"}**. ${activeAlerts.length > 0 ? "Review active alerts and dispatch field teams for critical faults." : "All systems operating within normal parameters."}`;
+    return {
+      content: `**Network Health Summary:**\n- Total devices: **${String(devices.length)}**\n- Online: **${String(devices.filter((d) => d.status === "active").length)}** devices\n- Faulty: **${String(faultyDevices.length)}** device(s) need attention\n- Warning: **${String(warnDevices.length)}** device(s) in degraded state\n- Active alerts: **${String(activeAlerts.length)}** open incident(s)\n- SLA breaches: **${String(slaBreaches.length)}**\n- At-risk devices: **${String(atRisk.length)}**\n\nOverall network health is **${activeAlerts.length === 0 ? "NOMINAL" : "DEGRADED"}**.`,
+      actionCards: actionCards,
+    };
+  }
+
+  if (/capacity|utilization|bandwidth|forecast/.test(q)) {
+    return {
+      content:
+        "**Capacity Planning insights:**\nNavigate to the **Capacity Planning** page for detailed forecasts.\n\n- Monitor fiber utilization percentages per route\n- Review `demand vs capacity` growth charts\n- Identify routes approaching exhaustion in the next 6–12 months\n- Plan `upgrade timelines` before capacity exceeds 80% threshold",
+      actionCards: [
+        {
+          label: "Capacity Planning",
+          icon: TrendingUp,
+          query: "Capacity utilization forecast",
+        },
+        {
+          label: "View on Map",
+          icon: MapIcon,
+          query: "Show topology overview",
+        },
+        { label: "Check SLA", icon: Shield, query: "SLA status overview" },
+      ],
+    };
   }
 
   if (/hello|hi |hey |help|start|begin|what can/.test(q)) {
-    return "Hello! I am **FiberNMS AI**, your intelligent NOC assistant. I can help you with:\n- **Fault analysis** — diagnose active alarms and root causes\n- **Signal quality** — interpret dBm readings and optical loss\n- **Network topology** — understand your OLT to Splitter to ONT architecture\n- **OTDR interpretation** — analyze trace events and loss points\n- **Power budget** — calculate link margins and verify fiber design\n- **Maintenance guidance** — safe procedures for network changes\n\nWhat would you like to know?";
+    return {
+      content:
+        "Hello! I am **FiberNMS AI**, your intelligent NOC assistant. I can help you with:\n- **Fault analysis** — diagnose active alarms and root causes\n- **SLA monitoring** — track service level compliance\n- **Predictive intelligence** — at-risk device forecasting\n- **Signal quality** — interpret dBm readings and optical loss\n- **Network topology** — understand your OLT → Splitter → ONT architecture\n- **OTDR interpretation** — analyze trace events and loss points\n- **Capacity planning** — fiber utilization and growth forecasting\n\nWhat would you like to know?",
+      actionCards: [
+        {
+          label: "Network Health",
+          icon: Activity,
+          query: "Network health summary",
+        },
+        { label: "Check SLA", icon: Shield, query: "SLA status overview" },
+        {
+          label: "Predictive Risks",
+          icon: TrendingUp,
+          query: "Show predictive alerts",
+        },
+      ],
+    };
   }
 
-  return `I did not find a specific match for your query, but here are topics I can help with:\n- **Active faults and alarms** — type "show faults"\n- **Signal levels and dBm** — type "check signal levels"\n- **OLT / ONT / Splitter status** — type "OLT status"\n- **OTDR testing** — type "explain OTDR"\n- **Power budget calculation** — type "power budget help"\n\nCurrent network status: **${String(activeAlerts.length)}** active alert(s), **${String(faultyDevices.length + warnDevices.length)}** device(s) requiring attention.`;
+  return {
+    content: `I did not find a specific match for your query, but here are topics I can help with:\n- **Active faults and alarms** — type "show faults"\n- **SLA breaches** — type "SLA status"\n- **At-risk devices** — type "predictive alerts"\n- **Signal levels** — type "check signal levels"\n- **OLT / ONT status** — type "OLT status"\n\nCurrent network: **${String(activeAlerts.length)}** active alert(s), **${String(slaBreaches.length)}** SLA breach(es), **${String(atRisk.length)}** at-risk device(s).`,
+    actionCards: actionCards,
+  };
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
@@ -271,7 +483,13 @@ function TypingIndicator() {
   );
 }
 
-function AIMessage({ msg }: { msg: Message }) {
+function AIMessage({
+  msg,
+  onAction,
+}: {
+  msg: Message;
+  onAction: (query: string) => void;
+}) {
   const [copied, setCopied] = useState(false);
 
   function copyText() {
@@ -302,6 +520,26 @@ function AIMessage({ msg }: { msg: Message }) {
             {renderMarkdown(msg.content)}
           </div>
         </GlassCard>
+        {/* Inline action cards */}
+        {msg.actionCards && msg.actionCards.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2 pl-1">
+            {msg.actionCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <button
+                  key={card.label}
+                  type="button"
+                  onClick={() => onAction(card.query)}
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border/50 bg-muted/30 text-[11px] text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-smooth"
+                  data-ocid={`action-card-${card.label.toLowerCase().replace(/\s+/g, "-")}`}
+                >
+                  <Icon size={11} />
+                  {card.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className="flex items-center gap-2 mt-1 px-1">
           <span className="text-[10px] text-muted-foreground">{time}</span>
           <button
@@ -355,10 +593,10 @@ function UserMessage({ msg }: { msg: Message }) {
 const SUGGESTED = [
   { label: "Show devices with low signal", query: "Check signal levels" },
   { label: "List all active alerts", query: "Show active faults" },
-  { label: "Check OLT-1 status", query: "OLT status overview" },
+  { label: "Check OLT status", query: "OLT status overview" },
   { label: "Analyze network health", query: "Network health summary" },
-  { label: "Explain OTDR testing", query: "Explain OTDR testing procedure" },
-  { label: "Power budget help", query: "Power budget calculation help" },
+  { label: "SLA breach status", query: "SLA status overview" },
+  { label: "Predictive risks", query: "Show predictive alerts" },
 ];
 
 // ── Relative time helper ──────────────────────────────────────────────────────
@@ -382,7 +620,194 @@ function makeWelcome(): Message {
       "I can help you diagnose faults, analyze signal quality, interpret network topology, and provide technical guidance.\n\n" +
       "How can I assist you today?",
     timestamp: Date.now(),
+    actionCards: DEFAULT_ACTION_CARDS,
   };
+}
+
+// ── Network Context Panel ─────────────────────────────────────────────────────
+
+function NetworkContextPanel({
+  onItemClick,
+}: {
+  onItemClick: (query: string) => void;
+}) {
+  const alerts = useNetworkStore((s) => s.alerts);
+  const slaRecords = useNetworkStore((s) => s.slaRecords);
+  const predictiveAlerts = useNetworkStore((s) => s.predictiveAlerts);
+
+  const activeAlerts = alerts.filter((a) => !a.resolved);
+  const criticalAlerts = activeAlerts.filter((a) => a.severity === "critical");
+  const warningAlerts = activeAlerts.filter((a) => a.severity === "warning");
+  const slaBreaches = slaRecords.filter((s) => s.status === "breach");
+  const slaWarnings = slaRecords.filter((s) => s.status === "warning");
+  const atRiskDevices = predictiveAlerts
+    .filter((a) => a.status === "active")
+    .sort((a, b) => b.riskScore - a.riskScore)
+    .slice(0, 5);
+
+  return (
+    <div
+      className="w-72 flex-shrink-0 flex flex-col border-l border-border/30 bg-card/30 overflow-y-auto noc-scrollbar"
+      data-ocid="network-context-panel"
+    >
+      <div className="px-4 py-3 border-b border-border/30 flex items-center gap-2">
+        <Activity size={13} className="text-primary" />
+        <span className="text-xs font-display tracking-widest text-foreground uppercase">
+          Live Context
+        </span>
+      </div>
+
+      {/* Alert summary */}
+      <div className="p-3 border-b border-border/20">
+        <p className="text-[10px] font-display tracking-widest text-muted-foreground/60 uppercase mb-2">
+          Active Alerts
+        </p>
+        <div className="space-y-1.5">
+          <button
+            type="button"
+            onClick={() =>
+              onItemClick(
+                `Show active faults — ${String(criticalAlerts.length)} critical, ${String(warningAlerts.length)} warning`,
+              )
+            }
+            className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-border/30 hover:border-destructive/40 hover:bg-destructive/5 transition-smooth group"
+            data-ocid="ctx-critical-alerts"
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle size={11} className="text-destructive" />
+              <span className="text-[11px] text-muted-foreground group-hover:text-foreground">
+                Critical
+              </span>
+            </div>
+            <span className="text-[11px] font-mono font-bold text-destructive">
+              {criticalAlerts.length}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() =>
+              onItemClick(
+                `Show warning level faults — ${String(warningAlerts.length)} active`,
+              )
+            }
+            className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-border/30 hover:border-amber-500/40 hover:bg-amber-500/5 transition-smooth group"
+            data-ocid="ctx-warning-alerts"
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle size={11} className="text-amber-400" />
+              <span className="text-[11px] text-muted-foreground group-hover:text-foreground">
+                Warning
+              </span>
+            </div>
+            <span className="text-[11px] font-mono font-bold text-amber-400">
+              {warningAlerts.length}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {/* SLA Breaches */}
+      <div className="p-3 border-b border-border/20">
+        <p className="text-[10px] font-display tracking-widest text-muted-foreground/60 uppercase mb-2">
+          SLA Status
+        </p>
+        {slaBreaches.length === 0 && slaWarnings.length === 0 ? (
+          <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="text-[11px] text-emerald-400">All Compliant</span>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {slaBreaches.slice(0, 3).map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() =>
+                  onItemClick(
+                    `Tell me about the SLA breach for ${s.customerName}`,
+                  )
+                }
+                className="w-full text-left px-2.5 py-2 rounded-lg border border-destructive/30 hover:border-destructive/50 hover:bg-destructive/5 transition-smooth group"
+                data-ocid={`ctx-sla-${s.id}`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-foreground truncate max-w-[130px]">
+                    {s.customerName}
+                  </span>
+                  <Badge
+                    variant="destructive"
+                    className="text-[9px] px-1 py-0 h-4 ml-1 flex-shrink-0"
+                  >
+                    BREACH
+                  </Badge>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-0.5">
+                  {s.region} · {s.uptime}% uptime
+                </p>
+                <ExternalLink
+                  size={9}
+                  className="text-muted-foreground/40 group-hover:text-primary mt-0.5"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* At-risk devices */}
+      <div className="p-3">
+        <p className="text-[10px] font-display tracking-widest text-muted-foreground/60 uppercase mb-2">
+          At-Risk Devices
+        </p>
+        {atRiskDevices.length === 0 ? (
+          <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            <span className="text-[11px] text-emerald-400">
+              No high-risk devices
+            </span>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {atRiskDevices.map((a) => {
+              const riskColor =
+                a.riskScore >= 80
+                  ? "text-destructive"
+                  : a.riskScore >= 60
+                    ? "text-amber-400"
+                    : "text-yellow-400";
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() =>
+                    onItemClick(
+                      `Tell me about the at-risk device ${a.deviceName} with risk score ${String(a.riskScore)}`,
+                    )
+                  }
+                  className="w-full text-left px-2.5 py-2 rounded-lg border border-border/30 hover:border-primary/40 hover:bg-primary/5 transition-smooth group"
+                  data-ocid={`ctx-risk-${a.id}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-mono text-foreground truncate max-w-[130px]">
+                      {a.deviceName}
+                    </span>
+                    <span
+                      className={`text-[11px] font-mono font-bold ${riskColor}`}
+                    >
+                      {a.riskScore}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5 capitalize">
+                    {a.failureType.replace(/-/g, " ")} · {a.predictedETA}h ETA
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ── Session sidebar ───────────────────────────────────────────────────────────
@@ -401,7 +826,7 @@ function SessionSidebar({
   activeAlerts: number;
 }) {
   return (
-    <div className="w-72 flex-shrink-0 flex flex-col border-r border-border/30 bg-card/40">
+    <div className="w-64 flex-shrink-0 flex flex-col border-r border-border/30 bg-card/40">
       {/* Sidebar header */}
       <div className="p-4 border-b border-border/30 flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -518,7 +943,7 @@ function SessionSidebar({
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export default function AIAssistant() {
-  const { devices, alerts } = useNetworkStore();
+  const { devices, alerts, slaRecords, predictiveAlerts } = useNetworkStore();
   const [sessions, setSessions] = useState<ChatSession[]>(MOCK_SESSIONS);
   const [activeSessionId, setActiveSessionId] = useState<string>("s-01");
   const [messages, setMessages] = useState<Message[]>([makeWelcome()]);
@@ -530,6 +955,54 @@ export default function AIAssistant() {
   const faultyDevices = devices.filter((d) => d.status === "faulty");
   const warnDevices = devices.filter((d) => d.status === "warning");
   const onlineDevices = devices.filter((d) => d.status === "active");
+
+  // Inject network context on mount — run once, use stable store snapshot
+  useEffect(() => {
+    const snap = useNetworkStore.getState();
+    const initAlerts = snap.alerts.filter((a) => !a.resolved);
+    const slaBreaches = snap.slaRecords.filter((s) => s.status === "breach");
+    const atRisk = snap.predictiveAlerts
+      .filter((a) => a.status === "active")
+      .sort((a, b) => b.riskScore - a.riskScore)
+      .slice(0, 3);
+
+    if (initAlerts.length > 0 || slaBreaches.length > 0 || atRisk.length > 0) {
+      const criticalCount = initAlerts.filter(
+        (a) => a.severity === "critical",
+      ).length;
+      const breachLine =
+        slaBreaches.length > 0
+          ? `\n- **${String(slaBreaches.length)}** SLA breach(es): ${slaBreaches
+              .slice(0, 2)
+              .map((s) => s.customerName)
+              .join(", ")}`
+          : "";
+      const atRiskLine =
+        atRisk.length > 0
+          ? `\n- **Top at-risk:** ${atRisk[0].deviceName} (risk score: ${String(atRisk[0].riskScore)})`
+          : "";
+      const contextMsg: Message = {
+        id: `ctx-${Date.now().toString()}`,
+        role: "ai",
+        content: `**Network Context Loaded:**\n- **${String(initAlerts.length)}** active alert(s) — ${String(criticalCount)} critical${breachLine}${atRiskLine}\n- **${String(snap.devices.length)}** total devices monitored\n\nAsk me anything about the current network state.`,
+        timestamp: Date.now(),
+        actionCards: [
+          {
+            label: "Show Faults",
+            icon: AlertCircle,
+            query: "Show active faults",
+          },
+          { label: "SLA Status", icon: Shield, query: "SLA status overview" },
+          {
+            label: "Predictive Risks",
+            icon: TrendingUp,
+            query: "Show predictive alerts",
+          },
+        ],
+      };
+      setMessages([makeWelcome(), contextMsg]);
+    }
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -550,21 +1023,27 @@ export default function AIAssistant() {
       setInput("");
       setIsThinking(true);
 
-      const response = buildResponse(trimmed, { devices, alerts });
-      const delay = Math.min(500 + response.length * 1.5, 1800);
+      const { content, actionCards } = buildResponse(trimmed, {
+        devices,
+        alerts,
+        slaRecords,
+        predictiveAlerts,
+      });
+      const delay = Math.min(500 + content.length * 1.5, 1800);
 
       setTimeout(() => {
         const aiMsg: Message = {
           id: `a-${Date.now().toString()}`,
           role: "ai",
-          content: response,
+          content,
           timestamp: Date.now(),
+          actionCards,
         };
         setMessages((prev) => [...prev, aiMsg]);
         setIsThinking(false);
       }, delay);
     },
-    [devices, alerts, isThinking],
+    [devices, alerts, slaRecords, predictiveAlerts, isThinking],
   );
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -612,7 +1091,7 @@ export default function AIAssistant() {
         activeAlerts={activeAlerts.length}
       />
 
-      {/* ── Right Panel: Active Chat (2/3 width) ── */}
+      {/* ── Center Panel: Active Chat ── */}
       <div className="flex flex-col flex-1 min-w-0 h-full">
         {/* Chat panel header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/30 bg-card/30 flex-shrink-0">
@@ -674,8 +1153,8 @@ export default function AIAssistant() {
                 Ask FiberNMS AI
               </h2>
               <p className="text-sm text-muted-foreground mb-6 max-w-sm">
-                Get instant insights on network faults, signal quality,
-                topology, and maintenance guidance.
+                Get instant insights on network faults, SLA compliance,
+                predictive risks, signal quality, and topology analysis.
               </p>
               <div className="flex flex-wrap gap-2 justify-center max-w-lg">
                 {SUGGESTED.map((s) => (
@@ -699,7 +1178,7 @@ export default function AIAssistant() {
               msg.role === "user" ? (
                 <UserMessage key={msg.id} msg={msg} />
               ) : (
-                <AIMessage key={msg.id} msg={msg} />
+                <AIMessage key={msg.id} msg={msg} onAction={sendMessage} />
               ),
             )}
             {isThinking && <TypingIndicator key="typing" />}
@@ -736,7 +1215,7 @@ export default function AIAssistant() {
               }}
               onKeyDown={handleKeyDown}
               disabled={isThinking}
-              placeholder="Ask about network faults, signal levels, OLT status…  (Enter to send)"
+              placeholder="Ask about faults, SLA status, predictive risks, OLT status…  (Enter to send)"
               className="w-full resize-none rounded-xl border border-border/60 bg-muted/30 px-4 py-3 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-smooth noc-scrollbar disabled:opacity-50"
               style={{ maxHeight: 120, minHeight: 44 }}
               data-ocid="chat-input"
@@ -760,6 +1239,9 @@ export default function AIAssistant() {
           </Button>
         </div>
       </div>
+
+      {/* ── Right Panel: Network Context ── */}
+      <NetworkContextPanel onItemClick={sendMessage} />
     </div>
   );
 }

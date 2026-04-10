@@ -9,45 +9,74 @@
     --font-mono: "JetBrains Mono", monospace;
     --radius: 0.5rem;
 
-    --background: 0.99 0 0;
-    --foreground: 0.15 0 0;
-    --card: 0.97 0 0;
-    --card-foreground: 0.15 0 0;
-    --popover: 0.98 0 0;
-    --popover-foreground: 0.15 0 0;
+    /* Light theme — enterprise clean with warm off-white */
+    --background: 0.975 0.004 240;
+    --foreground: 0.16 0.012 255;
+    --card: 0.995 0.002 240;
+    --card-foreground: 0.16 0.012 255;
+    --popover: 0.995 0.002 240;
+    --popover-foreground: 0.16 0.012 255;
 
-    --primary: 0.65 0.15 180;
-    --primary-foreground: 0.98 0 0;
+    --primary: 0.62 0.18 210;
+    --primary-foreground: 0.99 0 0;
 
-    --secondary: 0.88 0.05 0;
-    --secondary-foreground: 0.25 0 0;
-    --muted: 0.92 0 0;
-    --muted-foreground: 0.5 0 0;
+    --secondary: 0.93 0.012 240;
+    --secondary-foreground: 0.22 0.01 255;
+    --muted: 0.93 0.008 240;
+    --muted-foreground: 0.46 0.012 240;
 
-    --accent: 0.58 0.22 55;
-    --accent-foreground: 0.98 0 0;
+    --accent: 0.62 0.22 50;
+    --accent-foreground: 0.99 0 0;
 
-    --destructive: 0.52 0.25 25;
-    --destructive-foreground: 0.98 0 0;
+    --destructive: 0.52 0.24 22;
+    --destructive-foreground: 0.99 0 0;
 
-    --border: 0.88 0.02 0;
-    --input: 0.92 0.01 0;
-    --ring: 0.65 0.15 180;
+    --border: 0.87 0.012 240;
+    --input: 0.9 0.008 240;
+    --ring: 0.62 0.18 210;
 
-    --chart-1: 0.65 0.22 264;
-    --chart-2: 0.7 0.2 180;
-    --chart-3: 0.6 0.18 120;
-    --chart-4: 0.72 0.22 55;
-    --chart-5: 0.55 0.25 25;
+    --chart-1: 0.62 0.2 210;
+    --chart-2: 0.58 0.2 160;
+    --chart-3: 0.55 0.18 142;
+    --chart-4: 0.62 0.22 50;
+    --chart-5: 0.52 0.24 22;
 
-    --sidebar: 0.97 0 0;
-    --sidebar-foreground: 0.15 0 0;
-    --sidebar-primary: 0.65 0.15 180;
-    --sidebar-primary-foreground: 0.98 0 0;
-    --sidebar-accent: 0.88 0.05 0;
-    --sidebar-accent-foreground: 0.25 0 0;
-    --sidebar-border: 0.88 0.02 0;
-    --sidebar-ring: 0.65 0.15 180;
+    --sidebar: 0.955 0.008 240;
+    --sidebar-foreground: 0.16 0.012 255;
+    --sidebar-primary: 0.62 0.18 210;
+    --sidebar-primary-foreground: 0.99 0 0;
+    --sidebar-accent: 0.93 0.012 240;
+    --sidebar-accent-foreground: 0.22 0.01 255;
+    --sidebar-border: 0.87 0.012 240;
+    --sidebar-ring: 0.62 0.18 210;
+
+    /* Enterprise Risk Scale */
+    --risk-ok: 0.55 0.2 142;
+    --risk-low: 0.55 0.2 142;
+    --risk-medium: 0.58 0.22 55;
+    --risk-high: 0.58 0.22 40;
+    --risk-critical: 0.52 0.24 22;
+
+    /* SLA Status */
+    --sla-pass: 0.55 0.2 142;
+    --sla-warning: 0.58 0.22 55;
+    --sla-breach: 0.52 0.24 22;
+
+    /* Multi-Layer Visualization */
+    --layer-l1: 0.62 0.18 210;
+    --layer-l2: 0.62 0.22 50;
+    --layer-l3: 0.58 0.2 290;
+
+    /* Audit Event Types */
+    --audit-device: 0.62 0.18 210;
+    --audit-user: 0.62 0.22 50;
+    --audit-workflow: 0.58 0.2 290;
+    --audit-system: 0.46 0.012 240;
+
+    /* Capacity Utilization Gradient */
+    --capacity-healthy: 0.55 0.2 142;
+    --capacity-warning: 0.58 0.22 55;
+    --capacity-critical: 0.52 0.24 22;
   }
 
   .dark {
@@ -90,6 +119,34 @@
     --sidebar-accent-foreground: 0.85 0.005 260;
     --sidebar-border: 0.26 0.01 265;
     --sidebar-ring: 0.72 0.22 210;
+
+    /* Enterprise Risk Scale (0-100) */
+    --risk-ok: 0.62 0.22 142;
+    --risk-low: 0.62 0.22 142;
+    --risk-medium: 0.7 0.25 55;
+    --risk-high: 0.65 0.25 40;
+    --risk-critical: 0.62 0.28 22;
+
+    /* SLA Status */
+    --sla-pass: 0.62 0.22 142;
+    --sla-warning: 0.7 0.25 55;
+    --sla-breach: 0.62 0.28 22;
+
+    /* Multi-Layer Visualization */
+    --layer-l1: 0.72 0.22 210;
+    --layer-l2: 0.68 0.25 55;
+    --layer-l3: 0.65 0.22 290;
+
+    /* Audit Event Types */
+    --audit-device: 0.72 0.22 210;
+    --audit-user: 0.68 0.25 55;
+    --audit-workflow: 0.65 0.22 290;
+    --audit-system: 0.52 0.008 260;
+
+    /* Capacity Utilization Gradient */
+    --capacity-healthy: 0.62 0.22 142;
+    --capacity-warning: 0.7 0.25 55;
+    --capacity-critical: 0.62 0.28 22;
   }
 
   * {
@@ -97,6 +154,9 @@
   }
   body {
     @apply bg-background text-foreground font-body antialiased;
+    color-scheme: light dark;
+  }
+  .dark body {
     color-scheme: dark;
   }
 }
@@ -143,13 +203,13 @@
   }
 
   .noc-glow-warn {
-    box-shadow: 0 0 0 1px oklch(0.7 0.25 55 / 0.3), 0 0 18px
-      oklch(0.7 0.25 55 / 0.3);
+    box-shadow: 0 0 0 1px oklch(var(--accent) / 0.3), 0 0 18px
+      oklch(var(--accent) / 0.3);
   }
 
   .noc-glow-ok {
-    box-shadow: 0 0 0 1px oklch(0.62 0.22 142 / 0.3), 0 0 18px
-      oklch(0.62 0.22 142 / 0.3);
+    box-shadow: 0 0 0 1px oklch(var(--risk-ok) / 0.3), 0 0 18px
+      oklch(var(--risk-ok) / 0.3);
   }
 
   /* Terminal metric text */
@@ -173,6 +233,135 @@
   /* Status badge */
   .status-badge {
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium;
+  }
+
+  /* Risk severity badges (0-100 scale) */
+  .risk-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold;
+  }
+
+  .risk-ok {
+    background-color: oklch(var(--risk-ok) / 0.15);
+    color: oklch(var(--risk-ok));
+  }
+
+  .risk-low {
+    background-color: oklch(var(--risk-low) / 0.15);
+    color: oklch(var(--risk-low));
+  }
+
+  .risk-medium {
+    background-color: oklch(var(--risk-medium) / 0.15);
+    color: oklch(var(--risk-medium));
+  }
+
+  .risk-high {
+    background-color: oklch(var(--risk-high) / 0.15);
+    color: oklch(var(--risk-high));
+  }
+
+  .risk-critical {
+    background-color: oklch(var(--risk-critical) / 0.15);
+    color: oklch(var(--risk-critical));
+  }
+
+  /* SLA Status Card */
+  .sla-status {
+    @apply glass-card p-4 rounded-lg;
+  }
+
+  .sla-pass {
+    border-left: 4px solid oklch(var(--sla-pass));
+  }
+
+  .sla-warning {
+    border-left: 4px solid oklch(var(--sla-warning));
+  }
+
+  .sla-breach {
+    border-left: 4px solid oklch(var(--sla-breach));
+  }
+
+  /* Multi-Layer Visualization */
+  .layer-l1 {
+    color: oklch(var(--layer-l1));
+  }
+
+  .layer-l2 {
+    color: oklch(var(--layer-l2));
+  }
+
+  .layer-l3 {
+    color: oklch(var(--layer-l3));
+  }
+
+  .layer-button {
+    @apply px-3 py-1.5 rounded-md text-xs font-medium transition-smooth;
+  }
+
+  /* Audit Event Timeline */
+  .audit-timeline-item {
+    @apply relative pl-6 py-2;
+  }
+
+  .audit-device {
+    color: oklch(var(--audit-device));
+  }
+
+  .audit-user {
+    color: oklch(var(--audit-user));
+  }
+
+  .audit-workflow {
+    color: oklch(var(--audit-workflow));
+  }
+
+  .audit-system {
+    color: oklch(var(--audit-system));
+  }
+
+  /* Capacity Utilization Gradient */
+  .capacity-bar {
+    @apply h-2 rounded-full overflow-hidden;
+  }
+
+  .capacity-fill-healthy {
+    background: linear-gradient(
+      to right,
+      oklch(var(--capacity-healthy)),
+      oklch(var(--capacity-healthy))
+    );
+  }
+
+  .capacity-fill-warning {
+    background: linear-gradient(
+      to right,
+      oklch(var(--capacity-healthy)),
+      oklch(var(--capacity-warning)),
+      oklch(var(--capacity-warning))
+    );
+  }
+
+  .capacity-fill-critical {
+    background: linear-gradient(
+      to right,
+      oklch(var(--capacity-healthy)),
+      oklch(var(--capacity-warning)),
+      oklch(var(--capacity-critical))
+    );
+  }
+
+  /* Command Palette Overlay */
+  .command-palette {
+    @apply glass-elevated fixed inset-0 m-auto max-w-2xl rounded-lg shadow-noc-elevated;
+  }
+
+  .command-palette-input {
+    @apply w-full bg-transparent px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none;
+  }
+
+  .command-palette-item {
+    @apply px-4 py-2 cursor-pointer hover:bg-accent/10 transition-smooth;
   }
 
   /* NOC scan-line overlay */

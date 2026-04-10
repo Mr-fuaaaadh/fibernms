@@ -1,25 +1,31 @@
 {
-  "overview": "A professional telecom-grade Optical Fiber Network Management System with interactive GIS map, real-time device monitoring, fault detection, power budget calculator, and network topology visualization. Built with a dark NOC-style interface, glassmorphic cards, and color-coded device status indicators.",
+  "overview": "FiberNMS is a carrier-grade Optical Fiber Network Management System — a real-time, AI-powered NOC platform for telecom operators. It features an interactive GIS map, device management for 10K+ devices, network topology visualization, predictive fault intelligence with AI risk scoring, SLA tracking, capacity planning, audit logs, and a global command palette. Built for professional Network Operations Centers managing multi-region fiber infrastructure.",
   "features": [
-    "Interactive GIS map with fiber route drawing and editing",
-    "Device management for OLT, ONT, Splitter, Joint Box, and Switch",
-    "Network topology tree visualization with OLT → Splitter → ONT hierarchy",
-    "Power budget calculator with PASS/FAIL signal margin indicator",
-    "Real-time monitoring dashboard with live charts and alerts panel",
-    "Fault detection with red blinking route highlighting on map",
-    "Dark NOC-style theme with glassmorphism and neon accent colors",
-    "Layer toggles for Backbone, Distribution, and Drop fiber types"
+    "Interactive GIS map with fiber route drawing and device placement",
+    "Predictive Fault Intelligence with AI risk scoring (0-100) and heatmap overlays",
+    "SLA & Service Assurance Dashboard with breach alerts",
+    "Capacity Planning & Forecasting with 24-month growth projections",
+    "Audit Logs & Compliance panel with timeline view and CSV export",
+    "Multi-Layer Network Visualization (L1 Fiber, L2 VLAN, L3 IP topology)",
+    "Digital Twin simulation mode for fiber cut and failure scenarios",
+    "Global Command Palette (CMD+K) across all devices, alerts, and workflows",
+    "Real-time monitoring with 5-second live telemetry updates",
+    "AI Assistant with real-time network context injection",
+    "10K+ deterministically-generated mock devices with realistic topology",
+    "Visual workflow automation builder with pre-built NOC automations"
   ],
   "category": "productivity",
   "tags": [
     "telecom",
-    "network-management",
-    "fiber",
-    "gis",
     "noc",
+    "fiber-network",
     "monitoring",
-    "dashboard",
-    "dark-theme"
+    "enterprise",
+    "real-time",
+    "gis",
+    "ai",
+    "network-management",
+    "dashboard"
   ],
-  "last_updated": "2026-04-08T10:45:09.087Z"
+  "last_updated": "2026-04-10T07:22:22.458Z"
 }

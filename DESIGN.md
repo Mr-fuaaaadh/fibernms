@@ -1,83 +1,89 @@
 # Design Brief
 
-**Purpose:** Telecom-grade optical fiber network operations center dashboard — mission-critical infrastructure monitoring tool for 24/7 network engineers.
+**Purpose:** Enterprise telecom-grade Optical Fiber Network Operations Center with predictive intelligence, SLA assurance, capacity forecasting, and audit compliance.
 
-**Tone:** Professional, utilitarian, authentic NOC aesthetic. Zero ornamentation. Precision typography. High information density. Color is semantic (green = healthy, red = critical, yellow = warning), never decorative.
+**Tone:** Professional, mission-critical, authentic NOC aesthetic. Semantic color signals (green = healthy, yellow = warning, orange = risk, red = critical). High information density with glassmorphism for layer separation.
 
-**Aesthetic:** Dark terminal-inspired interface with neon accents. Glassmorphism applied functionally (layer separation via backdrop blur), not decoratively. Authentic network operations center UI — real engineers will recognize the visual language.
+**Aesthetic:** Dark terminal-inspired interface with neon cyan/orange/red accents. Enterprise-grade precision typography. WebGL-optimized map visualization. Real-time alerting with pulsing state indicators.
 
-## Palette
+## Core Palette
 
-| Token              | Light (L C H)      | Dark (L C H)        | Purpose                         |
-| :----------------- | :----------------- | :------------------ | :------------------------------ |
-| **background**     | 0.99 0 0           | 0.12 0 0            | Page background, lowest layer   |
-| **card**           | 0.97 0 0           | 0.16 0.01 280       | Card/panel surfaces, glass base |
-| **foreground**     | 0.15 0 0           | 0.92 0 0            | Primary text, high contrast     |
-| **primary**        | 0.65 0.15 180      | 0.72 0.22 260       | Neon cyan — active state        |
-| **accent**         | 0.58 0.22 55       | 0.68 0.25 55        | Neon orange — warnings/alert    |
-| **destructive**    | 0.52 0.25 25       | 0.62 0.28 22        | Neon red — critical faults      |
-| **muted**          | 0.92 0 0           | 0.22 0 0            | Secondary UI, disabled state    |
-| **border**         | 0.88 0.02 0        | 0.24 0.01 280       | Subtle dividers, glass borders  |
-| **chart-1/2/3/4/5**| Various spectral   | Neon-tuned hues     | Data visualization palette      |
+| Token              | Dark (L C H)        | Purpose                         |
+| :----------------- | :------------------ | :------------------------------ |
+| **background**     | 0.11 0 0            | Base surface                    |
+| **card**           | 0.155 0.008 265     | Raised panels, glass base       |
+| **foreground**     | 0.92 0 0            | Primary text                    |
+| **primary**        | 0.72 0.22 210       | Neon cyan — active state        |
+| **accent**         | 0.68 0.25 55        | Neon orange — warnings          |
+| **destructive**    | 0.62 0.28 22        | Neon red — critical faults      |
+| **border**         | 0.26 0.01 265       | Subtle dividers                 |
+| **muted**          | 0.22 0 0            | Secondary UI, disabled          |
+
+## Enterprise Tokens
+
+| Token Class | Values | Purpose |
+| :---------- | :----- | :------ |
+| **Risk (0-100 scale)** | ok (0.62 L), low (0.62 L), medium (0.7 L), high (0.65 L), critical (0.62 L) | Predictive fault intelligence severity |
+| **SLA Status** | pass (green), warning (orange), breach (red) | SLA performance tracking |
+| **Layer Visualization** | L1 (cyan), L2 (orange), L3 (purple) | Multi-layer topology (fiber, VLAN, IP) |
+| **Audit Events** | device (cyan), user (orange), workflow (purple), system (gray) | Compliance timeline |
+| **Capacity** | healthy (green), warning (yellow), critical (red) | Utilization forecasting |
 
 ## Structural Zones
 
-| Zone             | Treatment                                                      | Palette Token   |
-| :--------------- | :------------------------------------------------------------- | :-------------- |
-| **Header/Nav**   | Solid bg-sidebar, border-b, glassmorphic hover states          | sidebar/border  |
-| **Sidebar**      | Solid bg-sidebar, high contrast text, icon-badge indicators   | sidebar/*       |
-| **Main Content** | bg-background, card-based layout with glass-card utility       | background/card |
-| **Data Panels**  | glass-card (backdrop-blur + bg-card/80), noc-soft shadow       | card/border     |
-| **Alerts/Status**| Colored badges (green/yellow/red), noc-glow-active for active  | status tokens   |
-| **Footer**       | bg-muted/10, border-t, meta information in text-muted          | muted/border    |
+| Zone | Treatment | Tokens |
+| :--- | :-------- | :----- |
+| **Map Container** | WebGL canvas, overlay risk heatmap, layer toggles | background, layer-* |
+| **Metrics Panels** | glass-card grid, risk/SLA/capacity gauges | card, risk-*, sla-*, capacity-* |
+| **Predictive Heatmap** | Gradient overlay on map (green → red), responsive to risk scale | risk-ok/medium/critical |
+| **SLA Dashboard** | Card-based, bordered left by status color, metric rows | sla-pass/warning/breach |
+| **Capacity Planner** | Stacked bar charts, gradient fills, trend lines | capacity-healthy/warning/critical |
+| **Audit Timeline** | Vertical timeline, color-coded event badges, expandable details | audit-device/user/workflow/system |
+| **Layer Toggles** | Button group, active state glows, L1/L2/L3 color-coded | layer-l1/l2/l3, noc-glow |
+| **Command Palette** | CMD+K overlay, glass-elevated backdrop, search results list | glass-elevated, command-palette-* |
+
+## Component Variants
+
+- **RiskBadge:** `risk-badge` with `.risk-ok`, `.risk-low`, `.risk-medium`, `.risk-high`, `.risk-critical`
+- **SLAStatusCard:** `sla-status` base + `.sla-pass`, `.sla-warning`, `.sla-breach` for left border accent
+- **AuditTimelineItem:** `audit-timeline-item` + `.audit-device`, `.audit-user`, `.audit-workflow`, `.audit-system`
+- **LayerToggleButton:** `layer-button` with `.layer-l1`, `.layer-l2`, `.layer-l3` for color context
+- **CommandPaletteOverlay:** `command-palette` glass-elevated container, `.command-palette-input`, `.command-palette-item`
 
 ## Typography
 
-| Tier     | Font              | Size  | Weight | Usage                             |
-| :------- | :---------------- | :---- | :----- | :-------------------------------- |
-| **H1**   | Geist Mono        | 28px  | 600    | Page titles, major headings       |
-| **H2**   | Geist Mono        | 20px  | 600    | Section headers, panel titles     |
-| **Body** | General Sans      | 14px  | 400    | Labels, list items, descriptions |
-| **Small**| General Sans      | 12px  | 500    | Badge text, metadata              |
-| **Mono**| JetBrains Mono    | 12px  | 400    | Metrics, IPs, signal values       |
+| Tier | Font | Size | Weight | Usage |
+| :--- | :--- | :--- | :----- | :---- |
+| **H1** | Geist Mono | 28px | 600 | Page titles, KPI headers |
+| **H2** | Geist Mono | 20px | 600 | Section headers, metric titles |
+| **Body** | General Sans | 14px | 400 | Labels, list items, descriptions |
+| **Small** | General Sans | 12px | 500 | Badge text, metadata, timestamps |
+| **Mono** | JetBrains Mono | 12px | 400 | Metrics, IPs, signal values, risk scores |
 
 ## Elevation & Depth
 
-- **L0 (background):** 0.12 (dark) — base surface
-- **L1 (card):** 0.16 — raised panels, glass effect via backdrop blur + border
-- **L2 (popover):** 0.20 — modals, dropdowns, elevated overlays
-- **Shadow:** Soft (noc-soft), Elevated (noc-elevated) — never harsh, supports glassmorphism
-
-## Component Patterns
-
-- **Status badges:** `status-badge` + `bg-green-500/20 text-green-700` (active), `bg-red-500/20 text-red-700` (fault), `bg-yellow-500/20 text-yellow-700` (warning)
-- **Device cards:** `glass-card` + flex grid, metric data in `text-metric` (mono)
-- **Alert indicators:** `noc-glow-active` on critical, `pulse-soft` animation on warning
-- **Interactive:**  `transition-smooth` on all hover/active states
+- **L0 (background):** 0.11 — base surface, map container
+- **L1 (card):** 0.155 — raised panels, metrics cards, glass effect via backdrop blur + border
+- **L2 (popover):** 0.18 — modals, dropdowns, command palette, elevated overlays
+- **Shadow:** noc-soft (panels), noc-elevated (modals) — soft, never harsh
 
 ## Motion & Animation
 
-- **Entrance:** `animate-slide-in` (300ms ease-out) for modals, panels
-- **State change:** `transition-smooth` (300ms) on color/opacity shifts
-- **Alerts:** `animate-pulse-soft` (2s) on warning state, steady on critical
-- **Focus/Hover:** Subtle `noc-glow` effect, color shift to `primary` or `accent`
+- **Entrance:** animate-slide-in (300ms) for modals, panels, timeline items
+- **State change:** transition-smooth (220ms) on all interactive elements
+- **Alerts:** animate-pulse-soft (2s) on warning states, steady on critical
+- **Risk heatmap:** fade-in on data load, smooth gradient transitions
+- **Layer toggle:** noc-glow effect on active layer button
 
 ## Constraints
 
-- **Color in dark mode only** — neon cyan/orange/red meaningless in light mode, disable for light variant
-- **Density over decoration** — info-rich layout, minimal whitespace
-- **Contrast AA+ at all times** — monitor WCAG scores, especially on dark backgrounds
-- **Glyphs/icons:** Lucide-react, size 16–20px, color via semantic tokens
-- **Form inputs:** High contrast border, `bg-input`, clear focus ring with `ring-primary`
+- **Color semantic only** — every neon accent serves function (risk signal, status indicator, layer differentiation)
+- **High contrast AA+** — WCAG compliance on dark backgrounds, minimum 7:1 text ratio
+- **Density over decoration** — information-rich layouts, minimal whitespace
+- **Forms:** High-contrast borders, bg-input, clear focus ring with ring-primary
+- **Icons:** Lucide React, 16–20px, semantic color via tokens
+- **Glassmorphism:** Backdrop blur (4–8px) + semi-transparent background + subtle border = layer separation
 
 ## Signature Detail
 
-Neon accent colors appear **only as semantic signals** (active = cyan, warning = orange, critical = red). These colors justify their presence through meaning, not trend. Every neon glow is earned by function. The overall visual is refined, professional — NOC tool, not gaming interface.
-
-## Font Loading
-
-- GeistMono: Display/title font, geometric and technical
-- GeneralSans: Body font, excellent readability at 12–14px density
-- JetBrainsMono: Metrics, code-like precision for network data
-
-Fonts loaded via `@font-face` from `/assets/fonts/` with `font-display: swap`.
+Predictive intelligence heatmap on the global fiber network map — a gradient overlay showing risk zones (green healthy → red critical) that updates in real-time based on anomaly detection. The heatmap is the visual centerpiece of the NOC, earning every neon color through data significance, never decoration.

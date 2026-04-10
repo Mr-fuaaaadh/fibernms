@@ -22,6 +22,12 @@ const Tools = lazy(() => import("@/pages/Tools"));
 const Analytics = lazy(() => import("@/pages/Analytics"));
 const Workflows = lazy(() => import("@/pages/Workflows"));
 const AIAssistant = lazy(() => import("@/pages/AIAssistant"));
+const SLADashboard = lazy(() => import("@/pages/SLADashboard"));
+const PredictiveIntelligence = lazy(
+  () => import("@/pages/PredictiveIntelligence"),
+);
+const CapacityPlanning = lazy(() => import("@/pages/CapacityPlanning"));
+const AuditLogs = lazy(() => import("@/pages/AuditLogs"));
 
 function PageLoader() {
   return (
@@ -109,6 +115,42 @@ const routes = [
     component: () => (
       <Suspense fallback={<PageLoader />}>
         <AIAssistant />
+      </Suspense>
+    ),
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/sla",
+    component: () => (
+      <Suspense fallback={<PageLoader />}>
+        <SLADashboard />
+      </Suspense>
+    ),
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/predictive",
+    component: () => (
+      <Suspense fallback={<PageLoader />}>
+        <PredictiveIntelligence />
+      </Suspense>
+    ),
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/capacity",
+    component: () => (
+      <Suspense fallback={<PageLoader />}>
+        <CapacityPlanning />
+      </Suspense>
+    ),
+  }),
+  createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/audit",
+    component: () => (
+      <Suspense fallback={<PageLoader />}>
+        <AuditLogs />
       </Suspense>
     ),
   }),

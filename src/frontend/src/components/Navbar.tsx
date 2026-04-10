@@ -9,12 +9,16 @@ import {
   ChevronDown,
   Info,
   LogOut,
+  Moon,
   Search,
   Settings,
+  ShieldAlert,
+  Sun,
   User,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 
 const SEVERITY_ICON: Record<AlertSeverity, React.ElementType> = {
@@ -26,6 +30,16 @@ const SEVERITY_COLOR: Record<AlertSeverity, string> = {
   critical: "text-red-400",
   warning: "text-amber-400",
   info: "text-primary",
+};
+
+// Role definitions
+const ROLES = ["Admin", "Engineer", "Viewer"] as const;
+type UserRole = (typeof ROLES)[number];
+
+const ROLE_COLOR: Record<UserRole, string> = {
+  Admin: "border-red-500/40 text-red-400",
+  Engineer: "border-primary/40 text-primary",
+  Viewer: "border-muted text-muted-foreground",
 };
 
 function timeAgo(ts: number) {
@@ -40,14 +54,23 @@ export function Navbar() {
   const setSearchQuery = useNetworkStore((s) => s.setSearchQuery);
   const alerts = useNetworkStore((s) => s.alerts);
   const resolveAlert = useNetworkStore((s) => s.resolveAlert);
+  const slaRecords = useNetworkStore((s) => s.slaRecords);
+
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const isDark = theme === "dark";
 
   const unresolvedAlerts = alerts.filter((a) => !a.resolved);
   const criticalCount = unresolvedAlerts.filter(
     (a) => a.severity === "critical",
   ).length;
 
+  const slaBreachCount = slaRecords.filter((s) => s.status === "breach").length;
+
   const [alertOpen, setAlertOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [userRole] = useState<UserRole>("Admin");
   const alertRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -71,6 +94,20 @@ export function Navbar() {
         </span>
       </div>
 
+      {/* SLA Breach Indicator */}
+      {slaBreachCount > 0 && (
+        <div
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-destructive/40 bg-destructive/10"
+          data-ocid="navbar-sla-breaches"
+          title={`${slaBreachCount} SLA breach${slaBreachCount !== 1 ? "es" : ""} active`}
+        >
+          <ShieldAlert className="w-3.5 h-3.5 text-destructive" />
+          <span className="text-[11px] font-mono font-semibold text-destructive">
+            {slaBreachCount} SLA BREACH{slaBreachCount !== 1 ? "ES" : ""}
+          </span>
+        </div>
+      )}
+
       {/* Search */}
       <div className="relative w-64" data-ocid="navbar-search">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
@@ -92,6 +129,48 @@ export function Navbar() {
           </button>
         )}
       </div>
+
+      {/* Theme Toggle */}
+      {mounted && (
+        <div className="relative group" data-ocid="navbar-theme-toggle">
+          <button
+            type="button"
+            onClick={() => setTheme(isDark ? "light" : "dark")}
+            className="relative p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-smooth overflow-hidden"
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {isDark ? (
+                <motion.span
+                  key="sun"
+                  initial={{ rotate: -90, scale: 0.5, opacity: 0 }}
+                  animate={{ rotate: 0, scale: 1, opacity: 1 }}
+                  exit={{ rotate: 90, scale: 0.5, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="flex items-center justify-center"
+                >
+                  <Sun className="w-4 h-4" />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="moon"
+                  initial={{ rotate: 90, scale: 0.5, opacity: 0 }}
+                  animate={{ rotate: 0, scale: 1, opacity: 1 }}
+                  exit={{ rotate: -90, scale: 0.5, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="flex items-center justify-center"
+                >
+                  <Moon className="w-4 h-4" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
+          {/* Tooltip */}
+          <span className="pointer-events-none absolute right-1/2 translate-x-1/2 top-full mt-1.5 whitespace-nowrap px-2 py-1 rounded bg-card border border-border/50 text-[10px] font-mono text-foreground shadow-noc-elevated opacity-0 group-hover:opacity-100 transition-smooth z-50">
+            {isDark ? "Switch to light mode" : "Switch to dark mode"}
+          </span>
+        </div>
+      )}
 
       {/* Alerts */}
       <div className="relative" ref={alertRef}>
@@ -204,6 +283,16 @@ export function Navbar() {
           <span className="font-body text-xs text-foreground hidden sm:block">
             Engineer
           </span>
+          <Badge
+            variant="outline"
+            className={cn(
+              "text-[9px] px-1 py-0 h-4 font-mono hidden sm:flex",
+              ROLE_COLOR[userRole],
+            )}
+            data-ocid="navbar-role-badge"
+          >
+            {userRole}
+          </Badge>
           <ChevronDown className="w-3 h-3 text-muted-foreground" />
         </button>
 
@@ -214,7 +303,7 @@ export function Navbar() {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -6, scale: 0.97 }}
               transition={{ duration: 0.15 }}
-              className="absolute right-0 top-full mt-2 w-44 glass-elevated rounded-xl overflow-hidden shadow-noc-elevated z-50"
+              className="absolute right-0 top-full mt-2 w-52 glass-elevated rounded-xl overflow-hidden shadow-noc-elevated z-50"
             >
               <div className="px-4 py-3 border-b border-border/50">
                 <p className="text-xs font-mono text-foreground">
@@ -223,6 +312,15 @@ export function Navbar() {
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   System Engineer
                 </p>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[9px] px-1.5 py-0.5 mt-1.5 font-mono",
+                    ROLE_COLOR[userRole],
+                  )}
+                >
+                  {userRole} Access
+                </Badge>
               </div>
               <div className="p-1">
                 <button

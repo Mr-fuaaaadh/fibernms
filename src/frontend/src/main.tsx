@@ -1,5 +1,6 @@
 import { InternetIdentityProvider } from "@caffeineai/core-infrastructure";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ThemeProvider } from "next-themes";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
@@ -17,9 +18,15 @@ declare global {
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <QueryClientProvider client={queryClient}>
-    <InternetIdentityProvider>
-      <App />
-    </InternetIdentityProvider>
-  </QueryClientProvider>,
+  <ThemeProvider
+    attribute="class"
+    defaultTheme="dark"
+    disableTransitionOnChange={false}
+  >
+    <QueryClientProvider client={queryClient}>
+      <InternetIdentityProvider>
+        <App />
+      </InternetIdentityProvider>
+    </QueryClientProvider>
+  </ThemeProvider>,
 );

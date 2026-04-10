@@ -66,6 +66,34 @@ export default {
           border: "oklch(var(--sidebar-border))",
           ring: "oklch(var(--sidebar-ring))",
         },
+        risk: {
+          ok: "oklch(var(--risk-ok) / <alpha-value>)",
+          low: "oklch(var(--risk-low) / <alpha-value>)",
+          medium: "oklch(var(--risk-medium) / <alpha-value>)",
+          high: "oklch(var(--risk-high) / <alpha-value>)",
+          critical: "oklch(var(--risk-critical) / <alpha-value>)",
+        },
+        sla: {
+          pass: "oklch(var(--sla-pass) / <alpha-value>)",
+          warning: "oklch(var(--sla-warning) / <alpha-value>)",
+          breach: "oklch(var(--sla-breach) / <alpha-value>)",
+        },
+        layer: {
+          l1: "oklch(var(--layer-l1) / <alpha-value>)",
+          l2: "oklch(var(--layer-l2) / <alpha-value>)",
+          l3: "oklch(var(--layer-l3) / <alpha-value>)",
+        },
+        audit: {
+          device: "oklch(var(--audit-device) / <alpha-value>)",
+          user: "oklch(var(--audit-user) / <alpha-value>)",
+          workflow: "oklch(var(--audit-workflow) / <alpha-value>)",
+          system: "oklch(var(--audit-system) / <alpha-value>)",
+        },
+        capacity: {
+          healthy: "oklch(var(--capacity-healthy) / <alpha-value>)",
+          warning: "oklch(var(--capacity-warning) / <alpha-value>)",
+          critical: "oklch(var(--capacity-critical) / <alpha-value>)",
+        },
       },
       fontFamily: {
         display: ["var(--font-display)", "serif"],

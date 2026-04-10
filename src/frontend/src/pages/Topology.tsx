@@ -2,8 +2,15 @@ import { GlassCard } from "@/components/GlassCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TopologyGraph } from "@/components/topology/TopologyGraph";
 import { TopologyNodePanel } from "@/components/topology/TopologyNodePanel";
+import { cn } from "@/lib/utils";
 import { useNetworkStore } from "@/store/networkStore";
-import { AlertTriangle, CheckCircle2, GitBranch, Radio } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  GitBranch,
+  Layers,
+  Radio,
+} from "lucide-react";
 import { motion } from "motion/react";
 
 function StatPill({
@@ -22,6 +29,149 @@ function StatPill({
       <Icon className={`w-3.5 h-3.5 ${color}`} />
       <span className="text-xs text-muted-foreground font-mono">{label}</span>
       <span className={`text-xs font-bold font-mono ${color}`}>{value}</span>
+    </div>
+  );
+}
+
+// ── Layer Toggle Bar ──────────────────────────────────────────────────────────
+
+interface LayerConfig {
+  type: "L1" | "L2" | "L3";
+  label: string;
+  sublabel: string;
+  color: string;
+  activeClass: string;
+  borderActive: string;
+}
+
+const LAYER_CONFIGS: LayerConfig[] = [
+  {
+    type: "L1",
+    label: "L1 Fiber",
+    sublabel: "Physical Routes",
+    color: "oklch(0.72 0.22 210)",
+    activeClass: "bg-primary/15 text-primary border-primary/40",
+    borderActive: "border-primary/40",
+  },
+  {
+    type: "L2",
+    label: "L2 VLAN",
+    sublabel: "Switching Paths",
+    color: "oklch(0.68 0.22 42)",
+    activeClass: "bg-orange-500/15 text-orange-400 border-orange-500/40",
+    borderActive: "border-orange-500/40",
+  },
+  {
+    type: "L3",
+    label: "L3 IP",
+    sublabel: "IP Topology",
+    color: "oklch(0.65 0.22 290)",
+    activeClass: "bg-purple-500/15 text-purple-400 border-purple-500/40",
+    borderActive: "border-purple-500/40",
+  },
+];
+
+function LayerToggleBar() {
+  const networkLayers = useNetworkStore((s) => s.networkLayers);
+  const toggleNetworkLayer = useNetworkStore((s) => s.toggleNetworkLayer);
+
+  return (
+    <div className="flex items-center gap-2" data-ocid="layer-toggle-toolbar">
+      <div className="flex items-center gap-1.5 mr-1">
+        <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+        <span className="text-[10px] font-display tracking-widest text-muted-foreground uppercase">
+          Layers
+        </span>
+      </div>
+      {LAYER_CONFIGS.map((cfg) => {
+        const layer = networkLayers.find((l) => l.type === cfg.type);
+        const isVisible = layer?.visible ?? false;
+        return (
+          <button
+            key={cfg.type}
+            type="button"
+            onClick={() => toggleNetworkLayer(cfg.type)}
+            data-ocid={`layer-toggle-${cfg.type.toLowerCase()}`}
+            aria-pressed={isVisible}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-mono transition-smooth select-none",
+              isVisible
+                ? cfg.activeClass
+                : "text-muted-foreground/50 border-border/30 hover:border-border/60 hover:text-muted-foreground",
+            )}
+          >
+            <span
+              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style={{
+                background: isVisible ? cfg.color : "currentColor",
+                opacity: isVisible ? 1 : 0.35,
+                boxShadow: isVisible ? `0 0 6px ${cfg.color}` : "none",
+              }}
+            />
+            {cfg.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Layer Legend ──────────────────────────────────────────────────────────────
+
+function LayerLegend() {
+  const networkLayers = useNetworkStore((s) => s.networkLayers);
+
+  const visibleLayers = LAYER_CONFIGS.filter(
+    (cfg) => networkLayers.find((l) => l.type === cfg.type)?.visible,
+  );
+
+  if (visibleLayers.length === 0) return null;
+
+  return (
+    <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5 glass-card rounded-xl px-3 py-2.5">
+      <p className="text-[9px] font-display tracking-widest text-muted-foreground/60 uppercase mb-1">
+        Active Layers
+      </p>
+      {visibleLayers.map((cfg) => (
+        <div key={cfg.type} className="flex items-center gap-2">
+          {cfg.type === "L1" ? (
+            <span
+              className="w-5 h-0.5 rounded"
+              style={{
+                background: cfg.color,
+                boxShadow: `0 0 4px ${cfg.color}`,
+              }}
+            />
+          ) : cfg.type === "L2" ? (
+            <svg width={20} height={4} aria-hidden="true">
+              <line
+                x1={0}
+                y1={2}
+                x2={20}
+                y2={2}
+                stroke={cfg.color}
+                strokeWidth={1.5}
+                strokeDasharray="4 2"
+              />
+            </svg>
+          ) : (
+            <svg width={20} height={4} aria-hidden="true">
+              <line
+                x1={0}
+                y1={2}
+                x2={20}
+                y2={2}
+                stroke={cfg.color}
+                strokeWidth={1.5}
+                strokeDasharray="2 2"
+              />
+            </svg>
+          )}
+          <span className="text-[10px] font-mono text-muted-foreground">
+            {cfg.sublabel}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -107,6 +257,11 @@ export default function Topology() {
         </div>
       </div>
 
+      {/* Layer toggle toolbar */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <LayerToggleBar />
+      </div>
+
       {/* Graph + Panel */}
       <div className="flex gap-4 flex-1 min-h-0">
         {/* Main graph canvas */}
@@ -128,6 +283,7 @@ export default function Topology() {
           {/* Graph */}
           <div className="relative" style={{ height: "calc(100% - 44px)" }}>
             <TopologyGraph />
+            <LayerLegend />
           </div>
         </GlassCard>
 

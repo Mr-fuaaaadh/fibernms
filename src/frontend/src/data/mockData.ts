@@ -1,299 +1,416 @@
-import type { Alert, Device, FiberRoute } from "../types/network";
+import type {
+  Alert,
+  AuditLog,
+  CapacityRecord,
+  Device,
+  FiberRoute,
+  PredictiveAlert,
+  SLARecord,
+} from "../types/network";
 
-export const mockDevices: Device[] = [
-  {
-    id: "olt-01",
-    name: "OLT-CORE-01",
-    type: "OLT",
-    lat: 40.7128,
-    lng: -74.006,
-    ports: 16,
-    status: "active",
-    connectedTo: ["spl-01", "spl-02"],
-    location: "Central Exchange, Manhattan",
-    signalStrength: -18,
-    uptime: 99.8,
-  },
-  {
-    id: "olt-02",
-    name: "OLT-EDGE-02",
-    type: "OLT",
-    lat: 40.7282,
-    lng: -73.994,
-    ports: 8,
-    status: "warning",
-    connectedTo: ["spl-03", "spl-04"],
-    location: "Midtown Hub, Manhattan",
-    signalStrength: -22,
-    uptime: 97.2,
-  },
-  {
-    id: "spl-01",
-    name: "SPLITTER-A1",
-    type: "Splitter",
-    lat: 40.7089,
-    lng: -74.012,
-    ports: 8,
-    status: "active",
-    connectedTo: ["ont-01", "ont-02", "ont-03"],
-    location: "Distribution Point A",
-    signalStrength: -24,
-    uptime: 100,
-  },
-  {
-    id: "spl-02",
-    name: "SPLITTER-A2",
-    type: "Splitter",
-    lat: 40.7155,
-    lng: -74.002,
-    ports: 8,
-    status: "active",
-    connectedTo: ["ont-04", "ont-05"],
-    location: "Distribution Point B",
-    signalStrength: -25,
-    uptime: 99.5,
-  },
-  {
-    id: "spl-03",
-    name: "SPLITTER-B1",
-    type: "Splitter",
-    lat: 40.7312,
-    lng: -73.988,
-    ports: 4,
-    status: "faulty",
-    connectedTo: ["ont-06"],
-    location: "Distribution Point C",
-    signalStrength: -32,
-    uptime: 45.0,
-  },
-  {
-    id: "spl-04",
-    name: "SPLITTER-B2",
-    type: "Splitter",
-    lat: 40.7245,
-    lng: -73.998,
-    ports: 4,
-    status: "active",
-    connectedTo: ["ont-07", "ont-08"],
-    location: "Distribution Point D",
-    signalStrength: -26,
-    uptime: 98.1,
-  },
-  {
-    id: "ont-01",
-    name: "ONT-RES-001",
-    type: "ONT",
-    lat: 40.7065,
-    lng: -74.018,
-    ports: 4,
-    status: "active",
-    connectedTo: ["spl-01"],
-    location: "123 West St, Apt 4B",
-    signalStrength: -27,
-    uptime: 99.9,
-  },
-  {
-    id: "ont-02",
-    name: "ONT-RES-002",
-    type: "ONT",
-    lat: 40.7075,
-    lng: -74.015,
-    ports: 4,
-    status: "active",
-    connectedTo: ["spl-01"],
-    location: "456 Liberty St, Floor 2",
-    signalStrength: -28,
-    uptime: 99.7,
-  },
-  {
-    id: "ont-03",
-    name: "ONT-COM-003",
-    type: "ONT",
-    lat: 40.708,
-    lng: -74.01,
-    ports: 4,
-    status: "warning",
-    connectedTo: ["spl-01"],
-    location: "789 Broad St",
-    signalStrength: -30,
-    uptime: 91.3,
-  },
-  {
-    id: "ont-04",
-    name: "ONT-RES-004",
-    type: "ONT",
-    lat: 40.716,
-    lng: -73.999,
-    ports: 4,
-    status: "active",
-    connectedTo: ["spl-02"],
-    location: "22 Fulton St, Unit 7",
-    signalStrength: -27,
-    uptime: 99.8,
-  },
-  {
-    id: "ont-05",
-    name: "ONT-RES-005",
-    type: "ONT",
-    lat: 40.715,
-    lng: -74.004,
-    ports: 4,
-    status: "active",
-    connectedTo: ["spl-02"],
-    location: "11 Water St",
-    signalStrength: -26,
-    uptime: 100,
-  },
-  {
-    id: "ont-06",
-    name: "ONT-COM-006",
-    type: "ONT",
-    lat: 40.732,
-    lng: -73.985,
-    ports: 4,
-    status: "faulty",
-    connectedTo: ["spl-03"],
-    location: "300 Park Ave, Suite 12",
-    signalStrength: -38,
-    uptime: 0,
-  },
-  {
-    id: "ont-07",
-    name: "ONT-RES-007",
-    type: "ONT",
-    lat: 40.726,
-    lng: -74.0,
-    ports: 4,
-    status: "active",
-    connectedTo: ["spl-04"],
-    location: "55 Hudson St",
-    signalStrength: -28,
-    uptime: 99.6,
-  },
-  {
-    id: "ont-08",
-    name: "ONT-RES-008",
-    type: "ONT",
-    lat: 40.724,
-    lng: -73.996,
-    ports: 4,
-    status: "active",
-    connectedTo: ["spl-04"],
-    location: "88 Greenwich Ave",
-    signalStrength: -29,
-    uptime: 99.4,
-  },
-  {
-    id: "jjb-01",
-    name: "JJB-TRUNK-01",
-    type: "JJB",
-    lat: 40.71,
-    lng: -74.008,
-    ports: 24,
-    status: "active",
-    connectedTo: ["olt-01", "spl-01"],
-    location: "Manhole J-417, Canal St",
-    signalStrength: -20,
-    uptime: 99.9,
-  },
-  {
-    id: "sw-01",
-    name: "SW-AGG-01",
-    type: "Switch",
-    lat: 40.718,
-    lng: -73.99,
-    ports: 48,
-    status: "active",
-    connectedTo: ["olt-01", "olt-02"],
-    location: "Aggregation Rack, Core DC",
-    signalStrength: -15,
-    uptime: 99.99,
-  },
+// Mulberry32 seeded PRNG — no imports needed, fully deterministic
+function mulberry32(initialSeed: number) {
+  let seed = initialSeed;
+  return () => {
+    seed += 0x6d2b79f5;
+    let t = seed;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const rng = mulberry32(42);
+
+function rand() {
+  return rng();
+}
+function randInt(min: number, max: number) {
+  return Math.floor(rand() * (max - min + 1)) + min;
+}
+function randFrom<T>(arr: T[]): T {
+  return arr[Math.floor(rand() * arr.length)];
+}
+function randFloat(min: number, max: number, decimals = 2) {
+  return Number.parseFloat((rand() * (max - min) + min).toFixed(decimals));
+}
+
+// ─── Region Seeds ────────────────────────────────────────────────────────────
+const REGIONS = [
+  { name: "North America", lat: 40.7128, lng: -74.006, dlat: 5, dlng: 10 },
+  { name: "Europe", lat: 51.5074, lng: -0.1278, dlat: 4, dlng: 8 },
+  { name: "Asia-Pacific", lat: 35.6762, lng: 139.6503, dlat: 6, dlng: 12 },
+  { name: "Middle East", lat: 25.2048, lng: 55.2708, dlat: 3, dlng: 6 },
+  { name: "South America", lat: -23.5505, lng: -46.6333, dlat: 4, dlng: 8 },
 ];
 
-export const mockRoutes: FiberRoute[] = [
-  {
-    id: "route-01",
-    name: "BACKBONE-CORE-01",
-    type: "backbone",
-    waypoints: [
-      { lat: 40.7128, lng: -74.006 },
-      { lat: 40.715, lng: -74.001 },
-      { lat: 40.7282, lng: -73.994 },
-    ],
-    distanceKm: 2.4,
-    status: "active",
-  },
-  {
-    id: "route-02",
-    name: "DIST-ZONE-A",
-    type: "distribution",
-    waypoints: [
-      { lat: 40.7128, lng: -74.006 },
-      { lat: 40.7089, lng: -74.012 },
-      { lat: 40.7075, lng: -74.015 },
-    ],
-    distanceKm: 1.1,
-    status: "active",
-  },
-  {
-    id: "route-03",
-    name: "DROP-FAULT-B1",
-    type: "drop",
-    waypoints: [
-      { lat: 40.7282, lng: -73.994 },
-      { lat: 40.7312, lng: -73.988 },
-      { lat: 40.732, lng: -73.985 },
-    ],
-    distanceKm: 0.6,
-    status: "faulty",
-  },
+const _REGIONS_REF = REGIONS; // avoid unused warning — used below
+
+const CUSTOMER_NAMES = [
+  "TeleCorp Global",
+  "NetStream Asia",
+  "FiberLink EU",
+  "OptiComm ME",
+  "SkyNet Brasil",
+  "PacificNet Co",
+  "AtlanticFiber",
+  "AlphaISP Ltd",
+  "NovaTel Inc",
+  "ClearPath ISP",
+  "DataBridge LLC",
+  "SpeedWave Corp",
+  "CoreNet Systems",
+  "ZenithTel",
+  "ApexFiber Group",
+  "OrbitISP",
+  "SignalPath Inc",
+  "HorizonNet",
+  "PrimeFiber",
+  "NexusComm",
 ];
 
-export const mockAlerts: Alert[] = [
-  {
-    id: "alert-01",
-    deviceId: "spl-03",
-    deviceName: "SPLITTER-B1",
-    issueType: "Signal Loss — RX power below threshold (-32 dBm)",
-    timestamp: Date.now() - 1000 * 60 * 12,
-    severity: "critical",
-    resolved: false,
-  },
-  {
-    id: "alert-02",
-    deviceId: "ont-06",
-    deviceName: "ONT-COM-006",
-    issueType: "Device Offline — No response for 47 minutes",
-    timestamp: Date.now() - 1000 * 60 * 47,
-    severity: "critical",
-    resolved: false,
-  },
-  {
-    id: "alert-03",
-    deviceId: "olt-02",
-    deviceName: "OLT-EDGE-02",
-    issueType: "High BER — Bit error rate 1.2×10⁻⁵ (threshold 10⁻⁶)",
-    timestamp: Date.now() - 1000 * 60 * 35,
-    severity: "warning",
-    resolved: false,
-  },
-  {
-    id: "alert-04",
-    deviceId: "ont-03",
-    deviceName: "ONT-COM-003",
-    issueType: "Weak Signal — RX power at -30 dBm (marginal)",
-    timestamp: Date.now() - 1000 * 60 * 68,
-    severity: "warning",
-    resolved: false,
-  },
-  {
-    id: "alert-05",
-    deviceId: "route-03",
-    deviceName: "DROP-FAULT-B1",
-    issueType: "Fiber Break Detected — OTDR event at 0.3km marker",
-    timestamp: Date.now() - 1000 * 60 * 8,
-    severity: "critical",
-    resolved: false,
-  },
+const USER_NAMES = [
+  "Alice Chen",
+  "Bob Martinez",
+  "Carla Schmidt",
+  "David Okafor",
+  "Elena Petrov",
+  "Frank Liu",
+  "Grace Nguyen",
+  "Hassan Ali",
 ];
+
+const ISSUE_TYPES = [
+  "Signal Loss — RX power below threshold",
+  "High BER — Bit error rate exceeded",
+  "Device Offline — No response",
+  "Fiber Break Detected — OTDR event",
+  "Weak Signal — Marginal RX power",
+  "Port Saturation — Capacity exceeded",
+  "Temperature Alert — Module overheating",
+  "Packet Loss Spike — >5% threshold",
+  "Latency Spike — >50ms threshold",
+  "Power Supply Warning — Voltage fluctuation",
+];
+
+// ─── Devices ─────────────────────────────────────────────────────────────────
+export const mockDevices: Device[] = (() => {
+  const devices: Device[] = [];
+
+  for (let ri = 0; ri < REGIONS.length; ri++) {
+    const region = REGIONS[ri];
+
+    // 2 OLTs per region = 10 total
+    for (let oi = 0; oi < 2; oi++) {
+      const oltId = `olt-r${ri}-${oi}`;
+      const oltLat = region.lat + randFloat(-region.dlat, region.dlat);
+      const oltLng = region.lng + randFloat(-region.dlng, region.dlng);
+      const oltStatus =
+        rand() < 0.85 ? "active" : rand() < 0.5 ? "warning" : "faulty";
+
+      devices.push({
+        id: oltId,
+        name: `OLT-${region.name.slice(0, 2).toUpperCase()}-${ri}${oi}`,
+        type: "OLT",
+        lat: oltLat,
+        lng: oltLng,
+        ports: randFrom([8, 16, 32]),
+        status: oltStatus as Device["status"],
+        connectedTo: [],
+        location: `${region.name} Core Exchange ${oi + 1}`,
+        signalStrength: randFloat(-22, -14),
+        uptime: randFloat(95, 99.99),
+        region: region.name,
+      });
+
+      // 10 splitters per OLT = 100 total
+      for (let si = 0; si < 10; si++) {
+        const splId = `spl-r${ri}-${oi}-${si}`;
+        const splLat = oltLat + randFloat(-0.5, 0.5);
+        const splLng = oltLng + randFloat(-0.5, 0.5);
+        const splStatus =
+          rand() < 0.8 ? "active" : rand() < 0.5 ? "warning" : "faulty";
+
+        devices.push({
+          id: splId,
+          name: `SPL-${region.name.slice(0, 2).toUpperCase()}${ri}${oi}${si}`,
+          type: "Splitter",
+          lat: splLat,
+          lng: splLng,
+          ports: randFrom([4, 8, 16]),
+          status: splStatus as Device["status"],
+          connectedTo: [oltId],
+          location: `Distribution Point ${ri}-${oi}-${si}`,
+          signalStrength: randFloat(-30, -22),
+          uptime: randFloat(88, 100),
+          region: region.name,
+        });
+
+        // ~4 ONTs per splitter = ~400 total (440 across 5 regions)
+        const ontCount = si < 8 ? 4 : 5; // last 2 splitters per OLT get 5 ONTs
+        for (let ni = 0; ni < ontCount; ni++) {
+          const ontId = `ont-r${ri}-${oi}-${si}-${ni}`;
+          const ontStatus =
+            rand() < 0.82 ? "active" : rand() < 0.5 ? "warning" : "faulty";
+
+          devices.push({
+            id: ontId,
+            name: `ONT-${region.name.slice(0, 2).toUpperCase()}${ri}${oi}${si}${ni}`,
+            type: "ONT",
+            lat: splLat + randFloat(-0.05, 0.05),
+            lng: splLng + randFloat(-0.05, 0.05),
+            ports: 4,
+            status: ontStatus as Device["status"],
+            connectedTo: [splId],
+            location: `${randInt(1, 999)} ${randFrom(["Main St", "Fiber Ave", "Network Blvd", "Signal Rd"])}`,
+            signalStrength: randFloat(-34, -24),
+            uptime: ontStatus === "faulty" ? 0 : randFloat(85, 99.9),
+            region: region.name,
+          });
+        }
+      }
+    }
+  }
+
+  // Add JJBs and Switches
+  for (let i = 0; i < 10; i++) {
+    const region = REGIONS[i % REGIONS.length];
+    devices.push({
+      id: `jjb-${i}`,
+      name: `JJB-TRUNK-${String(i + 1).padStart(2, "0")}`,
+      type: "JJB",
+      lat: region.lat + randFloat(-2, 2),
+      lng: region.lng + randFloat(-2, 2),
+      ports: randFrom([12, 24, 48]),
+      status: rand() < 0.9 ? "active" : "warning",
+      connectedTo: [],
+      location: `Manhole J-${randInt(100, 999)}, ${region.name}`,
+      signalStrength: randFloat(-22, -16),
+      uptime: randFloat(97, 99.99),
+      region: region.name,
+    });
+  }
+
+  for (let i = 0; i < 5; i++) {
+    const region = REGIONS[i % REGIONS.length];
+    devices.push({
+      id: `sw-${i}`,
+      name: `SW-AGG-${String(i + 1).padStart(2, "0")}`,
+      type: "Switch",
+      lat: region.lat + randFloat(-1, 1),
+      lng: region.lng + randFloat(-1, 1),
+      ports: randFrom([24, 48, 96]),
+      status: "active",
+      connectedTo: [],
+      location: `Aggregation Rack, ${region.name} Core DC`,
+      signalStrength: randFloat(-18, -12),
+      uptime: randFloat(99.5, 99.99),
+      region: region.name,
+    });
+  }
+
+  return devices;
+})();
+
+// ─── Fiber Routes ─────────────────────────────────────────────────────────────
+export const mockRoutes: FiberRoute[] = (() => {
+  const routes: FiberRoute[] = [];
+  const types: FiberRoute["type"][] = ["backbone", "distribution", "drop"];
+
+  for (let ri = 0; ri < REGIONS.length; ri++) {
+    const region = REGIONS[ri];
+    for (let i = 0; i < 4; i++) {
+      const routeType = types[i % 3];
+      const status: FiberRoute["status"] =
+        rand() < 0.85 ? "active" : rand() < 0.5 ? "warning" : "faulty";
+      const wpCount = randInt(2, 5);
+      const waypoints = Array.from({ length: wpCount }, () => ({
+        lat: region.lat + randFloat(-region.dlat * 0.5, region.dlat * 0.5),
+        lng: region.lng + randFloat(-region.dlng * 0.5, region.dlng * 0.5),
+      }));
+
+      routes.push({
+        id: `route-r${ri}-${i}`,
+        name: `${routeType.toUpperCase()}-${region.name.slice(0, 2).toUpperCase()}-${ri}${i}`,
+        type: routeType,
+        waypoints,
+        distanceKm: randFloat(0.5, 50),
+        status,
+      });
+    }
+  }
+
+  return routes;
+})();
+
+// ─── Alerts ───────────────────────────────────────────────────────────────────
+export const mockAlerts: Alert[] = (() => {
+  const alerts: Alert[] = [];
+  const severities: Alert["severity"][] = [
+    "critical",
+    "critical",
+    "warning",
+    "warning",
+    "info",
+  ];
+
+  for (let i = 0; i < 200; i++) {
+    const device = mockDevices[randInt(0, mockDevices.length - 1)];
+    const severity = randFrom(severities);
+    alerts.push({
+      id: `alert-${i}`,
+      deviceId: device.id,
+      deviceName: device.name,
+      issueType: randFrom(ISSUE_TYPES),
+      timestamp: Date.now() - randInt(0, 1000 * 60 * 60 * 24 * 7), // within last week
+      severity,
+      resolved: rand() < 0.4,
+    });
+  }
+
+  return alerts;
+})();
+
+// ─── SLA Records ──────────────────────────────────────────────────────────────
+export const mockSLARecords: SLARecord[] = (() => {
+  return Array.from({ length: 20 }, (_, i) => {
+    const latency = randFloat(2, 80);
+    const packetLoss = randFloat(0, 3);
+    const uptime = randFloat(95, 99.99);
+    let status: SLARecord["status"] = "compliant";
+    if (latency > 50 || packetLoss > 1.5 || uptime < 99) status = "warning";
+    if (latency > 70 || packetLoss > 2.5 || uptime < 97) status = "breach";
+
+    return {
+      id: `sla-${i}`,
+      customerId: `cust-${i}`,
+      customerName: CUSTOMER_NAMES[i],
+      region: randFrom(REGIONS).name,
+      latency,
+      packetLoss,
+      uptime,
+      status,
+      lastChecked: Date.now() - randInt(0, 1000 * 60 * 60),
+    };
+  });
+})();
+
+// ─── Predictive Alerts ────────────────────────────────────────────────────────
+export const mockPredictiveAlerts: PredictiveAlert[] = (() => {
+  const failureTypes: PredictiveAlert["failureType"][] = [
+    "fiber-cut",
+    "signal-degradation",
+    "device-failure",
+  ];
+
+  return Array.from({ length: 60 }, (_, i) => {
+    const device = mockDevices[randInt(0, mockDevices.length - 1)];
+    const riskScore = randInt(10, 98);
+    return {
+      id: `pred-${i}`,
+      deviceId: device.id,
+      deviceName: device.name,
+      riskScore,
+      failureType: randFrom(failureTypes),
+      predictedETA: randFloat(0.5, 72, 1),
+      status: rand() < 0.75 ? "active" : "resolved",
+    };
+  });
+})();
+
+// ─── Audit Logs ───────────────────────────────────────────────────────────────
+export const mockAuditLogs: AuditLog[] = (() => {
+  const actionTypes: AuditLog["actionType"][] = [
+    "device-change",
+    "device-change",
+    "user-action",
+    "user-action",
+    "workflow-execution",
+    "system",
+  ];
+  const actions = [
+    "Updated device configuration",
+    "Resolved fault alert",
+    "Modified SLA threshold",
+    "Ran OTDR scan",
+    "Executed failover workflow",
+    "Deleted offline device",
+    "Added new fiber route",
+    "Changed device status",
+    "Exported audit report",
+    "Acknowledged alarm",
+    "Updated firmware",
+    "Triggered capacity rebalance",
+  ];
+
+  return Array.from({ length: 120 }, (_, i) => {
+    const device = mockDevices[randInt(0, mockDevices.length - 1)];
+    const user = USER_NAMES[randInt(0, USER_NAMES.length - 1)];
+    const actionType = randFrom(actionTypes);
+    const action = randFrom(actions);
+
+    return {
+      id: `log-${i}`,
+      timestamp: Date.now() - randInt(0, 1000 * 60 * 60 * 24 * 30),
+      userId: `user-${USER_NAMES.indexOf(user)}`,
+      userName: user,
+      action,
+      actionType,
+      targetId: device.id,
+      targetName: device.name,
+      details: `${action} on ${device.name} in ${device.region ?? "Unknown"}`,
+      status: rand() < 0.92 ? "success" : "failure",
+    };
+  });
+})();
+
+// ─── Capacity Records ─────────────────────────────────────────────────────────
+export const mockCapacityRecords: CapacityRecord[] = (() => {
+  const MONTHS = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const currentMonth = new Date().getMonth();
+
+  return Array.from({ length: 10 }, (_, i) => {
+    const region = REGIONS[i % REGIONS.length];
+    const route = mockRoutes[i % mockRoutes.length];
+    const currentUtil = randFloat(40, 92);
+    const maxCapacity = randFrom([10, 40, 100, 400]);
+
+    // Forecast: next 12 months of utilization trending upward
+    const forecastData = MONTHS.map((month, mi) => {
+      const monthOffset = (mi - currentMonth + 12) % 12;
+      const growth = monthOffset * randFloat(0.5, 2.5);
+      return { month, utilization: Math.min(100, currentUtil + growth) };
+    });
+
+    const exhaustionMonths = Math.ceil(
+      (100 - currentUtil) / randFloat(0.5, 2.5),
+    );
+
+    return {
+      id: `cap-${i}`,
+      routeId: route.id,
+      routeName: `${region.name} Backbone ${i + 1}`,
+      region: region.name,
+      currentUtilization: currentUtil,
+      maxCapacity,
+      forecastData,
+      exhaustionMonths,
+    };
+  });
+})();
+
+// ─── Legacy aliases for existing pages ────────────────────────────────────────
+export { mockRoutes as mockFiberRoutes };
