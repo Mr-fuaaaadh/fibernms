@@ -569,7 +569,8 @@ export default function PredictiveIntelligence() {
 
   function handleDeviceClick(deviceId: string) {
     useNetworkStore.getState().setSelectedDevice(deviceId);
-    navigate({ to: "/devices" });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    void navigate({ to: "/devices" as any });
   }
 
   return (

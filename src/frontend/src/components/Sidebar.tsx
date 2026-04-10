@@ -1,17 +1,26 @@
 import { cn } from "@/lib/utils";
 import { useNetworkStore } from "@/store/networkStore";
+import { useSubscriptionStore } from "@/store/subscriptionStore";
+import { Plan } from "@/types/subscription";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
   BarChart3,
   Bot,
   Brain,
+  Building2,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
+  CreditCard,
+  Crown,
   Database,
   GitFork,
+  Key,
+  LayoutList,
   Map as MapIcon,
+  Palette,
+  Puzzle,
   Radio,
   Server,
   ShieldCheck,
@@ -38,16 +47,46 @@ const ENTERPRISE_NAV = [
   { label: "Audit Logs", icon: ClipboardList, to: "/audit" },
 ] as const;
 
-type NavItem = { label: string; icon: React.ElementType; to: string };
+const BILLING_NAV = [
+  { label: "Plans", icon: LayoutList, to: "/plans", ultraOnly: false },
+  { label: "Billing", icon: CreditCard, to: "/billing", ultraOnly: false },
+  { label: "Usage", icon: BarChart3, to: "/usage", ultraOnly: false },
+] as const;
+
+const ADMIN_NAV = [
+  {
+    label: "Integrations",
+    icon: Puzzle,
+    to: "/integrations",
+    ultraOnly: false,
+  },
+  { label: "Multi-Tenant", icon: Building2, to: "/tenants", ultraOnly: true },
+  {
+    label: "White-Labeling",
+    icon: Palette,
+    to: "/settings/branding",
+    ultraOnly: true,
+  },
+  { label: "License", icon: Key, to: "/settings/license", ultraOnly: false },
+] as const;
+
+type NavItem = {
+  label: string;
+  icon: React.ElementType;
+  to: string;
+  ultraOnly?: boolean;
+};
 
 function NavItemLink({
   item,
   isActive,
   collapsed,
+  ultraOnly,
 }: {
   item: NavItem;
   isActive: boolean;
   collapsed: boolean;
+  ultraOnly?: boolean;
 }) {
   const { label, icon: Icon, to } = item;
   return (
@@ -71,18 +110,73 @@ function NavItemLink({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -6 }}
             transition={{ duration: 0.12 }}
-            className="whitespace-nowrap font-body text-xs tracking-wide"
+            className="whitespace-nowrap font-body text-xs tracking-wide flex-1 min-w-0"
           >
             {label}
           </motion.span>
         )}
       </AnimatePresence>
+      {/* ULTRA badge for ultra-only items */}
+      {ultraOnly && !collapsed && (
+        <motion.span
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.12 }}
+          className="flex-shrink-0 flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] font-mono font-bold bg-violet-500/15 text-violet-400 border border-violet-500/30"
+        >
+          <Crown className="w-2.5 h-2.5" />
+          ULTRA
+        </motion.span>
+      )}
+      {/* Collapsed tooltip */}
       {collapsed && (
-        <div className="absolute left-full ml-3 px-2 py-1 bg-popover border border-border rounded-md text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-smooth z-50 shadow-noc-elevated">
+        <div className="absolute left-full ml-3 px-2 py-1 bg-popover border border-border rounded-md text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-smooth z-50 shadow-noc-elevated flex items-center gap-1.5">
           {label}
+          {ultraOnly && (
+            <span className="flex items-center gap-0.5 px-1 py-0.5 rounded text-[8px] font-mono font-bold bg-violet-500/15 text-violet-400 border border-violet-500/30">
+              <Crown className="w-2.5 h-2.5" />
+              ULTRA
+            </span>
+          )}
         </div>
       )}
     </Link>
+  );
+}
+
+function SectionDivider({
+  label,
+  collapsed,
+  accent,
+}: {
+  label: string;
+  collapsed: boolean;
+  accent?: string;
+}) {
+  return (
+    <div className="mx-2 my-3">
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-px bg-border/40" />
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
+              className={cn(
+                "text-[9px] font-display tracking-[0.18em] uppercase whitespace-nowrap px-1",
+                accent ?? "text-muted-foreground/50",
+              )}
+            >
+              {label}
+            </motion.span>
+          )}
+        </AnimatePresence>
+        <div className="flex-1 h-px bg-border/40" />
+      </div>
+    </div>
   );
 }
 
@@ -91,10 +185,13 @@ export function Sidebar() {
   const toggle = useNetworkStore((s) => s.toggleSidebar);
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
+  const { currentPlan } = useSubscriptionStore();
 
   function isActive(to: string) {
     return to === "/" ? currentPath === "/" : currentPath.startsWith(to);
   }
+
+  const isUltra = currentPlan === Plan.ULTRA;
 
   return (
     <motion.aside
@@ -136,25 +233,7 @@ export function Sidebar() {
         ))}
 
         {/* Enterprise separator */}
-        <div className="mx-2 my-3">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-px bg-border/40" />
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.1 }}
-                  className="text-[9px] font-display tracking-[0.18em] text-muted-foreground/50 uppercase whitespace-nowrap px-1"
-                >
-                  Enterprise
-                </motion.span>
-              )}
-            </AnimatePresence>
-            <div className="flex-1 h-px bg-border/40" />
-          </div>
-        </div>
+        <SectionDivider label="Enterprise" collapsed={collapsed} />
 
         {/* Enterprise navigation */}
         {ENTERPRISE_NAV.map((item) => (
@@ -163,6 +242,41 @@ export function Sidebar() {
             item={item}
             isActive={isActive(item.to)}
             collapsed={collapsed}
+          />
+        ))}
+
+        {/* Billing & Plans separator */}
+        <SectionDivider
+          label="Billing & Plans"
+          collapsed={collapsed}
+          accent="text-indigo-400/60"
+        />
+
+        {/* Billing navigation */}
+        {BILLING_NAV.map((item) => (
+          <NavItemLink
+            key={item.to}
+            item={item}
+            isActive={isActive(item.to)}
+            collapsed={collapsed}
+          />
+        ))}
+
+        {/* Admin separator */}
+        <SectionDivider
+          label="Admin"
+          collapsed={collapsed}
+          accent={isUltra ? "text-violet-400/70" : "text-muted-foreground/50"}
+        />
+
+        {/* Admin navigation */}
+        {ADMIN_NAV.map((item) => (
+          <NavItemLink
+            key={item.to}
+            item={item}
+            isActive={isActive(item.to)}
+            collapsed={collapsed}
+            ultraOnly={item.ultraOnly}
           />
         ))}
       </nav>

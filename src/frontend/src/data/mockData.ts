@@ -7,6 +7,7 @@ import type {
   PredictiveAlert,
   SLARecord,
 } from "../types/network";
+import { Plan } from "../types/subscription";
 
 // Mulberry32 seeded PRNG — no imports needed, fully deterministic
 function mulberry32(initialSeed: number) {
@@ -414,3 +415,68 @@ export const mockCapacityRecords: CapacityRecord[] = (() => {
 
 // ─── Legacy aliases for existing pages ────────────────────────────────────────
 export { mockRoutes as mockFiberRoutes };
+
+// ─── Plan-Aware Mock Data Generator ──────────────────────────────────────────
+// Returns a scaled dataset based on subscription plan tier.
+// Does NOT modify any of the exported constants above.
+export interface PlanAwareMockData {
+  devices: Device[];
+  alerts: Alert[];
+  routes: FiberRoute[];
+  deviceCount: number;
+}
+
+const PLAN_SCALE: Record<Plan, number> = {
+  [Plan.BASIC]: 0.05, // ~500 devices from base
+  [Plan.PROFESSIONAL]: 0.5, // ~5,000 devices
+  [Plan.ENTERPRISE]: 1.0, // ~10,000 devices (full base set)
+  [Plan.ULTRA]: 10.0, // ~100,000 devices (10x base via synthetic expansion)
+};
+
+export function generatePlanAwareMockData(plan: Plan): PlanAwareMockData {
+  const scale = PLAN_SCALE[plan];
+
+  // Slice or expand devices
+  let devices: Device[];
+  if (scale <= 1.0) {
+    const count = Math.round(mockDevices.length * scale);
+    devices = mockDevices.slice(0, count);
+  } else {
+    // Expand beyond the base set by cloning with modified IDs (ULTRA tier)
+    const repeats = Math.ceil(scale);
+    const expanded: Device[] = [];
+    for (let rep = 0; rep < repeats; rep++) {
+      for (const d of mockDevices) {
+        expanded.push({
+          ...d,
+          id: rep === 0 ? d.id : `${d.id}-x${rep}`,
+          name: rep === 0 ? d.name : `${d.name}-${rep}`,
+          connectedTo: d.connectedTo.map((cid) =>
+            rep === 0 ? cid : `${cid}-x${rep}`,
+          ),
+        });
+      }
+    }
+    devices = expanded.slice(0, 100_000);
+  }
+
+  const deviceIdSet = new Set(devices.map((d) => d.id));
+
+  // Scale alerts proportionally (cap to devices in set)
+  const alertCount = Math.min(
+    Math.round(mockAlerts.length * Math.min(scale, 1)),
+    mockAlerts.length,
+  );
+  const alerts = mockAlerts
+    .filter((a) => deviceIdSet.has(a.deviceId))
+    .slice(0, alertCount);
+
+  // Scale routes proportionally
+  const routeCount = Math.max(
+    1,
+    Math.round(mockRoutes.length * Math.min(scale, 1)),
+  );
+  const routes = mockRoutes.slice(0, routeCount);
+
+  return { devices, alerts, routes, deviceCount: devices.length };
+}

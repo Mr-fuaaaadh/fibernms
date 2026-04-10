@@ -1,18 +1,24 @@
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { useNetworkStore } from "@/store/networkStore";
+import { useSubscriptionStore } from "@/store/subscriptionStore";
 import type { AlertSeverity } from "@/types/network";
+import { Plan } from "@/types/subscription";
+import { useRouter } from "@tanstack/react-router";
 import {
   AlertCircle,
   AlertTriangle,
   Bell,
   ChevronDown,
+  Crown,
   Info,
   LogOut,
   Moon,
   Search,
   Settings,
   ShieldAlert,
+  Star,
   Sun,
   User,
   X,
@@ -49,12 +55,90 @@ function timeAgo(ts: number) {
   return `${Math.floor(diff / 60)}h ago`;
 }
 
+function formatExpiry(ts: number) {
+  return new Date(ts).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function LicenseStatusDot() {
+  const { isLicenseValid, expiryDate } = useSubscriptionStore();
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const daysUntilExpiry = Math.floor(
+    (expiryDate - Date.now()) / (1000 * 60 * 60 * 24),
+  );
+
+  let dotColor: string;
+  let statusLabel: string;
+  let tooltipText: string;
+
+  if (!isLicenseValid || daysUntilExpiry < 0) {
+    dotColor = "bg-red-500 shadow-[0_0_6px_2px_rgba(239,68,68,0.5)]";
+    statusLabel = "Expired";
+    tooltipText = `License expired on ${formatExpiry(expiryDate)}`;
+  } else if (daysUntilExpiry <= 30) {
+    dotColor = "bg-amber-400 shadow-[0_0_6px_2px_rgba(251,191,36,0.4)]";
+    statusLabel = "Expiring soon";
+    tooltipText = `License expires ${formatExpiry(expiryDate)} (${daysUntilExpiry}d left)`;
+  } else {
+    dotColor = "bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.4)]";
+    statusLabel = "Valid";
+    tooltipText = `License valid · Expires ${formatExpiry(expiryDate)}`;
+  }
+
+  return (
+    <div
+      className="relative flex items-center gap-1.5 cursor-default"
+      data-ocid="navbar-license-status"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      <span
+        className={cn(
+          "w-2 h-2 rounded-full flex-shrink-0 animate-pulse",
+          dotColor,
+        )}
+      />
+      <span className="hidden md:block text-[10px] font-mono text-muted-foreground">
+        {statusLabel}
+      </span>
+      <AnimatePresence>
+        {showTooltip && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.12 }}
+            className="absolute left-1/2 -translate-x-1/2 top-full mt-2 px-2.5 py-1.5 bg-popover border border-border rounded-lg text-[11px] font-mono text-foreground whitespace-nowrap shadow-noc-elevated z-50 pointer-events-none"
+          >
+            {tooltipText}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export function Navbar() {
   const searchQuery = useNetworkStore((s) => s.searchQuery);
   const setSearchQuery = useNetworkStore((s) => s.setSearchQuery);
   const alerts = useNetworkStore((s) => s.alerts);
   const resolveAlert = useNetworkStore((s) => s.resolveAlert);
   const slaRecords = useNetworkStore((s) => s.slaRecords);
+
+  const { logout, principal } = useAuth();
+  const router = useRouter();
+
+  const { currentPlan, trialDaysLeft } = useSubscriptionStore();
+
+  function handleLogout() {
+    setProfileOpen(false);
+    logout();
+    void router.navigate({ to: "/login" });
+  }
 
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -86,7 +170,7 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="h-14 flex items-center gap-4 px-5 bg-card border-b border-border/50 z-30 flex-shrink-0">
+    <header className="h-14 flex items-center gap-3 px-5 bg-card border-b border-border/50 z-30 flex-shrink-0">
       {/* Page title */}
       <div className="flex-1 min-w-0">
         <span className="font-display text-xs tracking-[0.2em] text-muted-foreground uppercase">
@@ -108,8 +192,39 @@ export function Navbar() {
         </div>
       )}
 
+      {/* Trial badge */}
+      {trialDaysLeft > 0 && (
+        <div
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-500/40 bg-amber-500/10"
+          data-ocid="navbar-trial-badge"
+        >
+          <Star className="w-3 h-3 text-amber-400" />
+          <span className="text-[11px] font-mono font-semibold text-amber-400">
+            Trial: {trialDaysLeft}d left
+          </span>
+        </div>
+      )}
+
+      {/* Upgrade button — hidden for ULTRA plan */}
+      {currentPlan !== Plan.ULTRA && (
+        <button
+          type="button"
+          data-ocid="navbar-upgrade-btn"
+          onClick={() => {
+            window.location.href = "/billing?upgrade_to=ULTRA";
+          }}
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-mono font-semibold bg-gradient-to-r from-violet-600/80 to-indigo-600/80 hover:from-violet-500/90 hover:to-indigo-500/90 text-white border border-violet-500/40 transition-smooth shadow-sm hover:shadow-[0_0_12px_rgba(139,92,246,0.35)] whitespace-nowrap"
+        >
+          <Crown className="w-3.5 h-3.5" />
+          Upgrade to ULTRA
+        </button>
+      )}
+
+      {/* License status dot */}
+      <LicenseStatusDot />
+
       {/* Search */}
-      <div className="relative w-64" data-ocid="navbar-search">
+      <div className="relative w-56" data-ocid="navbar-search">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
         <input
           type="text"
@@ -306,8 +421,10 @@ export function Navbar() {
               className="absolute right-0 top-full mt-2 w-52 glass-elevated rounded-xl overflow-hidden shadow-noc-elevated z-50"
             >
               <div className="px-4 py-3 border-b border-border/50">
-                <p className="text-xs font-mono text-foreground">
-                  Lorine Smith
+                <p className="text-xs font-mono text-foreground truncate max-w-[180px]">
+                  {principal
+                    ? `${principal.slice(0, 5)}…${principal.slice(-4)}`
+                    : "NOC Operator"}
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
                   System Engineer
@@ -332,6 +449,8 @@ export function Navbar() {
                 </button>
                 <button
                   type="button"
+                  onClick={handleLogout}
+                  data-ocid="navbar-logout"
                   className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs text-red-400 hover:bg-red-400/10 transition-smooth"
                 >
                   <LogOut className="w-3.5 h-3.5" />
