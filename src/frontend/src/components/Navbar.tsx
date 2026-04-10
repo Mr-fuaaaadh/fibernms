@@ -129,7 +129,7 @@ export function Navbar() {
   const resolveAlert = useNetworkStore((s) => s.resolveAlert);
   const slaRecords = useNetworkStore((s) => s.slaRecords);
 
-  const { logout, principal } = useAuth();
+  const { logout, principal, currentUser } = useAuth();
   const router = useRouter();
 
   const { currentPlan, trialDaysLeft } = useSubscriptionStore();
@@ -396,7 +396,7 @@ export function Navbar() {
             <User className="w-3.5 h-3.5 text-primary" />
           </div>
           <span className="font-body text-xs text-foreground hidden sm:block">
-            Engineer
+            {currentUser?.firstName ?? "Engineer"}
           </span>
           <Badge
             variant="outline"
@@ -422,12 +422,14 @@ export function Navbar() {
             >
               <div className="px-4 py-3 border-b border-border/50">
                 <p className="text-xs font-mono text-foreground truncate max-w-[180px]">
-                  {principal
-                    ? `${principal.slice(0, 5)}…${principal.slice(-4)}`
-                    : "NOC Operator"}
+                  {currentUser
+                    ? `${currentUser.firstName} ${currentUser.lastName}`
+                    : principal
+                      ? `${principal.slice(0, 5)}…${principal.slice(-4)}`
+                      : "NOC Operator"}
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-0.5">
-                  System Engineer
+                  {currentUser?.role ?? "System Engineer"}
                 </p>
                 <Badge
                   variant="outline"

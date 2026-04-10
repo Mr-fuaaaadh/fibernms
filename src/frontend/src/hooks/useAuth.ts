@@ -1,32 +1,39 @@
-import { useInternetIdentity } from "@caffeineai/core-infrastructure";
+import type { AuthUser, RegisterData } from "@/store/authStore";
+import { useAuthStore } from "@/store/authStore";
+
+export type { RegisterData };
 
 export type AuthState = {
   isAuthenticated: boolean;
   isInitializing: boolean;
+  currentUser: AuthUser | null;
   principal: string | null;
-  login: () => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  register: (data: RegisterData) => Promise<boolean>;
   logout: () => void;
 };
 
 /**
- * Wraps InternetIdentityProvider context with NOC-friendly helpers.
- *
- * - `isAuthenticated`: true when an identity has been loaded (persisted or fresh login)
- * - `principal`: the textual principal of the logged-in user, or null
- * - `login`: opens the Internet Identity popup
- * - `logout`: clears the identity from state + storage
+ * NOC auth hook backed by Zustand + localStorage mock store.
+ * Provides isAuthenticated, currentUser, login/register/logout.
+ * isInitializing is always false (store hydrates synchronously from localStorage).
  */
 export function useAuth(): AuthState {
-  const { identity, login, clear, isInitializing } = useInternetIdentity();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const currentUser = useAuthStore((s) => s.currentUser);
+  const login = useAuthStore((s) => s.login);
+  const register = useAuthStore((s) => s.register);
+  const logout = useAuthStore((s) => s.logout);
 
-  const isAuthenticated = !!identity;
-  const principal = identity ? identity.getPrincipal().toText() : null;
+  const principal = currentUser ? currentUser.email : null;
 
   return {
     isAuthenticated,
-    isInitializing,
+    isInitializing: false,
+    currentUser,
     principal,
     login,
-    logout: clear,
+    register,
+    logout,
   };
 }
