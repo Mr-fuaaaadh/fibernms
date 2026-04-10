@@ -7,6 +7,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Activity,
   BarChart3,
+  BookOpen,
   Bot,
   Brain,
   Building2,
@@ -100,6 +101,12 @@ const ADMIN_NAV = [
     ultraOnly: true,
   },
   { label: "License", icon: Key, to: "/settings/license", ultraOnly: false },
+  {
+    label: "Documentation",
+    icon: BookOpen,
+    to: "/docs",
+    ultraOnly: false,
+  },
 ] as const;
 
 type NavItem = {

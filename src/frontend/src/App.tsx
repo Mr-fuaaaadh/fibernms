@@ -42,6 +42,7 @@ const Integrations = lazy(() => import("@/pages/Integrations"));
 const Branding = lazy(() => import("@/pages/Branding"));
 const License = lazy(() => import("@/pages/License"));
 const Tenants = lazy(() => import("@/pages/Tenants"));
+const Docs = lazy(() => import("@/pages/Docs"));
 
 // ─── Super Admin pages ────────────────────────────────────────────────────────
 
@@ -188,6 +189,7 @@ const integrationsRoute = makeProtectedPage("/integrations", Integrations);
 const brandingRoute = makeProtectedPage("/settings/branding", Branding);
 const licenseRoute = makeProtectedPage("/settings/license", License);
 const tenantsRoute = makeProtectedPage("/tenants", Tenants);
+const docsRoute = makeProtectedPage("/docs", Docs);
 const tenantAdminRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: "/tenant-admin/$companyId",
@@ -265,6 +267,7 @@ const routeTree = rootRoute.addChildren([
     brandingRoute,
     licenseRoute,
     tenantsRoute,
+    docsRoute,
     tenantAdminRoute,
   ]),
   superAdminRoute.addChildren([
