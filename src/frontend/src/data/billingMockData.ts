@@ -103,6 +103,9 @@ export const MOCK_BILLING_RECORDS: BillingRecord[] = [
   },
 ];
 
+// Legacy alias
+export const mockBillingHistory = MOCK_BILLING_RECORDS;
+
 // ─── Tenants (10 mock tenants) ────────────────────────────────────────────────
 export const MOCK_TENANTS: TenantInfo[] = [
   {
@@ -211,7 +214,7 @@ export const MOCK_TENANTS: TenantInfo[] = [
 export interface ApiKey {
   id: string;
   name: string;
-  key: string; // masked, e.g. "sk-****...abc1"
+  key: string;
   created: number;
   lastUsed: number;
   permissions: string[];
@@ -299,3 +302,33 @@ export const MOCK_WEBHOOKS: Webhook[] = [
     lastTriggered: Date.now() - 7 * MS_PER_DAY,
   },
 ];
+
+// ─── Monthly Revenue (24 months) ──────────────────────────────────────────────
+function getMonthLabel(monthsAgo: number): string {
+  const d = new Date();
+  d.setMonth(d.getMonth() - monthsAgo);
+  return d.toLocaleString("default", { month: "short", year: "2-digit" });
+}
+
+// Realistic MRR growth from ~80K → ~180K over 24 months
+export const monthlyRevenue = Array.from({ length: 24 }, (_, i) => {
+  const monthsAgo = 23 - i;
+  const baseRevenue = 80_000 + i * 4_200 + Math.round(Math.sin(i * 0.5) * 3000);
+  return {
+    month: getMonthLabel(monthsAgo),
+    revenue: baseRevenue,
+    mrr: baseRevenue,
+    arr: baseRevenue * 12,
+  };
+});
+
+// ─── Plan Distribution ─────────────────────────────────────────────────────────
+export const planDistribution = [
+  { plan: "BASIC", count: 12, color: "#22c55e", revenue: 200 * 12 },
+  { plan: "PROFESSIONAL", count: 18, color: "#3b82f6", revenue: 500 * 18 },
+  { plan: "ENTERPRISE", count: 15, color: "#a855f7", revenue: 2000 * 15 },
+  { plan: "ULTRA", count: 9, color: "#ef4444", revenue: 5000 * 9 },
+];
+
+// ─── Revenue Data (alias for legacy consumers) ────────────────────────────────
+export const mockRevenueData = monthlyRevenue;

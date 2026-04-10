@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/store/authStore";
 import { useNetworkStore } from "@/store/networkStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { Plan } from "@/types/subscription";
@@ -15,19 +16,50 @@ import {
   CreditCard,
   Crown,
   Database,
+  FileText,
   GitFork,
   Key,
+  LayoutDashboard,
   LayoutList,
+  Lock,
   Map as MapIcon,
   Palette,
   Puzzle,
   Radio,
   Server,
+  Shield,
+  ShieldAlert,
   ShieldCheck,
+  TrendingUp,
+  Users,
   Workflow,
   Wrench,
+  Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+
+// ─── Super Admin Navigation ───────────────────────────────────────────────────
+
+const SUPER_ADMIN_NAV = [
+  { label: "SA Dashboard", icon: Zap, to: "/super-admin" },
+  { label: "Companies", icon: Building2, to: "/super-admin/companies" },
+  { label: "Usage & Limits", icon: TrendingUp, to: "/super-admin/usage" },
+  { label: "Global Users", icon: Users, to: "/super-admin/users" },
+  { label: "Global Billing", icon: CreditCard, to: "/super-admin/billing" },
+  { label: "Orders & Invoices", icon: FileText, to: "/super-admin/orders" },
+  { label: "Platform Audit", icon: ClipboardList, to: "/super-admin/audit" },
+  { label: "Access Control", icon: Lock, to: "/super-admin/access" },
+  { label: "System Alerts", icon: ShieldAlert, to: "/super-admin/alerts" },
+  { label: "Security", icon: ShieldCheck, to: "/super-admin/security" },
+  { label: "SA Analytics", icon: TrendingUp, to: "/super-admin/analytics" },
+  {
+    label: "Tenant Panel",
+    icon: LayoutDashboard,
+    to: "/tenant-admin/company-0001",
+  },
+] as const;
+
+// ─── NOC Navigation ───────────────────────────────────────────────────────────
 
 const CORE_NAV = [
   { label: "Map Dashboard", icon: MapIcon, to: "/" },
@@ -82,26 +114,41 @@ function NavItemLink({
   isActive,
   collapsed,
   ultraOnly,
+  variant = "default",
 }: {
   item: NavItem;
   isActive: boolean;
   collapsed: boolean;
   ultraOnly?: boolean;
+  variant?: "default" | "superAdmin";
 }) {
   const { label, icon: Icon, to } = item;
+
+  const activeClass =
+    variant === "superAdmin"
+      ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+      : "bg-primary/15 text-primary border border-primary/25 noc-glow";
+
+  const hoverClass =
+    variant === "superAdmin"
+      ? "hover:text-amber-300 hover:bg-amber-500/10"
+      : "hover:text-foreground hover:bg-muted/50";
+
   return (
     <Link
       to={to}
       data-ocid={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
       className={cn(
         "flex items-center gap-3 mx-2 px-3 py-2.5 rounded-lg transition-smooth text-sm relative group",
-        isActive
-          ? "bg-primary/15 text-primary border border-primary/25 noc-glow"
-          : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+        isActive ? activeClass : `text-muted-foreground ${hoverClass}`,
       )}
     >
       <Icon
-        className={cn("w-4 h-4 flex-shrink-0", isActive && "text-primary")}
+        className={cn(
+          "w-4 h-4 flex-shrink-0",
+          isActive && variant === "superAdmin" && "text-amber-400",
+          isActive && variant === "default" && "text-primary",
+        )}
       />
       <AnimatePresence>
         {!collapsed && (
@@ -149,10 +196,12 @@ function SectionDivider({
   label,
   collapsed,
   accent,
+  icon: DivIcon,
 }: {
   label: string;
   collapsed: boolean;
   accent?: string;
+  icon?: React.ElementType;
 }) {
   return (
     <div className="mx-2 my-3">
@@ -166,10 +215,11 @@ function SectionDivider({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.1 }}
               className={cn(
-                "text-[9px] font-display tracking-[0.18em] uppercase whitespace-nowrap px-1",
+                "text-[9px] font-display tracking-[0.18em] uppercase whitespace-nowrap px-1 flex items-center gap-1",
                 accent ?? "text-muted-foreground/50",
               )}
             >
+              {DivIcon && <DivIcon className="w-2.5 h-2.5" />}
               {label}
             </motion.span>
           )}
@@ -186,8 +236,12 @@ export function Sidebar() {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
   const { currentPlan } = useSubscriptionStore();
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
 
   function isActive(to: string) {
+    if (to === "/super-admin") {
+      return currentPath === "/super-admin";
+    }
     return to === "/" ? currentPath === "/" : currentPath.startsWith(to);
   }
 
@@ -222,6 +276,32 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden">
+        {/* ── Super Admin Section (only for superAdmin role) ── */}
+        {isSuperAdmin && (
+          <>
+            <SectionDivider
+              label="Super Admin"
+              collapsed={collapsed}
+              accent="text-amber-400/80"
+              icon={Shield}
+            />
+            {SUPER_ADMIN_NAV.map((item) => (
+              <NavItemLink
+                key={item.to}
+                item={item}
+                isActive={isActive(item.to)}
+                collapsed={collapsed}
+                variant="superAdmin"
+              />
+            ))}
+            <SectionDivider
+              label="NOC Platform"
+              collapsed={collapsed}
+              accent="text-primary/60"
+            />
+          </>
+        )}
+
         {/* Core navigation */}
         {CORE_NAV.map((item) => (
           <NavItemLink

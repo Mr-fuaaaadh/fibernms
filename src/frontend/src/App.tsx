@@ -1,6 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuthStore } from "@/store/authStore";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -16,7 +17,8 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
 });
 
-// Lazy-loaded pages
+// ─── Lazy-loaded pages ────────────────────────────────────────────────────────
+
 const MapDashboard = lazy(() => import("@/pages/MapDashboard"));
 const Devices = lazy(() => import("@/pages/Devices"));
 const Topology = lazy(() => import("@/pages/Topology"));
@@ -41,7 +43,30 @@ const Branding = lazy(() => import("@/pages/Branding"));
 const License = lazy(() => import("@/pages/License"));
 const Tenants = lazy(() => import("@/pages/Tenants"));
 
-type RouterContext = { isAuthenticated: boolean };
+// ─── Super Admin pages ────────────────────────────────────────────────────────
+
+const TenantAdminPanel = lazy(() => import("@/pages/admin/TenantAdminPanel"));
+
+const SuperAdminDashboard = lazy(
+  () => import("@/pages/admin/SuperAdminDashboard"),
+);
+const CompanyManagement = lazy(() => import("@/pages/admin/CompanyManagement"));
+const CompanyDetail = lazy(() => import("@/pages/admin/CompanyDetail"));
+const UsageLimits = lazy(() => import("@/pages/admin/UsageLimits"));
+const GlobalUserManagement = lazy(
+  () => import("@/pages/admin/GlobalUserManagement"),
+);
+const GlobalBilling = lazy(() => import("@/pages/admin/GlobalBilling"));
+const OrdersInvoices = lazy(() => import("@/pages/admin/OrdersInvoices"));
+const PlatformAudit = lazy(() => import("@/pages/admin/PlatformAudit"));
+const AccessControl = lazy(() => import("@/pages/admin/AccessControl"));
+const SystemAlerts = lazy(() => import("@/pages/admin/SystemAlerts"));
+const SecurityDashboard = lazy(() => import("@/pages/admin/SecurityDashboard"));
+const GlobalAnalytics = lazy(() => import("@/pages/admin/GlobalAnalytics"));
+
+// ─── Router context ───────────────────────────────────────────────────────────
+
+type RouterContext = { isAuthenticated: boolean; isSuperAdmin: boolean };
 
 function PageLoader() {
   return (
@@ -69,7 +94,8 @@ function withSuspense(
   };
 }
 
-// Route tree construction
+// ─── Route tree ───────────────────────────────────────────────────────────────
+
 const rootRoute = createRootRouteWithContext<RouterContext>()({});
 
 const publicRoute = createRoute({
@@ -116,6 +142,30 @@ function makeProtectedPage(
   });
 }
 
+// Super admin route — requires both authentication AND isSuperAdmin
+const superAdminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  id: "super-admin",
+  beforeLoad: ({ context }) => {
+    if (!context.isAuthenticated) throw redirect({ to: "/login" });
+    if (!context.isSuperAdmin) throw redirect({ to: "/" });
+  },
+  component: Layout,
+});
+
+function makeSuperAdminPage(
+  path: string,
+  Page: React.LazyExoticComponent<() => React.ReactElement>,
+) {
+  return createRoute({
+    getParentRoute: () => superAdminRoute,
+    path,
+    component: withSuspense(Page),
+  });
+}
+
+// ─── Protected routes ─────────────────────────────────────────────────────────
+
 const mapRoute = makeProtectedPage("/", MapDashboard);
 const devicesRoute = makeProtectedPage("/devices", Devices);
 const topologyRoute = makeProtectedPage("/topology", Topology);
@@ -138,6 +188,60 @@ const integrationsRoute = makeProtectedPage("/integrations", Integrations);
 const brandingRoute = makeProtectedPage("/settings/branding", Branding);
 const licenseRoute = makeProtectedPage("/settings/license", License);
 const tenantsRoute = makeProtectedPage("/tenants", Tenants);
+const tenantAdminRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: "/tenant-admin/$companyId",
+  component: withSuspense(TenantAdminPanel),
+});
+
+// ─── Super Admin routes ───────────────────────────────────────────────────────
+
+const superAdminDashboardRoute = makeSuperAdminPage(
+  "/super-admin",
+  SuperAdminDashboard,
+);
+const companyMgmtRoute = makeSuperAdminPage(
+  "/super-admin/companies",
+  CompanyManagement,
+);
+const companyDetailRoute = createRoute({
+  getParentRoute: () => superAdminRoute,
+  path: "/super-admin/companies/$companyId",
+  component: withSuspense(CompanyDetail),
+});
+const usageLimitsRoute = makeSuperAdminPage("/super-admin/usage", UsageLimits);
+const globalUserMgmtRoute = makeSuperAdminPage(
+  "/super-admin/users",
+  GlobalUserManagement,
+);
+const globalBillingRoute = makeSuperAdminPage(
+  "/super-admin/billing",
+  GlobalBilling,
+);
+const ordersInvoicesRoute = makeSuperAdminPage(
+  "/super-admin/orders",
+  OrdersInvoices,
+);
+const platformAuditRoute = makeSuperAdminPage(
+  "/super-admin/audit",
+  PlatformAudit,
+);
+const accessControlRoute = makeSuperAdminPage(
+  "/super-admin/access",
+  AccessControl,
+);
+const systemAlertsRoute = makeSuperAdminPage(
+  "/super-admin/alerts",
+  SystemAlerts,
+);
+const securityDashboardRoute = makeSuperAdminPage(
+  "/super-admin/security",
+  SecurityDashboard,
+);
+const globalAnalyticsRoute = makeSuperAdminPage(
+  "/super-admin/analytics",
+  GlobalAnalytics,
+);
 
 const routeTree = rootRoute.addChildren([
   publicRoute.addChildren([loginRoute, registerRoute]),
@@ -161,13 +265,28 @@ const routeTree = rootRoute.addChildren([
     brandingRoute,
     licenseRoute,
     tenantsRoute,
+    tenantAdminRoute,
+  ]),
+  superAdminRoute.addChildren([
+    superAdminDashboardRoute,
+    companyMgmtRoute,
+    companyDetailRoute,
+    usageLimitsRoute,
+    globalUserMgmtRoute,
+    globalBillingRoute,
+    ordersInvoicesRoute,
+    platformAuditRoute,
+    accessControlRoute,
+    systemAlertsRoute,
+    securityDashboardRoute,
+    globalAnalyticsRoute,
   ]),
 ]);
 
 // Stable router instance used for type registration only
 const router = createRouter({
   routeTree,
-  context: { isAuthenticated: false },
+  context: { isAuthenticated: false, isSuperAdmin: false },
 });
 
 declare module "@tanstack/react-router" {
@@ -206,14 +325,15 @@ function InitializingScreen() {
 
 function AppRouter() {
   const { isAuthenticated, isInitializing } = useAuth();
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
 
   const authenticatedRouter = useMemo(
     () =>
       createRouter({
         routeTree,
-        context: { isAuthenticated },
+        context: { isAuthenticated, isSuperAdmin },
       }),
-    [isAuthenticated],
+    [isAuthenticated, isSuperAdmin],
   );
 
   if (isInitializing) return <InitializingScreen />;

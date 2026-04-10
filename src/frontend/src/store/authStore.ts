@@ -4,13 +4,21 @@ import { persist } from "zustand/middleware";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+export type UserRole =
+  | "admin"
+  | "operator"
+  | "viewer"
+  | "engineer"
+  | "superAdmin";
+
 export interface AuthUser {
+  id?: string;
   email: string;
   firstName: string;
   lastName: string;
   company: string;
   plan: Plan;
-  role: string;
+  role: UserRole | string;
   department: string;
   country: string;
 }
@@ -18,6 +26,7 @@ export interface AuthUser {
 export interface AuthState {
   isAuthenticated: boolean;
   currentUser: AuthUser | null;
+  isSuperAdmin: boolean;
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<boolean>;
@@ -55,15 +64,31 @@ interface StoredUser {
 
 const SEED_USERS: StoredUser[] = [
   {
+    email: "superadmin@fibernms.com",
+    passwordHash: "SuperAdmin@123",
+    profile: {
+      id: "sa-001",
+      email: "superadmin@fibernms.com",
+      firstName: "Super",
+      lastName: "Admin",
+      company: "FiberNMS Platform",
+      plan: Plan.ULTRA,
+      role: "superAdmin",
+      department: "Platform Operations",
+      country: "United States",
+    },
+  },
+  {
     email: "admin@fibernms.com",
     passwordHash: "Admin@123",
     profile: {
+      id: "adm-001",
       email: "admin@fibernms.com",
       firstName: "System",
       lastName: "Administrator",
       company: "FiberNMS Operations",
       plan: Plan.ENTERPRISE,
-      role: "NOC Engineer",
+      role: "admin",
       department: "NOC",
       country: "United States",
     },
@@ -72,12 +97,13 @@ const SEED_USERS: StoredUser[] = [
     email: "operator@fibernms.com",
     passwordHash: "Operator@123",
     profile: {
+      id: "op-001",
       email: "operator@fibernms.com",
       firstName: "Network",
       lastName: "Operator",
       company: "TelecomCo Inc.",
       plan: Plan.PROFESSIONAL,
-      role: "Network Engineer",
+      role: "operator",
       department: "Network Operations",
       country: "United Kingdom",
     },
@@ -116,6 +142,7 @@ export const useAuthStore = create<AuthState>()(
     (set) => ({
       isAuthenticated: false,
       currentUser: null,
+      isSuperAdmin: false,
       isLoading: false,
       error: null,
 
@@ -139,9 +166,12 @@ export const useAuthStore = create<AuthState>()(
           return false;
         }
 
+        const isSuperAdmin = match.profile.role === "superAdmin";
+
         set({
           isAuthenticated: true,
           currentUser: match.profile,
+          isSuperAdmin,
           isLoading: false,
           error: null,
         });
@@ -185,6 +215,7 @@ export const useAuthStore = create<AuthState>()(
         set({
           isAuthenticated: true,
           currentUser: newUser.profile,
+          isSuperAdmin: false,
           isLoading: false,
           error: null,
         });
@@ -192,7 +223,12 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        set({ isAuthenticated: false, currentUser: null, error: null });
+        set({
+          isAuthenticated: false,
+          currentUser: null,
+          isSuperAdmin: false,
+          error: null,
+        });
       },
 
       clearError: () => set({ error: null }),
@@ -202,6 +238,7 @@ export const useAuthStore = create<AuthState>()(
       partialize: (s) => ({
         isAuthenticated: s.isAuthenticated,
         currentUser: s.currentUser,
+        isSuperAdmin: s.isSuperAdmin,
       }),
     },
   ),

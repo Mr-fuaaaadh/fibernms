@@ -77,6 +77,17 @@
     --capacity-healthy: 0.55 0.2 142;
     --capacity-warning: 0.58 0.22 55;
     --capacity-critical: 0.52 0.24 22;
+
+    /* Super Admin Control Panel Layer */
+    --admin-primary: 0.55 0.2 280;
+    --admin-accent: 0.65 0.18 280;
+    --admin-surface: 0.88 0.01 280;
+    --admin-surface-alt: 0.92 0.008 280;
+    --admin-table-alt: 0.985 0.003 240;
+    --admin-border-accent: 0.85 0.01 280;
+    --admin-status-active: 0.55 0.2 280;
+    --admin-status-pending: 0.58 0.22 55;
+    --admin-status-inactive: 0.46 0.012 240;
   }
 
   .dark {
@@ -147,6 +158,17 @@
     --capacity-healthy: 0.62 0.22 142;
     --capacity-warning: 0.7 0.25 55;
     --capacity-critical: 0.62 0.28 22;
+
+    /* Super Admin Control Panel Layer */
+    --admin-primary: 0.65 0.2 280;
+    --admin-accent: 0.72 0.18 280;
+    --admin-surface: 0.2 0.008 280;
+    --admin-surface-alt: 0.24 0.006 280;
+    --admin-table-alt: 0.175 0.01 265;
+    --admin-border-accent: 0.32 0.01 280;
+    --admin-status-active: 0.65 0.2 280;
+    --admin-status-pending: 0.7 0.25 55;
+    --admin-status-inactive: 0.38 0.008 260;
   }
 
   * {
@@ -379,7 +401,82 @@
     pointer-events: none;
   }
 
+  /* Admin Control Panel Glasscard */
+  .admin-card {
+    backdrop-filter: blur(8px);
+    background-color: oklch(var(--admin-surface) / 0.5);
+    border: 1px solid oklch(var(--admin-border-accent) / 0.3);
+    border-left: 3px solid oklch(var(--admin-primary) / 0.6);
+  }
+
+  .admin-card-elevated {
+    backdrop-filter: blur(12px);
+    background-color: oklch(var(--admin-surface-alt) / 0.7);
+    border: 1px solid oklch(var(--admin-border-accent) / 0.4);
+  }
+
+  /* Admin Table Styles */
+  .admin-table {
+    @apply w-full text-sm;
+  }
+
+  .admin-table-header {
+    @apply bg-muted/30 text-foreground font-semibold;
+  }
+
+  .admin-table-row {
+    @apply border-b border-border transition-smooth hover:bg-muted/40;
+  }
+
+  .admin-table-row-alt {
+    @apply bg-muted/10;
+  }
+
+  /* Admin Status Badges */
+  .admin-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .admin-badge-active {
+    @apply bg-emerald-500/15 text-emerald-400;
+  }
+
+  .admin-badge-pending {
+    @apply bg-amber-500/15 text-amber-400;
+  }
+
+  .admin-badge-inactive {
+    @apply bg-muted/30 text-muted-foreground;
+  }
+
+  /* Admin Stat Card */
+  .admin-stat-card {
+    @apply admin-card p-6 rounded-lg;
+  }
+
+  .admin-stat-value {
+    @apply text-3xl font-bold text-foreground font-display;
+  }
+
+  .admin-stat-label {
+    @apply text-sm text-muted-foreground;
+  }
+
+  /* Admin Toggle/Switch styling */
+  .admin-switch {
+    @apply relative inline-flex items-center h-5 w-9 rounded-full transition-smooth;
+  }
+
+  .admin-switch-on {
+    @apply bg-emerald-500;
+  }
+
+  .admin-switch-off {
+    @apply bg-muted;
+  }
+
   /* Scrollbar styling */
+
   .noc-scrollbar::-webkit-scrollbar {
     width: 4px;
   }
