@@ -4,47 +4,67 @@ import {
   Box,
   GitFork,
   Maximize2,
+  MinusCircle,
   Network,
+  PlusCircle,
   Router,
   Wifi,
-  ZoomIn,
-  ZoomOut,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useCallback, useRef, useState } from "react";
 
 // ─── Layout constants ────────────────────────────────────────────────────────
-const LEVEL_Y: Record<number, number> = { 0: 80, 1: 240, 2: 400 };
-const NODE_R = 28;
-const H_PAD = 90;
-const MIN_W = 1200;
-const MIN_H = 500;
+const LEVEL_Y: Record<number, number> = { 0: 100, 1: 280, 2: 460 };
+const H_PAD = 80;
+const MIN_W = 1400;
+const MIN_H = 600;
 
-// ─── Status colors ────────────────────────────────────────────────────────────
-const STATUS_FILL: Record<DeviceStatus, string> = {
-  active: "oklch(0.62 0.22 142 / 0.22)",
-  faulty: "oklch(0.62 0.28 22 / 0.22)",
-  warning: "oklch(0.7 0.25 55 / 0.22)",
-};
-const STATUS_STROKE: Record<DeviceStatus, string> = {
-  active: "oklch(0.62 0.22 142)",
-  faulty: "oklch(0.62 0.28 22)",
-  warning: "oklch(0.7 0.25 55)",
-};
-const STATUS_GLOW: Record<DeviceStatus, string> = {
-  active: "oklch(0.62 0.22 142 / 0.7)",
-  faulty: "oklch(0.62 0.28 22 / 0.7)",
-  warning: "oklch(0.7 0.25 55 / 0.7)",
+// ─── Node radius by device type ──────────────────────────────────────────────
+const NODE_SIZE: Record<DeviceType, number> = {
+  OLT: 22,
+  Splitter: 16,
+  ONT: 11,
+  JJB: 12,
+  Switch: 15,
 };
 
-// ─── Edge colors by route type ────────────────────────────────────────────────
-const LEVEL_EDGE_STROKE: Record<number, string> = {
-  0: "oklch(0.72 0.22 210)", // backbone – cyan
-  1: "oklch(0.60 0.22 264)", // distribution – blue
-  2: "oklch(0.62 0.22 142)", // drop – green
+// ─── Status palette ──────────────────────────────────────────────────────────
+const STATUS_COLOR: Record<
+  DeviceStatus,
+  { fill: string; stroke: string; glow: string }
+> = {
+  active: {
+    fill: "rgba(34,197,94,0.18)",
+    stroke: "#22c55e",
+    glow: "rgba(34,197,94,0.7)",
+  },
+  faulty: {
+    fill: "rgba(239,68,68,0.18)",
+    stroke: "#ef4444",
+    glow: "rgba(239,68,68,0.7)",
+  },
+  warning: {
+    fill: "rgba(234,179,8,0.18)",
+    stroke: "#eab308",
+    glow: "rgba(234,179,8,0.7)",
+  },
 };
 
-// ─── Icon map ─────────────────────────────────────────────────────────────────
+// ─── Type-based accent for OLT node glow ────────────────────────────────────
+const TYPE_ACCENT: Partial<Record<DeviceType, string>> = {
+  OLT: "#06b6d4",
+  Splitter: "#f97316",
+  ONT: "#a855f7",
+};
+
+// ─── Edge layer colors ───────────────────────────────────────────────────────
+const EDGE_COLOR: Record<number, string> = {
+  0: "#06b6d4",
+  1: "#f97316",
+  2: "#a855f7",
+};
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
 const ICON_MAP: Record<DeviceType, React.ElementType> = {
   OLT: Router,
   ONT: Wifi,
@@ -53,7 +73,7 @@ const ICON_MAP: Record<DeviceType, React.ElementType> = {
   Switch: Network,
 };
 
-// ─── Tree node ────────────────────────────────────────────────────────────────
+// ─── Tree types ───────────────────────────────────────────────────────────────
 interface TreeNode {
   device: Device;
   level: number;
@@ -62,6 +82,7 @@ interface TreeNode {
   children: TreeNode[];
 }
 
+// ─── Tree builder ─────────────────────────────────────────────────────────────
 function buildTree(devices: Device[]): TreeNode[] {
   const olts = devices.filter((d) => d.type === "OLT");
   const splitters = devices.filter((d) => d.type === "Splitter");
@@ -99,7 +120,6 @@ function buildTree(devices: Device[]): TreeNode[] {
       .filter(Boolean) as TreeNode[],
   }));
 
-  // Fallback: splitters not parented by any OLT
   const parentedSplIds = new Set(
     roots.flatMap((r) => r.children.map((c) => c.device.id)),
   );
@@ -127,7 +147,6 @@ function buildTree(devices: Device[]): TreeNode[] {
       });
     }
   }
-
   return roots;
 }
 
@@ -151,110 +170,245 @@ function assignPositions(roots: TreeNode[]): { w: number; h: number } {
 
   let maxW = 0;
   for (const [lvl, nodes] of Object.entries(byLevel)) {
-    const count = nodes.length;
-    const totalW = Math.max(MIN_W, count * (NODE_R * 2 + H_PAD));
-    const step = totalW / (count + 1);
+    const nr = NODE_SIZE[nodes[0].device.type] ?? 18;
+    const totalW = Math.max(MIN_W, nodes.length * (nr * 2 + H_PAD));
+    const step = totalW / (nodes.length + 1);
     nodes.forEach((n, i) => {
       n.x = step * (i + 1);
       n.y = LEVEL_Y[Number(lvl)];
     });
     maxW = Math.max(maxW, totalW);
   }
-
-  // Re-pass: set all nodes to the same total width
   for (const nodes of Object.values(byLevel)) {
     const step = maxW / (nodes.length + 1);
     nodes.forEach((n, i) => {
       n.x = step * (i + 1);
     });
   }
-
   const maxLevel = Math.max(...Object.keys(byLevel).map(Number));
-  const h = Math.max(MIN_H, LEVEL_Y[maxLevel] + 140);
-  return { w: maxW, h };
+  return { w: maxW, h: Math.max(MIN_H, LEVEL_Y[maxLevel] + 160) };
 }
 
-// ─── SVG Node ─────────────────────────────────────────────────────────────────
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+interface TooltipData {
+  node: TreeNode;
+  x: number;
+  y: number;
+}
+
+function NodeTooltip({ data }: { data: TooltipData }) {
+  const { device } = data.node;
+  const colors = STATUS_COLOR[device.status];
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 6, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 4, scale: 0.95 }}
+      transition={{ duration: 0.15 }}
+      className="absolute z-30 pointer-events-none"
+      style={{ left: data.x + 16, top: data.y - 60 }}
+    >
+      <div
+        className="rounded-xl px-3 py-2 min-w-[140px]"
+        style={{
+          background: "rgba(2,8,23,0.95)",
+          border: `1px solid ${colors.stroke}40`,
+          boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px ${colors.stroke}20`,
+        }}
+      >
+        <div className="flex items-center gap-1.5 mb-1">
+          <span
+            className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
+            style={{ background: `${colors.stroke}20`, color: colors.stroke }}
+          >
+            {device.type}
+          </span>
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{
+              background: colors.stroke,
+              boxShadow: `0 0 6px ${colors.glow}`,
+            }}
+          />
+        </div>
+        <p className="text-xs font-mono text-white font-semibold truncate max-w-[120px]">
+          {device.name}
+        </p>
+        {device.signalStrength != null && (
+          <p
+            className="text-[10px] font-mono mt-1"
+            style={{ color: colors.stroke }}
+          >
+            {device.signalStrength} dBm
+          </p>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── SVG Node component ───────────────────────────────────────────────────────
 interface NodeProps {
   node: TreeNode;
   isSelected: boolean;
   onClick: (id: string) => void;
+  onHover: (data: TooltipData | null) => void;
   index: number;
 }
 
-function TopologyNode({ node, isSelected, onClick, index }: NodeProps) {
-  const { device } = node;
+function TopologyNode({
+  node,
+  isSelected,
+  onClick,
+  onHover,
+  index,
+}: NodeProps) {
+  const { device, x, y } = node;
   const Icon = ICON_MAP[device.type] ?? Router;
-  const fill = STATUS_FILL[device.status];
-  const stroke = STATUS_STROKE[device.status];
-  const glowColor = STATUS_GLOW[device.status];
+  const r = NODE_SIZE[device.type] ?? 14;
+  const colors = STATUS_COLOR[device.status];
+  const typeAccent = TYPE_ACCENT[device.type];
+  const mainColor = typeAccent ?? colors.stroke;
+
+  // Hexagon path for OLT
+  function hexPath(cx: number, cy: number, size: number) {
+    const pts = Array.from({ length: 6 }, (_, i) => {
+      const a = (Math.PI / 3) * i - Math.PI / 6;
+      return `${cx + size * Math.cos(a)},${cy + size * Math.sin(a)}`;
+    });
+    return `M ${pts.join(" L ")} Z`;
+  }
+
+  // Diamond path for Splitter
+  function diamondPath(cx: number, cy: number, size: number) {
+    return `M ${cx},${cy - size} L ${cx + size},${cy} L ${cx},${cy + size} L ${cx - size},${cy} Z`;
+  }
+
+  const isOLT = device.type === "OLT";
+  const isSplitter = device.type === "Splitter";
+
+  const labelY = y + r + (isOLT ? 20 : 14);
+  const truncName =
+    device.name.length > 12 ? `${device.name.slice(0, 12)}…` : device.name;
 
   return (
     <motion.g
-      initial={{ opacity: 0, scale: 0.5 }}
+      initial={{ opacity: 0, scale: 0.4 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{
-        duration: 0.35,
+        duration: 0.45,
         delay: index * 0.04,
         ease: [0.4, 0, 0.2, 1],
       }}
-      style={{ transformOrigin: `${node.x}px ${node.y}px` }}
+      style={{ transformOrigin: `${x}px ${y}px` }}
       data-ocid={`topology-node-${device.id}`}
     >
-      {/* Selected ring glow */}
+      {/* Outer glow ring — selected */}
       {isSelected && (
-        <circle
-          cx={node.x}
-          cy={node.y}
-          r={NODE_R + 8}
-          fill="none"
-          stroke={glowColor}
-          strokeWidth={2}
-          opacity={0.6}
-        >
-          <animate
-            attributeName="r"
-            values={`${NODE_R + 6};${NODE_R + 12};${NODE_R + 6}`}
-            dur="2s"
-            repeatCount="indefinite"
+        <>
+          <motion.circle
+            cx={x}
+            cy={y}
+            r={r + 12}
+            fill="none"
+            stroke={mainColor}
+            strokeWidth={1}
+            opacity={0.3}
+            animate={{ r: [r + 10, r + 18, r + 10], opacity: [0.3, 0.05, 0.3] }}
+            transition={{
+              duration: 2.5,
+              repeat: Number.POSITIVE_INFINITY,
+              ease: "easeInOut",
+            }}
           />
-          <animate
-            attributeName="opacity"
-            values="0.6;0.2;0.6"
-            dur="2s"
-            repeatCount="indefinite"
+          <circle
+            cx={x}
+            cy={y}
+            r={r + 6}
+            fill="none"
+            stroke={mainColor}
+            strokeWidth={1.5}
+            opacity={0.5}
           />
-        </circle>
+        </>
       )}
 
-      {/* Outer ring */}
-      <circle
-        cx={node.x}
-        cy={node.y}
-        r={NODE_R + 4}
-        fill="none"
-        stroke={stroke}
-        strokeWidth={isSelected ? 2 : 1}
-        opacity={isSelected ? 0.7 : 0.25}
-      />
+      {/* Idle ambient glow */}
+      {!isSelected && (
+        <circle
+          cx={x}
+          cy={y}
+          r={r + 8}
+          fill={`${mainColor}08`}
+          stroke={`${mainColor}20`}
+          strokeWidth={1}
+        />
+      )}
 
-      {/* Main circle */}
+      {/* Shape */}
+      {isOLT ? (
+        <>
+          {/* Hex fill */}
+          <path
+            d={hexPath(x, y, r)}
+            fill={`${mainColor}25`}
+            stroke={isSelected ? mainColor : `${mainColor}90`}
+            strokeWidth={isSelected ? 2.5 : 1.5}
+            filter={
+              isSelected
+                ? `drop-shadow(0 0 10px ${mainColor})`
+                : `drop-shadow(0 0 4px ${mainColor}60)`
+            }
+          />
+          {/* Hex inner decoration */}
+          <path
+            d={hexPath(x, y, r * 0.65)}
+            fill="none"
+            stroke={`${mainColor}40`}
+            strokeWidth={0.8}
+          />
+        </>
+      ) : isSplitter ? (
+        <path
+          d={diamondPath(x, y, r)}
+          fill={`${mainColor}20`}
+          stroke={isSelected ? mainColor : `${mainColor}80`}
+          strokeWidth={isSelected ? 2.5 : 1.5}
+          filter={
+            isSelected
+              ? `drop-shadow(0 0 8px ${mainColor})`
+              : `drop-shadow(0 0 3px ${mainColor}50)`
+          }
+        />
+      ) : (
+        <rect
+          x={x - r}
+          y={y - r}
+          width={r * 2}
+          height={r * 2}
+          rx={r * 0.4}
+          fill={`${mainColor}18`}
+          stroke={isSelected ? mainColor : `${mainColor}70`}
+          strokeWidth={isSelected ? 2 : 1.2}
+          filter={isSelected ? `drop-shadow(0 0 6px ${mainColor})` : undefined}
+        />
+      )}
+
+      {/* Status indicator dot (top-right) */}
       <circle
-        cx={node.x}
-        cy={node.y}
-        r={NODE_R}
-        fill={fill}
-        stroke={stroke}
-        strokeWidth={isSelected ? 2.5 : 1.5}
-        filter={isSelected ? `drop-shadow(0 0 8px ${glowColor})` : undefined}
+        cx={x + r * 0.68}
+        cy={y - r * 0.68}
+        r={r * 0.28}
+        fill={colors.stroke}
+        style={{ filter: `drop-shadow(0 0 4px ${colors.glow})` }}
       />
 
       {/* Icon via foreignObject */}
       <foreignObject
-        x={node.x - 12}
-        y={node.y - 12}
-        width={24}
-        height={24}
+        x={x - r * 0.65}
+        y={y - r * 0.65}
+        width={r * 1.3}
+        height={r * 1.3}
         style={{ overflow: "visible", pointerEvents: "none" }}
       >
         <div
@@ -268,9 +422,9 @@ function TopologyNode({ node, isSelected, onClick, index }: NodeProps) {
         >
           <Icon
             style={{
-              width: 16,
-              height: 16,
-              color: stroke,
+              width: r * 0.85,
+              height: r * 0.85,
+              color: mainColor,
               flexShrink: 0,
             }}
           />
@@ -279,42 +433,62 @@ function TopologyNode({ node, isSelected, onClick, index }: NodeProps) {
 
       {/* Label */}
       <text
-        x={node.x}
-        y={node.y + NODE_R + 16}
+        x={x}
+        y={labelY}
         textAnchor="middle"
-        fill="oklch(0.85 0.005 260)"
-        fontSize={10}
+        fill={isSelected ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.7)"}
+        fontSize={isOLT ? 11 : isSplitter ? 10 : 9}
         fontFamily="var(--font-mono, monospace)"
         fontWeight={isSelected ? 700 : 400}
+        style={{
+          filter: isSelected ? `drop-shadow(0 0 8px ${mainColor})` : undefined,
+        }}
       >
-        {device.name}
+        {truncName}
       </text>
 
-      {/* Type label */}
-      <text
-        x={node.x}
-        y={node.y + NODE_R + 27}
-        textAnchor="middle"
-        fill="oklch(0.52 0.008 260)"
-        fontSize={9}
-        fontFamily="var(--font-mono, monospace)"
-      >
-        {device.type}
-      </text>
+      {/* Type sub-label for OLT */}
+      {isOLT && (
+        <text
+          x={x}
+          y={labelY + 12}
+          textAnchor="middle"
+          fill={`${mainColor}60`}
+          fontSize={8}
+          fontFamily="var(--font-mono, monospace)"
+        >
+          {device.type}
+        </text>
+      )}
 
-      {/* Transparent click overlay */}
+      {/* Transparent hit area */}
       <circle
-        cx={node.x}
-        cy={node.y}
-        r={NODE_R + 14}
+        cx={x}
+        cy={y}
+        r={r + 16}
         fill="transparent"
         style={{ cursor: "pointer" }}
         onClick={() => onClick(device.id)}
+        onMouseEnter={(e) => {
+          const rect = (e.target as Element)
+            .closest("svg")
+            ?.getBoundingClientRect();
+          const svgEl = (e.target as Element).closest(
+            "svg",
+          ) as SVGSVGElement | null;
+          if (!svgEl || !rect) return;
+          const pt = svgEl.createSVGPoint();
+          pt.x = e.clientX;
+          pt.y = e.clientY;
+          const sp = pt.matrixTransform(svgEl.getScreenCTM()?.inverse());
+          onHover({ node, x: sp.x, y: sp.y });
+        }}
+        onMouseLeave={() => onHover(null)}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") onClick(device.id);
         }}
         tabIndex={0}
-        aria-label={`Select node ${device.name}`}
+        aria-label={`Select node ${device.name} (${device.type}, ${device.status})`}
         role="button"
       />
     </motion.g>
@@ -326,38 +500,126 @@ interface EdgeProps {
   from: TreeNode;
   to: TreeNode;
   index: number;
+  animated?: boolean;
 }
 
-function TopologyEdge({ from, to, index }: EdgeProps) {
+function TopologyEdge({ from, to, index, animated = true }: EdgeProps) {
   const my = (from.y + to.y) / 2;
-  const edgeColor = LEVEL_EDGE_STROKE[from.level] ?? LEVEL_EDGE_STROKE[0];
-
-  const d = `M ${from.x} ${from.y + NODE_R}
-             C ${from.x} ${my},
-               ${to.x} ${my},
-               ${to.x} ${to.y - NODE_R}`;
+  const edgeColor = EDGE_COLOR[from.level] ?? EDGE_COLOR[0];
+  const d = `M ${from.x} ${from.y} C ${from.x} ${my}, ${to.x} ${my}, ${to.x} ${to.y}`;
+  const edgeLen = Math.abs(to.x - from.x) + Math.abs(to.y - from.y);
+  const dotOffset = (index * 137) % edgeLen;
 
   return (
-    <motion.path
-      d={d}
-      fill="none"
-      stroke={edgeColor}
-      strokeWidth={2}
-      opacity={0.55}
-      strokeDasharray="4 3"
-      initial={{ pathLength: 0, opacity: 0 }}
-      animate={{ pathLength: 1, opacity: 0.55 }}
-      transition={{ duration: 0.5, delay: index * 0.03, ease: "easeOut" }}
-    />
+    <g>
+      {/* Glow trail */}
+      <motion.path
+        d={d}
+        fill="none"
+        stroke={edgeColor}
+        strokeWidth={3}
+        opacity={0.08}
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 0.7, delay: index * 0.02, ease: "easeOut" }}
+      />
+      {/* Main edge */}
+      <motion.path
+        d={d}
+        fill="none"
+        stroke={edgeColor}
+        strokeWidth={1.5}
+        opacity={0.5}
+        strokeDasharray="6 4"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 0.5 }}
+        transition={{ duration: 0.6, delay: index * 0.025, ease: "easeOut" }}
+      />
+      {/* Animated data flow dot */}
+      {animated && (
+        <circle
+          r={2.5}
+          fill={edgeColor}
+          opacity={0.9}
+          style={{ filter: `drop-shadow(0 0 4px ${edgeColor})` }}
+        >
+          <animateMotion
+            dur={`${2.5 + (dotOffset % 2)}s`}
+            repeatCount="indefinite"
+            begin={`${(index * 0.3) % 3}s`}
+          >
+            <mpath href={`#edge-path-${index}`} />
+          </animateMotion>
+        </circle>
+      )}
+      {animated && (
+        <defs>
+          <path id={`edge-path-${index}`} d={d} />
+        </defs>
+      )}
+    </g>
   );
 }
 
-// ─── Level legend ─────────────────────────────────────────────────────────────
-const LEVEL_LABELS: Record<number, string> = {
-  0: "OLT — Core Nodes",
-  1: "Splitters — Distribution",
-  2: "ONT — Endpoints",
-};
+// ─── Minimap ──────────────────────────────────────────────────────────────────
+interface MinimapProps {
+  allNodes: TreeNode[];
+  totalW: number;
+  totalH: number;
+}
+
+function Minimap({ allNodes, totalW, totalH }: MinimapProps) {
+  const W = 160;
+  const H = 100;
+  const scaleX = W / totalW;
+  const scaleY = H / totalH;
+  return (
+    <div
+      className="absolute bottom-4 right-4 z-20 rounded-xl overflow-hidden"
+      style={{
+        background: "rgba(2,8,23,0.85)",
+        border: "1px solid rgba(6,182,212,0.2)",
+        backdropFilter: "blur(8px)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+      }}
+    >
+      <div className="px-2 py-1 border-b border-white/10">
+        <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">
+          Minimap
+        </span>
+      </div>
+      <svg
+        width={W}
+        height={H}
+        viewBox={`0 0 ${W} ${H}`}
+        aria-label="Network topology minimap"
+      >
+        <title>Minimap overview</title>
+        {allNodes.map((n) => {
+          const mainColor =
+            TYPE_ACCENT[n.device.type] ?? STATUS_COLOR[n.device.status].stroke;
+          return (
+            <circle
+              key={n.device.id}
+              cx={n.x * scaleX}
+              cy={n.y * scaleY}
+              r={
+                n.device.type === "OLT"
+                  ? 3.5
+                  : n.device.type === "Splitter"
+                    ? 2
+                    : 1.5
+              }
+              fill={mainColor}
+              opacity={0.8}
+              style={{ filter: `drop-shadow(0 0 2px ${mainColor})` }}
+            />
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
 
 // ─── Main graph ───────────────────────────────────────────────────────────────
 export function TopologyGraph() {
@@ -369,7 +631,6 @@ export function TopologyGraph() {
   const dims = assignPositions(roots);
   const allNodes = flattenNodes(roots);
 
-  // Build edge list
   const edges: { from: TreeNode; to: TreeNode }[] = [];
   function collectEdges(n: TreeNode) {
     for (const c of n.children) {
@@ -379,12 +640,16 @@ export function TopologyGraph() {
   }
   for (const r of roots) collectEdges(r);
 
-  // Zoom / pan
   const [zoom, setZoom] = useState(1);
+  const [showMinimap, setShowMinimap] = useState(true);
+  const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const zoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.2, 2.5)), []);
-  const zoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.2, 0.3)), []);
+  const zoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.2, 3)), []);
+  const zoomOut = useCallback(
+    () => setZoom((z) => Math.max(z - 0.2, 0.25)),
+    [],
+  );
   const fitView = useCallback(() => setZoom(1), []);
 
   const handleNodeClick = useCallback(
@@ -395,112 +660,222 @@ export function TopologyGraph() {
   );
 
   return (
-    <div className="relative w-full h-full flex flex-col">
-      {/* Zoom controls */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col gap-1">
-        {[
-          {
-            icon: ZoomIn,
-            fn: zoomIn,
-            ocid: "topology-zoom-in",
-            label: "Zoom in",
-          },
-          {
-            icon: ZoomOut,
-            fn: zoomOut,
-            ocid: "topology-zoom-out",
-            label: "Zoom out",
-          },
-          {
-            icon: Maximize2,
-            fn: fitView,
-            ocid: "topology-fit-view",
-            label: "Fit to view",
-          },
-        ].map(({ icon: Icon, fn, ocid, label }) => (
-          <button
-            key={ocid}
-            type="button"
-            onClick={fn}
-            aria-label={label}
-            data-ocid={ocid}
-            className="w-8 h-8 rounded-lg glass-elevated flex items-center justify-center text-muted-foreground hover:text-primary transition-smooth hover:noc-glow"
-          >
-            <Icon className="w-4 h-4" />
-          </button>
-        ))}
+    <div
+      className="relative w-full h-full flex flex-col overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(ellipse at 40% 30%, #0d1729 0%, #020817 70%)",
+      }}
+    >
+      {/* Dot grid overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgba(6,182,212,0.12) 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+      />
+
+      {/* ── Zoom controls — floating glass pill ──────────────────────────── */}
+      <div
+        className="absolute top-4 right-4 z-20 flex items-center gap-1 px-2 py-1.5 rounded-xl"
+        style={{
+          background: "rgba(2,8,23,0.85)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          backdropFilter: "blur(12px)",
+          boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        }}
+      >
+        <button
+          type="button"
+          onClick={zoomOut}
+          aria-label="Zoom out"
+          data-ocid="topology-zoom-out"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-cyan-400 transition-colors"
+        >
+          <MinusCircle className="w-4 h-4" />
+        </button>
+        <span className="text-[10px] font-mono text-white/40 w-8 text-center">
+          {Math.round(zoom * 100)}%
+        </span>
+        <button
+          type="button"
+          onClick={zoomIn}
+          aria-label="Zoom in"
+          data-ocid="topology-zoom-in"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-cyan-400 transition-colors"
+        >
+          <PlusCircle className="w-4 h-4" />
+        </button>
+        <div className="w-px h-4 bg-white/10 mx-0.5" />
+        <button
+          type="button"
+          onClick={fitView}
+          aria-label="Fit to view"
+          data-ocid="topology-fit-view"
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-cyan-400 transition-colors"
+        >
+          <Maximize2 className="w-3.5 h-3.5" />
+        </button>
+        <div className="w-px h-4 bg-white/10 mx-0.5" />
+        <button
+          type="button"
+          onClick={() => setShowMinimap((v) => !v)}
+          aria-label="Toggle minimap"
+          data-ocid="topology-toggle-minimap"
+          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors text-[9px] font-mono font-bold ${showMinimap ? "text-cyan-400" : "text-white/30"}`}
+        >
+          MAP
+        </button>
       </div>
 
-      {/* Level legend */}
-      <div className="absolute top-4 left-4 z-10 flex flex-col gap-1.5">
-        {Object.entries(LEVEL_LABELS).map(([lvl, label]) => (
-          <div key={lvl} className="flex items-center gap-2">
+      {/* ── Level legend (top-left) ───────────────────────────────────────── */}
+      <div
+        className="absolute top-4 left-4 z-20 flex flex-col gap-1.5 rounded-xl px-3 py-2.5"
+        style={{
+          background: "rgba(2,8,23,0.8)",
+          border: "1px solid rgba(255,255,255,0.08)",
+          backdropFilter: "blur(8px)",
+        }}
+      >
+        <p className="text-[9px] font-mono text-white/30 uppercase tracking-widest mb-0.5">
+          Hierarchy
+        </p>
+        {[
+          { label: "OLT — Core", color: "#06b6d4" },
+          { label: "Splitter — Dist.", color: "#f97316" },
+          { label: "ONT — Endpoint", color: "#a855f7" },
+        ].map(({ label, color }) => (
+          <div key={label} className="flex items-center gap-2">
             <span
-              className="w-6 h-0.5 rounded-full"
-              style={{
-                background: LEVEL_EDGE_STROKE[Number(lvl)],
-                boxShadow: `0 0 6px ${LEVEL_EDGE_STROKE[Number(lvl)]}`,
-              }}
+              className="w-5 h-0.5 rounded-full"
+              style={{ background: color, boxShadow: `0 0 6px ${color}` }}
             />
-            <span className="text-[10px] font-mono text-muted-foreground">
+            <span
+              className="text-[10px] font-mono"
+              style={{ color: "rgba(255,255,255,0.5)" }}
+            >
               {label}
             </span>
           </div>
         ))}
       </div>
 
-      {/* SVG canvas */}
+      {/* ── Tooltip ───────────────────────────────────────────────────────── */}
+      {tooltip && (
+        <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
+          <NodeTooltip data={tooltip} />
+        </div>
+      )}
+
+      {/* ── SVG canvas ────────────────────────────────────────────────────── */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto noc-scrollbar"
-        style={{ scrollbarGutter: "stable" }}
+        className="flex-1 overflow-auto"
+        style={{ scrollbarColor: "rgba(6,182,212,0.2) transparent" }}
       >
         <div
           style={{
             transform: `scale(${zoom})`,
             transformOrigin: "top center",
-            transition: "transform 0.2s cubic-bezier(0.4,0,0.2,1)",
+            transition: "transform 0.25s cubic-bezier(0.4,0,0.2,1)",
           }}
         >
           <svg
             width={dims.w}
             height={dims.h}
-            viewBox={`0 0 ${String(dims.w)} ${String(dims.h)}`}
+            viewBox={`0 0 ${dims.w} ${dims.h}`}
             aria-label="Network topology graph"
             style={{ display: "block", margin: "0 auto" }}
           >
             <title>Network Topology Graph</title>
-            {/* Grid lines */}
             <defs>
-              <pattern
-                id="topo-grid"
-                width={60}
-                height={60}
-                patternUnits="userSpaceOnUse"
+              {/* Subtle horizontal level separators */}
+              <linearGradient
+                id="level-line-l1"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
               >
-                <path
-                  d="M 60 0 L 0 0 0 60"
-                  fill="none"
-                  stroke="oklch(0.26 0.01 265 / 0.35)"
-                  strokeWidth={0.5}
-                />
-              </pattern>
+                <stop offset="0%" stopColor="#06b6d4" stopOpacity="0" />
+                <stop offset="50%" stopColor="#06b6d4" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#06b6d4" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient
+                id="level-line-l2"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="#f97316" stopOpacity="0" />
+                <stop offset="50%" stopColor="#f97316" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+              </linearGradient>
+              <linearGradient
+                id="level-line-l3"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
+              >
+                <stop offset="0%" stopColor="#a855f7" stopOpacity="0" />
+                <stop offset="50%" stopColor="#a855f7" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#a855f7" stopOpacity="0" />
+              </linearGradient>
             </defs>
-            <rect width={dims.w} height={dims.h} fill="url(#topo-grid)" />
 
-            {/* Level separator lines */}
-            {Object.entries(LEVEL_Y).map(([lvl, y]) => (
-              <line
-                key={lvl}
-                x1={40}
-                y1={y}
-                x2={dims.w - 40}
-                y2={y}
-                stroke={LEVEL_EDGE_STROKE[Number(lvl)]}
-                strokeWidth={0.5}
-                strokeDasharray="8 8"
-                opacity={0.18}
-              />
+            {/* Level separator bands */}
+            <rect
+              x={0}
+              y={LEVEL_Y[0] - 40}
+              width={dims.w}
+              height={80}
+              fill="url(#level-line-l1)"
+              opacity={0.5}
+            />
+            <rect
+              x={0}
+              y={LEVEL_Y[1] - 40}
+              width={dims.w}
+              height={80}
+              fill="url(#level-line-l2)"
+              opacity={0.5}
+            />
+            <rect
+              x={0}
+              y={LEVEL_Y[2] - 40}
+              width={dims.w}
+              height={80}
+              fill="url(#level-line-l3)"
+              opacity={0.5}
+            />
+
+            {/* Level labels on right */}
+            {[
+              { y: LEVEL_Y[0], label: "LAYER 1 — BACKBONE", color: "#06b6d4" },
+              {
+                y: LEVEL_Y[1],
+                label: "LAYER 2 — DISTRIBUTION",
+                color: "#f97316",
+              },
+              { y: LEVEL_Y[2], label: "LAYER 3 — ACCESS", color: "#a855f7" },
+            ].map(({ y, label, color }) => (
+              <text
+                key={label}
+                x={dims.w - 20}
+                y={y + 5}
+                textAnchor="end"
+                fill={color}
+                fontSize={9}
+                fontFamily="var(--font-mono, monospace)"
+                opacity={0.4}
+                letterSpacing={1}
+              >
+                {label}
+              </text>
             ))}
 
             {/* Edges */}
@@ -510,6 +885,7 @@ export function TopologyGraph() {
                 from={from}
                 to={to}
                 index={i}
+                animated={i < 40}
               />
             ))}
 
@@ -520,12 +896,18 @@ export function TopologyGraph() {
                 node={node}
                 isSelected={selectedDeviceId === node.device.id}
                 onClick={handleNodeClick}
+                onHover={setTooltip}
                 index={i}
               />
             ))}
           </svg>
         </div>
       </div>
+
+      {/* Minimap */}
+      {showMinimap && (
+        <Minimap allNodes={allNodes} totalW={dims.w} totalH={dims.h} />
+      )}
     </div>
   );
 }

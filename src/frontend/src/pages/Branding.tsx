@@ -584,8 +584,8 @@ export default function Branding() {
         featureLabel="White-Labeling & Branding"
         description="Custom branding, white-labeling, and custom domains are available on the Ultra plan. Upgrade to present this platform under your own brand identity."
       >
-        <div className="p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
+        <div className="p-4 md:p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-4 md:gap-6 items-start">
             {/* ── LEFT: Settings Columns ── */}
             <div className="space-y-5">
               {/* Logo */}

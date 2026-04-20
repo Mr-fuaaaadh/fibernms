@@ -101,9 +101,22 @@
 - **Glassmorphism:** NOC: sharp neon glows for alerts; Admin: refined backdrop blur + semi-transparent bg + subtle borders
 - **Tables:** Alternating row backgrounds (admin-table-row-alt), monospace for numeric data, hover state on rows
 
-## Signature Details
+## Topology Section Overhaul
 
-1. **NOC Heatmap:** Predictive intelligence gradient overlay on global fiber map (green healthy → red critical), real-time risk zones.
-2. **Admin Data Dashboard:** Dense, refined glassmorphic panels with purple accent left borders, elevated KPI cards with monospace metrics, compact table rows with status badges — enterprise SaaS aesthetic distinct from NOC's terminal style.
+**Visual Direction:** Mission-critical NOC aesthetic with enhanced neon effects, elevated glassmorphism, and bold visual hierarchy. Dark theme with vibrant cyan (L1), orange (L2), purple (L3) for fiber hierarchy.
+
+**Spatial Composition:** Header with bold monospace title + stat pills → Layer toggle bar with visual state indicators → Main canvas (hierarchical SVG graph in elevated glass card) + Right panel (device details). Layout emphasizes high-contrast information density with clear depth perception through layered glass effects.
+
+**Node Visualization:** Each node is a glowing circle (28px radius) with status-based neon halos: healthy (green glow), warning (orange/amber glow), critical (red glow). Edges rendered as bezier curves with layer-specific colors (cyan/orange/purple). Staggered entrance animation on load with easing curve. Enhanced hover state with expanded glow radius and shadow lift.
+
+**Interactive Elements:** Layer toggle buttons with visual fill states, neon borders, and smooth state transitions. Stat pills with hover lift effect. Topology nodes respond to selection with expanded glow + panel update. Smooth zoom/pan controls with momentum.
+
+**Elevation & Depth:** Canvas wrapped in elevated glass card (backdrop blur 8px, double border for depth). Status bar with gradient background. Right panel elevated glass with enhanced backdrop blur. All layers use layered OKLCH shadows for depth.
+
+**Motion:** Node entrance stagger (index × 40ms), smooth transitions (220ms cubic-bezier), pulsing glow animation on active nodes, fade-in on layer toggles, smooth panel slide-in on node select.
+
+**Color Intensity:** Boosted saturation and lightness in dark mode — cyan/orange/red neon for maximum contrast and alert communication. All glows use 0.6+ opacity at 50% of animation cycle.
+
+**Anti-Pattern Avoided:** No generic AI-safe pastels, no flat card designs, no timid animations. Instead: bold neon glows, theatrical motion, high-contrast dark UI with clear visual hierarchy.
 
 

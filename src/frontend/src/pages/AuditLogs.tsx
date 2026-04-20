@@ -1,6 +1,12 @@
 import { GlassCard } from "@/components/GlassCard";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -15,6 +21,7 @@ import {
   Clock,
   Download,
   FileText,
+  Filter,
   RefreshCw,
   Search,
   Shield,
@@ -53,6 +60,13 @@ const ACTION_TYPE_BG: Record<AuditLog["actionType"], string> = {
   "user-action": "bg-orange-500/10 text-orange-300",
   "workflow-execution": "bg-violet-500/10 text-violet-300",
   system: "bg-zinc-500/10 text-zinc-400",
+};
+
+const ACTION_TYPE_DOT: Record<AuditLog["actionType"], string> = {
+  "device-change": "bg-cyan-400",
+  "user-action": "bg-orange-400",
+  "workflow-execution": "bg-violet-400",
+  system: "bg-zinc-500",
 };
 
 const DATE_RANGES = ["Last hour", "Last 24h", "Last 7 days", "Last 30 days"];
@@ -130,7 +144,7 @@ function exportCSV(logs: AuditLog[]) {
   URL.revokeObjectURL(url);
 }
 
-// ─── AuditEntry row ───────────────────────────────────────────────────────────
+// ─── Desktop AuditEntry row ───────────────────────────────────────────────────
 
 function AuditEntry({ log, index }: { log: AuditLog; index: number }) {
   return (
@@ -191,6 +205,55 @@ function AuditEntry({ log, index }: { log: AuditLog; index: number }) {
   );
 }
 
+// ─── Mobile Timeline Item ────────────────────────────────────────────────────
+
+function MobileTimelineItem({ log, index }: { log: AuditLog; index: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.4) }}
+      className="relative pl-8"
+      data-ocid={`audit-mobile-${log.id}`}
+    >
+      {/* Vertical line */}
+      <div className="absolute left-3 top-0 bottom-0 w-px bg-border/40" />
+      {/* Circle */}
+      <div
+        className={`absolute left-[9px] top-4 w-2.5 h-2.5 rounded-full border-2 border-card z-10 ${ACTION_TYPE_DOT[log.actionType]}`}
+      />
+      <div className="mb-3 rounded-lg border border-border/30 bg-card/60 p-3">
+        <div className="flex items-start justify-between gap-2 mb-1.5">
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${ACTION_TYPE_BG[log.actionType]}`}
+          >
+            {ACTION_TYPE_LABELS[log.actionType]}
+          </span>
+          {log.status === "failure" && (
+            <Badge className="text-[9px] bg-red-500/15 text-red-400 border border-red-500/30 border-transparent">
+              FAILED
+            </Badge>
+          )}
+        </div>
+        <p className="text-xs font-medium text-foreground/90 leading-snug">
+          {log.action}
+        </p>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          <span className="text-foreground/70">{log.userName}</span>
+          {" · "}
+          <span className="text-primary/80">{log.targetName}</span>
+        </p>
+        <p className="text-[10px] text-muted-foreground/70 mt-0.5 line-clamp-2">
+          {log.details}
+        </p>
+        <p className="text-[9px] text-muted-foreground/60 mt-1.5 font-mono">
+          {relativeTime(log.timestamp)} · {absoluteTime(log.timestamp)}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 50;
@@ -203,6 +266,7 @@ export default function AuditLogs() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const filtered = useMemo(() => {
     // refreshKey is referenced so memo invalidates on refresh
@@ -291,9 +355,16 @@ export default function AuditLogs() {
     setPage(0);
   }, []);
 
+  const activeFilterCount = [
+    searchQuery,
+    actionTypeFilter !== "all" ? actionTypeFilter : "",
+    dateRange !== "Last 30 days" ? dateRange : "",
+    statusFilter !== "all" ? statusFilter : "",
+  ].filter(Boolean).length;
+
   return (
     <div
-      className="flex-1 overflow-y-auto bg-background p-6 space-y-5"
+      className="flex-1 overflow-y-auto bg-background p-4 md:p-6 space-y-5"
       data-ocid="audit-logs-page"
     >
       {/* Header */}
@@ -316,7 +387,7 @@ export default function AuditLogs() {
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            className="border-border/60 text-muted-foreground hover:text-foreground gap-1.5"
+            className="border-border/60 text-muted-foreground hover:text-foreground gap-1.5 min-h-[44px]"
             data-ocid="refresh-btn"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -326,7 +397,7 @@ export default function AuditLogs() {
             variant="outline"
             size="sm"
             onClick={() => exportCSV(filtered)}
-            className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5"
+            className="border-primary/40 text-primary hover:bg-primary/10 gap-1.5 min-h-[44px]"
             data-ocid="export-csv-btn"
           >
             <Download className="w-3.5 h-3.5" />
@@ -335,11 +406,155 @@ export default function AuditLogs() {
         </div>
       </motion.div>
 
-      {/* Filter Bar */}
+      {/* Mobile: Filter Popover button + search */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
+        className="md:hidden"
+      >
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Search user, device, action…"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(0);
+              }}
+              className="pl-8 bg-muted/30 border-border/50 text-sm h-11"
+              data-ocid="audit-search-mobile"
+            />
+          </div>
+          <Popover open={filterOpen} onOpenChange={setFilterOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 h-11 px-3 relative"
+                data-ocid="audit-filter-btn-mobile"
+              >
+                <Filter className="w-4 h-4" />
+                Filters
+                {activeFilterCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center font-bold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-72 p-4 space-y-4"
+              data-ocid="audit-filter-popover"
+            >
+              <p className="text-xs font-semibold text-foreground">Filters</p>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <p className="text-[11px] text-muted-foreground">
+                    Action Type
+                  </p>
+                  <Select
+                    value={actionTypeFilter}
+                    onValueChange={(v) => {
+                      setActionTypeFilter(v);
+                      setPage(0);
+                    }}
+                  >
+                    <SelectTrigger
+                      className="h-9 text-xs"
+                      data-ocid="type-filter-mobile"
+                    >
+                      <SelectValue placeholder="Action Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="device-change">
+                        Device Change
+                      </SelectItem>
+                      <SelectItem value="user-action">User Action</SelectItem>
+                      <SelectItem value="workflow-execution">
+                        Workflow
+                      </SelectItem>
+                      <SelectItem value="system">System</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-[11px] text-muted-foreground">
+                    Date Range
+                  </p>
+                  <Select
+                    value={dateRange}
+                    onValueChange={(v) => {
+                      setDateRange(v);
+                      setPage(0);
+                    }}
+                  >
+                    <SelectTrigger
+                      className="h-9 text-xs"
+                      data-ocid="date-range-filter-mobile"
+                    >
+                      <SelectValue placeholder="Date Range" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DATE_RANGES.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {r}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-[11px] text-muted-foreground">Status</p>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) => {
+                      setStatusFilter(v);
+                      setPage(0);
+                    }}
+                  >
+                    <SelectTrigger
+                      className="h-9 text-xs"
+                      data-ocid="status-filter-mobile"
+                    >
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="success">Success</SelectItem>
+                      <SelectItem value="failure">Failure</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="w-full text-xs text-muted-foreground"
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActionTypeFilter("all");
+                    setStatusFilter("all");
+                    setDateRange("Last 30 days");
+                    setPage(0);
+                    setFilterOpen(false);
+                  }}
+                >
+                  Clear All Filters
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </motion.div>
+
+      {/* Desktop: Filter Bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+        className="hidden md:block"
       >
         <GlassCard className="p-4">
           <div className="flex flex-wrap gap-3 items-center">
@@ -424,8 +639,90 @@ export default function AuditLogs() {
         </GlassCard>
       </motion.div>
 
-      {/* Main: Timeline + Stats sidebar */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-5">
+      {/* Mobile: summary stats strip */}
+      <div className="flex gap-2 overflow-x-auto pb-1 md:hidden">
+        <div className="flex-shrink-0 rounded-lg bg-card/60 border border-border/30 px-3 py-2 text-center min-w-[80px]">
+          <p className="text-lg font-bold text-foreground font-display">
+            {today}
+          </p>
+          <p className="text-[10px] text-muted-foreground">Today</p>
+        </div>
+        <div className="flex-shrink-0 rounded-lg bg-card/60 border border-border/30 px-3 py-2 text-center min-w-[80px]">
+          <p className="text-lg font-bold text-emerald-400 font-display">
+            {successRate}%
+          </p>
+          <p className="text-[10px] text-muted-foreground">Success</p>
+        </div>
+        <div className="flex-shrink-0 rounded-lg bg-card/60 border border-border/30 px-3 py-2 text-center min-w-[80px]">
+          <p className="text-lg font-bold text-red-400 font-display">
+            {failureCount}
+          </p>
+          <p className="text-[10px] text-muted-foreground">Failures</p>
+        </div>
+        <div className="flex-shrink-0 rounded-lg bg-card/60 border border-border/30 px-3 py-2 text-center min-w-[80px]">
+          <p className="text-lg font-bold text-foreground font-display">
+            {filtered.length}
+          </p>
+          <p className="text-[10px] text-muted-foreground">Total</p>
+        </div>
+      </div>
+
+      {/* Mobile: vertical timeline */}
+      <motion.div
+        className="md:hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.15 }}
+      >
+        {filtered.length === 0 ? (
+          <div
+            className="flex flex-col items-center justify-center py-16 text-center"
+            data-ocid="audit-empty-state"
+          >
+            <FileText className="w-10 h-10 text-muted-foreground/40 mb-3" />
+            <p className="text-muted-foreground text-sm">
+              No audit logs match your filters
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-2 text-xs text-primary"
+              onClick={() => {
+                setSearchQuery("");
+                setActionTypeFilter("all");
+                setStatusFilter("all");
+                setDateRange("Last 30 days");
+                setPage(0);
+              }}
+              data-ocid="clear-filters-btn-mobile"
+            >
+              Clear filters
+            </Button>
+          </div>
+        ) : (
+          <div data-ocid="audit-timeline-mobile">
+            {paginated.map((log, i) => (
+              <MobileTimelineItem key={log.id} log={log} index={i} />
+            ))}
+            {hasMore && (
+              <div className="pt-2 flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setPage((p) => p + 1)}
+                  className="text-xs text-primary hover:bg-primary/10 min-h-[44px]"
+                  data-ocid="load-more-btn-mobile"
+                >
+                  Load more ({filtered.length - paginated.length} remaining)
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </motion.div>
+
+      {/* Desktop: Timeline + Stats sidebar */}
+      <div className="hidden md:grid grid-cols-1 xl:grid-cols-4 gap-5">
         {/* Timeline */}
         <motion.div
           initial={{ opacity: 0, x: -16 }}

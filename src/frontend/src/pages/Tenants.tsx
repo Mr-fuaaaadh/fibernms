@@ -956,7 +956,7 @@ function TenantsContent() {
   return (
     <div className="flex flex-col min-h-full bg-background">
       {/* Page Header */}
-      <div className="bg-card border-b border-border px-6 py-5">
+      <div className="bg-card border-b border-border px-4 sm:px-6 py-4 md:py-5">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center">
@@ -1018,7 +1018,7 @@ function TenantsContent() {
       </div>
 
       {/* Action Bar */}
-      <div className="px-6 py-4 bg-background border-b border-border flex flex-wrap items-center gap-3">
+      <div className="px-4 sm:px-6 py-3 md:py-4 bg-background border-b border-border flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input
@@ -1071,7 +1071,7 @@ function TenantsContent() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 px-6 py-4 space-y-3">
+      <div className="flex-1 px-4 sm:px-6 py-4 space-y-3">
         {/* Bulk Actions */}
         <BulkActionsBar
           count={selectedCount}

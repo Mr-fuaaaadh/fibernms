@@ -65,6 +65,10 @@ interface NetworkState {
   toggleSimulationMode: () => void;
   setActiveLayer: (layer: "L1" | "L2" | "L3") => void;
   resolvePredictiveAlert: (id: string) => void;
+
+  // Mobile search
+  mobileSearchOpen: boolean;
+  setMobileSearchOpen: (open: boolean) => void;
 }
 
 export const useNetworkStore = create<NetworkState>((set) => ({
@@ -91,6 +95,7 @@ export const useNetworkStore = create<NetworkState>((set) => ({
   commandPaletteOpen: false,
   simulationMode: false,
   activeLayer: "L1",
+  mobileSearchOpen: false,
 
   // Core actions
   setSelectedDevice: (id) => set({ selectedDeviceId: id }),
@@ -145,4 +150,5 @@ export const useNetworkStore = create<NetworkState>((set) => ({
         a.id === id ? { ...a, status: "resolved" } : a,
       ),
     })),
+  setMobileSearchOpen: (open) => set({ mobileSearchOpen: open }),
 }));

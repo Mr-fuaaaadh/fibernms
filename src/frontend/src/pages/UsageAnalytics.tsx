@@ -432,7 +432,7 @@ export default function UsageAnalytics() {
 
   return (
     <div
-      className="p-6 space-y-8 max-w-7xl mx-auto"
+      className="p-4 md:p-6 space-y-6 md:space-y-8 max-w-7xl mx-auto"
       data-ocid="usage-analytics-page"
     >
       {/* ── Header ─────────────────────────────────────────────────────────── */}
@@ -551,81 +551,95 @@ export default function UsageAnalytics() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="w-full h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={data}
-                margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="deviceGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0.02} />
-                  </linearGradient>
-                  <linearGradient id="warnGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.18} />
-                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="var(--border)"
-                  strokeOpacity={0.4}
-                />
-                <XAxis
-                  dataKey="label"
-                  tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                  interval={tickInterval}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(v: number) =>
-                    v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)
-                  }
-                  width={38}
-                />
-                <Tooltip content={<ChartTooltipContent />} />
-                {/* Warning zone above 85% */}
-                <ReferenceLine
-                  y={sub.deviceLimit * 0.85}
-                  stroke="#f59e0b"
-                  strokeDasharray="4 3"
-                  strokeWidth={1.5}
-                  label={{
-                    value: "85% limit",
-                    fontSize: 9,
-                    fill: "#f59e0b",
-                    position: "insideTopRight",
-                  }}
-                />
-                <ReferenceLine
-                  y={sub.deviceLimit}
-                  stroke="#f43f5e"
-                  strokeDasharray="4 3"
-                  strokeWidth={1.5}
-                  label={{
-                    value: "Max",
-                    fontSize: 9,
-                    fill: "#f43f5e",
-                    position: "insideTopRight",
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="devices"
-                  name="Devices"
-                  stroke="#6366f1"
-                  strokeWidth={2}
-                  fill="url(#deviceGrad)"
-                  dot={false}
-                  activeDot={{ r: 4, fill: "#6366f1" }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="overflow-x-auto">
+            <div className="min-w-[500px] w-full h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart
+                  data={data}
+                  margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="deviceGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                      <stop
+                        offset="95%"
+                        stopColor="#6366f1"
+                        stopOpacity={0.02}
+                      />
+                    </linearGradient>
+                    <linearGradient id="warnGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="5%"
+                        stopColor="#f59e0b"
+                        stopOpacity={0.18}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor="#f59e0b"
+                        stopOpacity={0.02}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--border)"
+                    strokeOpacity={0.4}
+                  />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                    interval={tickInterval}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v: number) =>
+                      v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)
+                    }
+                    width={38}
+                  />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  {/* Warning zone above 85% */}
+                  <ReferenceLine
+                    y={sub.deviceLimit * 0.85}
+                    stroke="#f59e0b"
+                    strokeDasharray="4 3"
+                    strokeWidth={1.5}
+                    label={{
+                      value: "85% limit",
+                      fontSize: 9,
+                      fill: "#f59e0b",
+                      position: "insideTopRight",
+                    }}
+                  />
+                  <ReferenceLine
+                    y={sub.deviceLimit}
+                    stroke="#f43f5e"
+                    strokeDasharray="4 3"
+                    strokeWidth={1.5}
+                    label={{
+                      value: "Max",
+                      fontSize: 9,
+                      fill: "#f43f5e",
+                      position: "insideTopRight",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="devices"
+                    name="Devices"
+                    stroke="#6366f1"
+                    strokeWidth={2}
+                    fill="url(#deviceGrad)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: "#6366f1" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -648,63 +662,65 @@ export default function UsageAnalytics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="w-full h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={data}
-                  margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--border)"
-                    strokeOpacity={0.4}
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                    interval={tickInterval}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(v: number) =>
-                      v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)
-                    }
-                    width={38}
-                  />
-                  <Tooltip content={<ChartTooltipContent />} />
-                  <ReferenceLine
-                    y={sub.apiQuota * 0.028}
-                    stroke="#f43f5e"
-                    strokeDasharray="4 3"
-                    strokeWidth={1.5}
-                    label={{
-                      value: "Daily quota",
-                      fontSize: 9,
-                      fill: "#f43f5e",
-                      position: "insideTopRight",
-                    }}
-                  />
-                  <Bar
-                    dataKey="apiCalls"
-                    name="API Calls"
-                    radius={[2, 2, 0, 0]}
-                    maxBarSize={14}
+            <div className="overflow-x-auto">
+              <div className="min-w-[500px] w-full h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={data}
+                    margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
                   >
-                    {data.map((entry) => (
-                      <Cell
-                        key={entry.date}
-                        fill={apiBarColor(entry.apiCalls)}
-                        fillOpacity={0.85}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--border)"
+                      strokeOpacity={0.4}
+                      vertical={false}
+                    />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                      interval={tickInterval}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v: number) =>
+                        v >= 1000 ? `${(v / 1000).toFixed(0)}k` : String(v)
+                      }
+                      width={38}
+                    />
+                    <Tooltip content={<ChartTooltipContent />} />
+                    <ReferenceLine
+                      y={sub.apiQuota * 0.028}
+                      stroke="#f43f5e"
+                      strokeDasharray="4 3"
+                      strokeWidth={1.5}
+                      label={{
+                        value: "Daily quota",
+                        fontSize: 9,
+                        fill: "#f43f5e",
+                        position: "insideTopRight",
+                      }}
+                    />
+                    <Bar
+                      dataKey="apiCalls"
+                      name="API Calls"
+                      radius={[2, 2, 0, 0]}
+                      maxBarSize={14}
+                    >
+                      {data.map((entry) => (
+                        <Cell
+                          key={entry.date}
+                          fill={apiBarColor(entry.apiCalls)}
+                          fillOpacity={0.85}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
             <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground justify-end">
               {[
@@ -736,61 +752,63 @@ export default function UsageAnalytics() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="w-full h-52">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={data}
-                  margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--border)"
-                    strokeOpacity={0.4}
-                  />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                    interval={tickInterval}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={30}
-                  />
-                  <Tooltip content={<ChartTooltipContent />} />
-                  <Legend wrapperStyle={{ fontSize: 10, paddingTop: 6 }} />
-                  <Line
-                    type="monotone"
-                    dataKey="criticalAlerts"
-                    name="Critical"
-                    stroke="#f43f5e"
-                    strokeWidth={1.5}
-                    dot={false}
-                    activeDot={{ r: 3 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="warningAlerts"
-                    name="Warning"
-                    stroke="#f59e0b"
-                    strokeWidth={1.5}
-                    dot={false}
-                    activeDot={{ r: 3 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="infoAlerts"
-                    name="Info"
-                    stroke="#6366f1"
-                    strokeWidth={1.5}
-                    dot={false}
-                    activeDot={{ r: 3 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <div className="overflow-x-auto">
+              <div className="min-w-[500px] w-full h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={data}
+                    margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="var(--border)"
+                      strokeOpacity={0.4}
+                    />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                      interval={tickInterval}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+                      tickLine={false}
+                      axisLine={false}
+                      width={30}
+                    />
+                    <Tooltip content={<ChartTooltipContent />} />
+                    <Legend wrapperStyle={{ fontSize: 10, paddingTop: 6 }} />
+                    <Line
+                      type="monotone"
+                      dataKey="criticalAlerts"
+                      name="Critical"
+                      stroke="#f43f5e"
+                      strokeWidth={1.5}
+                      dot={false}
+                      activeDot={{ r: 3 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="warningAlerts"
+                      name="Warning"
+                      stroke="#f59e0b"
+                      strokeWidth={1.5}
+                      dot={false}
+                      activeDot={{ r: 3 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="infoAlerts"
+                      name="Info"
+                      stroke="#6366f1"
+                      strokeWidth={1.5}
+                      dot={false}
+                      activeDot={{ r: 3 }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </CardContent>
         </Card>

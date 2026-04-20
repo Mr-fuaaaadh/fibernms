@@ -521,7 +521,7 @@ export default function Workflows() {
 
   return (
     <div
-      className="flex flex-col gap-6 p-6 min-h-full noc-scrollbar overflow-y-auto"
+      className="flex flex-col gap-4 md:gap-6 p-4 md:p-6 min-h-full noc-scrollbar overflow-y-auto"
       data-ocid="workflows-page"
     >
       {/* Page header */}

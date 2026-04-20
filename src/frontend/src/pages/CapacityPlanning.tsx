@@ -231,7 +231,7 @@ export default function CapacityPlanning() {
 
   return (
     <div
-      className="flex-1 overflow-y-auto bg-background p-6 space-y-6"
+      className="flex-1 overflow-y-auto bg-background p-4 md:p-6 space-y-5 md:space-y-6"
       data-ocid="capacity-planning-page"
     >
       {/* Header */}
@@ -320,49 +320,53 @@ export default function CapacityPlanning() {
               <BarChart3 className="w-4 h-4 text-primary" />
               Utilization Overview
             </h2>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart
-                layout="vertical"
-                data={barData}
-                margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,0.06)"
-                  horizontal={false}
-                />
-                <XAxis
-                  type="number"
-                  domain={[0, 100]}
-                  tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
-                  tickFormatter={(v) => `${v}%`}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={96}
-                  tick={{ fill: "rgba(255,255,255,0.55)", fontSize: 9 }}
-                />
-                <Tooltip
-                  formatter={(v) => [`${v}%`, "Utilization"]}
-                  contentStyle={{
-                    background: "rgba(20,22,30,0.95)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                />
-                <Bar
-                  dataKey="utilization"
-                  radius={[0, 4, 4, 0]}
-                  isAnimationActive
-                >
-                  {barData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="overflow-x-auto">
+              <div className="min-w-[500px]">
+                <ResponsiveContainer width="100%" height={260}>
+                  <BarChart
+                    layout="vertical"
+                    data={barData}
+                    margin={{ top: 4, right: 16, left: 4, bottom: 4 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(255,255,255,0.06)"
+                      horizontal={false}
+                    />
+                    <XAxis
+                      type="number"
+                      domain={[0, 100]}
+                      tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
+                      tickFormatter={(v) => `${v}%`}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={96}
+                      tick={{ fill: "rgba(255,255,255,0.55)", fontSize: 9 }}
+                    />
+                    <Tooltip
+                      formatter={(v) => [`${v}%`, "Utilization"]}
+                      contentStyle={{
+                        background: "rgba(20,22,30,0.95)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Bar
+                      dataKey="utilization"
+                      radius={[0, 4, 4, 0]}
+                      isAnimationActive
+                    >
+                      {barData.map((entry) => (
+                        <Cell key={entry.name} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </GlassCard>
         </motion.div>
 
@@ -378,79 +382,85 @@ export default function CapacityPlanning() {
               <TrendingUp className="w-4 h-4 text-primary" />
               Demand vs Capacity Forecast (12-Month)
             </h2>
-            <ResponsiveContainer width="100%" height={260}>
-              <ComposedChart
-                data={forecastData}
-                margin={{ top: 8, right: 16, left: 0, bottom: 4 }}
-              >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,0.06)"
-                />
-                <XAxis
-                  dataKey="month"
-                  tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
-                />
-                <YAxis
-                  domain={[0, 100]}
-                  tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
-                  tickFormatter={(v) => `${v}%`}
-                />
-                <Tooltip
-                  formatter={(v, name) => [
-                    `${v}%`,
-                    name === "actual"
-                      ? "Actual Utilization"
-                      : "Projected Demand",
-                  ]}
-                  contentStyle={{
-                    background: "rgba(20,22,30,0.95)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                />
-                <Legend
-                  formatter={(v) =>
-                    v === "actual" ? "Actual Utilization" : "Projected Demand"
-                  }
-                  wrapperStyle={{
-                    fontSize: 11,
-                    color: "rgba(255,255,255,0.6)",
-                  }}
-                />
-                {exhaustionIdx && (
-                  <ReferenceLine
-                    x={exhaustionIdx}
-                    stroke="#ef4444"
-                    strokeDasharray="5 3"
-                    label={{
-                      value: "Exhaustion",
-                      fill: "#ef4444",
-                      fontSize: 10,
-                      position: "insideTopRight",
-                    }}
-                  />
-                )}
-                <Line
-                  type="monotone"
-                  dataKey="actual"
-                  stroke="#22d3ee"
-                  strokeWidth={2.5}
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="projected"
-                  stroke="#fb923c"
-                  strokeWidth={2}
-                  strokeDasharray="6 4"
-                  dot={false}
-                  activeDot={{ r: 4 }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+            <div className="overflow-x-auto">
+              <div className="min-w-[500px]">
+                <ResponsiveContainer width="100%" height={260}>
+                  <ComposedChart
+                    data={forecastData}
+                    margin={{ top: 8, right: 16, left: 0, bottom: 4 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(255,255,255,0.06)"
+                    />
+                    <XAxis
+                      dataKey="month"
+                      tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
+                    />
+                    <YAxis
+                      domain={[0, 100]}
+                      tick={{ fill: "rgba(255,255,255,0.45)", fontSize: 10 }}
+                      tickFormatter={(v) => `${v}%`}
+                    />
+                    <Tooltip
+                      formatter={(v, name) => [
+                        `${v}%`,
+                        name === "actual"
+                          ? "Actual Utilization"
+                          : "Projected Demand",
+                      ]}
+                      contentStyle={{
+                        background: "rgba(20,22,30,0.95)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                    <Legend
+                      formatter={(v) =>
+                        v === "actual"
+                          ? "Actual Utilization"
+                          : "Projected Demand"
+                      }
+                      wrapperStyle={{
+                        fontSize: 11,
+                        color: "rgba(255,255,255,0.6)",
+                      }}
+                    />
+                    {exhaustionIdx && (
+                      <ReferenceLine
+                        x={exhaustionIdx}
+                        stroke="#ef4444"
+                        strokeDasharray="5 3"
+                        label={{
+                          value: "Exhaustion",
+                          fill: "#ef4444",
+                          fontSize: 10,
+                          position: "insideTopRight",
+                        }}
+                      />
+                    )}
+                    <Line
+                      type="monotone"
+                      dataKey="actual"
+                      stroke="#22d3ee"
+                      strokeWidth={2.5}
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="projected"
+                      stroke="#fb923c"
+                      strokeWidth={2}
+                      strokeDasharray="6 4"
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           </GlassCard>
         </motion.div>
       </div>
@@ -574,38 +584,40 @@ export default function CapacityPlanning() {
               <ArrowUpRight className="w-4 h-4 text-primary" />
               Capacity Headroom by Region
             </h2>
-            <div className="flex-1 min-h-[220px]">
-              <ResponsiveContainer width="100%" height={220}>
-                <RadarChart
-                  cx="50%"
-                  cy="50%"
-                  outerRadius="70%"
-                  data={regionData}
-                >
-                  <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                  <PolarAngleAxis
-                    dataKey="region"
-                    tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 9 }}
-                  />
-                  <Radar
-                    name="Headroom %"
-                    dataKey="headroom"
-                    stroke="#22d3ee"
-                    fill="#22d3ee"
-                    fillOpacity={0.18}
-                    strokeWidth={1.5}
-                  />
-                  <Tooltip
-                    formatter={(v) => [`${v}%`, "Available Headroom"]}
-                    contentStyle={{
-                      background: "rgba(20,22,30,0.95)",
-                      border: "1px solid rgba(255,255,255,0.1)",
-                      borderRadius: 8,
-                      fontSize: 12,
-                    }}
-                  />
-                </RadarChart>
-              </ResponsiveContainer>
+            <div className="flex-1 min-h-[220px] overflow-x-auto">
+              <div className="min-w-[300px]">
+                <ResponsiveContainer width="100%" height={220}>
+                  <RadarChart
+                    cx="50%"
+                    cy="50%"
+                    outerRadius="70%"
+                    data={regionData}
+                  >
+                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                    <PolarAngleAxis
+                      dataKey="region"
+                      tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 9 }}
+                    />
+                    <Radar
+                      name="Headroom %"
+                      dataKey="headroom"
+                      stroke="#22d3ee"
+                      fill="#22d3ee"
+                      fillOpacity={0.18}
+                      strokeWidth={1.5}
+                    />
+                    <Tooltip
+                      formatter={(v) => [`${v}%`, "Available Headroom"]}
+                      contentStyle={{
+                        background: "rgba(20,22,30,0.95)",
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        borderRadius: 8,
+                        fontSize: 12,
+                      }}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
             <p className="text-xs text-muted-foreground text-center mt-2">
               Higher = more available capacity

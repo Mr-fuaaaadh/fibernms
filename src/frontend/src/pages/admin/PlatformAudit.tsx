@@ -3,6 +3,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -22,6 +27,7 @@ import {
   ClipboardList,
   CreditCard,
   Download,
+  Filter,
   Info,
   List,
   Monitor,
@@ -405,6 +411,62 @@ const ACTION_OPTIONS = [
 
 const PAGE_SIZE = 50;
 
+// ─── Mobile Timeline Event ────────────────────────────────────────────────────
+
+function MobileTimelineEvent({ event }: { event: AuditEvent }) {
+  const SevIcon = SEV_ICONS[event.severity];
+  const cat = getCat(event.action);
+  const CatIcon = CAT_ICONS[cat] ?? ClipboardList;
+
+  return (
+    <div
+      className="relative pl-8 mb-2"
+      data-ocid={`timeline-event-mobile-${event.id}`}
+    >
+      <div className="absolute left-3 top-0 bottom-0 w-px bg-border/30" />
+      <div
+        className={`absolute left-[9px] top-4 w-2.5 h-2.5 rounded-full border-2 border-card z-10 ${SEV_DOT[event.severity]}`}
+      />
+      <div className="rounded-lg border border-border/30 bg-card/50 p-3 space-y-2">
+        <div className="flex items-start gap-2">
+          <div
+            className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 border ${getColor(event.action)}`}
+          >
+            <CatIcon className="w-3.5 h-3.5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+              <span className="font-mono text-[11px] text-foreground font-medium">
+                {event.action}
+              </span>
+              <Badge
+                className={`text-[9px] border ${SEV_BADGE[event.severity]}`}
+              >
+                <SevIcon className="w-2.5 h-2.5 mr-0.5" />
+                {event.severity}
+              </Badge>
+            </div>
+            <p className="text-[11px] text-foreground font-medium leading-tight">
+              {event.userName}
+              <span className="text-muted-foreground font-normal">
+                {" · "}
+                {event.companyName}
+              </span>
+            </p>
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground line-clamp-2">
+          {event.details}
+        </p>
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground/60">
+          <span className="font-mono">{event.ipAddress}</span>
+          <span>{fmtRelative(event.timestamp)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PlatformAudit(): React.ReactElement {
   const [search, setSearch] = useState("");
   const [companyFilter, setCompanyFilter] = useState("all");
@@ -507,7 +569,7 @@ export default function PlatformAudit(): React.ReactElement {
     severityFilter !== "all";
 
   return (
-    <div className="p-6 space-y-5 max-w-[1400px] mx-auto">
+    <div className="p-4 md:p-6 space-y-5 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
@@ -520,7 +582,8 @@ export default function PlatformAudit(): React.ReactElement {
           </Badge>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <div className="flex rounded-md border border-border/50 overflow-hidden">
+          {/* Desktop view toggle */}
+          <div className="hidden md:flex rounded-md border border-border/50 overflow-hidden">
             <button
               type="button"
               onClick={() => setViewMode("timeline")}
@@ -585,8 +648,128 @@ export default function PlatformAudit(): React.ReactElement {
         />
       </div>
 
-      {/* Filters */}
-      <GlassCard className="p-3 flex flex-wrap gap-2.5 items-center">
+      {/* Mobile: search + filter popover */}
+      <div className="flex gap-2 md:hidden">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search user, action, company..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
+            className="pl-8 h-11 text-xs bg-background/50"
+            data-ocid="input-audit-search-mobile"
+          />
+        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-11 px-3 gap-1.5 relative"
+              data-ocid="btn-audit-filter-mobile"
+            >
+              <Filter className="w-4 h-4" />
+              Filters
+              {hasFilters && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] flex items-center justify-center font-bold">
+                  !
+                </span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            className="w-72 p-4 space-y-4"
+            data-ocid="audit-filter-popover-mobile"
+          >
+            <p className="text-xs font-semibold text-foreground">Filters</p>
+            <Select
+              value={companyFilter}
+              onValueChange={(v) => {
+                setCompanyFilter(v);
+                setPage(0);
+              }}
+            >
+              <SelectTrigger
+                className="h-9 text-xs"
+                data-ocid="filter-audit-company-mobile"
+              >
+                <SelectValue placeholder="All Companies" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="all">All Companies</SelectItem>
+                {companyOptions.map((c) => (
+                  <SelectItem key={c.id} value={c.id} className="text-xs">
+                    {truncate(c.name, 28)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={actionFilter}
+              onValueChange={(v) => {
+                setActionFilter(v);
+                setPage(0);
+              }}
+            >
+              <SelectTrigger
+                className="h-9 text-xs"
+                data-ocid="filter-audit-action-mobile"
+              >
+                <SelectValue placeholder="All Actions" />
+              </SelectTrigger>
+              <SelectContent>
+                {ACTION_OPTIONS.map((a) => (
+                  <SelectItem key={a} value={a} className="text-xs font-mono">
+                    {a === "all" ? "All Actions" : a}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={severityFilter}
+              onValueChange={(v) => {
+                setSeverityFilter(v);
+                setPage(0);
+              }}
+            >
+              <SelectTrigger
+                className="h-9 text-xs"
+                data-ocid="filter-audit-severity-mobile"
+              >
+                <SelectValue placeholder="All Severities" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="warning">Warning</SelectItem>
+                <SelectItem value="info">Info</SelectItem>
+              </SelectContent>
+            </Select>
+            {hasFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs text-muted-foreground"
+                onClick={() => {
+                  setSearch("");
+                  setCompanyFilter("all");
+                  setActionFilter("all");
+                  setSeverityFilter("all");
+                  setPage(0);
+                }}
+              >
+                <X className="w-3 h-3 mr-1" /> Clear Filters
+              </Button>
+            )}
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      {/* Desktop: Filters */}
+      <GlassCard className="hidden md:flex p-3 flex-wrap gap-2.5 items-center">
         <div className="relative flex-1 min-w-[180px]">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
           <Input
@@ -686,9 +869,30 @@ export default function PlatformAudit(): React.ReactElement {
         </span>
       </GlassCard>
 
-      {/* Content */}
+      {/* Mobile: vertical timeline */}
+      <div className="md:hidden">
+        {paged.length === 0 ? (
+          <div
+            className="flex flex-col items-center py-16 gap-3 text-center"
+            data-ocid="audit-empty-mobile"
+          >
+            <ClipboardList className="w-8 h-8 opacity-20" />
+            <p className="text-sm text-muted-foreground">
+              No audit events match your filters
+            </p>
+          </div>
+        ) : (
+          <div data-ocid="audit-timeline-mobile">
+            {paged.map((event) => (
+              <MobileTimelineEvent key={event.id} event={event} />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: Content */}
       {viewMode === "timeline" ? (
-        <div>
+        <div className="hidden md:block">
           {paged.length === 0 ? (
             <GlassCard className="flex flex-col items-center py-16 gap-3">
               <ClipboardList className="w-8 h-8 opacity-20" />
@@ -711,7 +915,7 @@ export default function PlatformAudit(): React.ReactElement {
           )}
         </div>
       ) : (
-        <GlassCard className="overflow-hidden">
+        <GlassCard className="overflow-hidden hidden md:block">
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead className="border-b border-border/40 bg-muted/10">

@@ -108,7 +108,10 @@ export default function Monitoring() {
   const totalDevices = stats.online + stats.offline + stats.warning;
 
   return (
-    <div className="p-6 space-y-6" data-ocid="monitoring-page">
+    <div
+      className="p-4 md:p-6 space-y-4 md:space-y-6"
+      data-ocid="monitoring-page"
+    >
       {/* Page header */}
       <motion.div
         className="flex items-center gap-3"
@@ -184,8 +187,10 @@ export default function Monitoring() {
               RX POWER (dBm) · TOP 3 OLTs
             </p>
           </div>
-          <div className="h-52">
-            <SignalLineChart data={signalData} oltNames={OLT_NAMES} />
+          <div className="overflow-x-auto">
+            <div className="min-w-[500px] h-52">
+              <SignalLineChart data={signalData} oltNames={OLT_NAMES} />
+            </div>
           </div>
         </motion.div>
 

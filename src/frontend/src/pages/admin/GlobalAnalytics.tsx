@@ -376,7 +376,7 @@ export default function GlobalAnalytics() {
   };
 
   return (
-    <div className="p-6 space-y-8 max-w-[1600px]">
+    <div className="p-4 md:p-6 space-y-6 md:space-y-8 max-w-[1600px]">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
@@ -459,45 +459,49 @@ export default function GlobalAnalytics() {
       {/* Top Customers by Revenue */}
       <GlassCard className="p-5">
         <SectionTitle>Top 10 Companies by Monthly Revenue</SectionTitle>
-        <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={topCustomers} layout="vertical" barSize={14}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="hsl(var(--border) / 0.3)"
-              horizontal={false}
-            />
-            <XAxis
-              type="number"
-              tickFormatter={(v) => `$${fmtK(v as number)}`}
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              type="category"
-              dataKey="name"
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              axisLine={false}
-              tickLine={false}
-              width={160}
-            />
-            <Tooltip
-              contentStyle={TOOLTIP_STYLE}
-              formatter={(v) => [
-                `$${Number(v).toLocaleString()}`,
-                "Monthly Revenue",
-              ]}
-            />
-            <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
-              {topCustomers.map((entry) => (
-                <Cell
-                  key={entry.name}
-                  fill={PLAN_COLORS[entry.plan as CompanyPlan]}
+        <div className="overflow-x-auto">
+          <div className="min-w-[500px]">
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={topCustomers} layout="vertical" barSize={14}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border) / 0.3)"
+                  horizontal={false}
                 />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+                <XAxis
+                  type="number"
+                  tickFormatter={(v) => `$${fmtK(v as number)}`}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={160}
+                />
+                <Tooltip
+                  contentStyle={TOOLTIP_STYLE}
+                  formatter={(v) => [
+                    `$${Number(v).toLocaleString()}`,
+                    "Monthly Revenue",
+                  ]}
+                />
+                <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
+                  {topCustomers.map((entry) => (
+                    <Cell
+                      key={entry.name}
+                      fill={PLAN_COLORS[entry.plan as CompanyPlan]}
+                    />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
         {/* Plan legend */}
         <div className="flex items-center gap-4 mt-3 flex-wrap">
           {(Object.entries(PLAN_COLORS) as [CompanyPlan, string][]).map(
@@ -522,46 +526,55 @@ export default function GlobalAnalytics() {
         <SectionTitle>
           Device Growth Trends — By Plan Tier (12 Months)
         </SectionTitle>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={deviceGrowthData}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="hsl(var(--border) / 0.3)"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="month"
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tickFormatter={fmtK}
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <Tooltip
-              contentStyle={TOOLTIP_STYLE}
-              formatter={(v, name) => [fmtK(Number(v)), name]}
-            />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            {(
-              ["BASIC", "PROFESSIONAL", "ENTERPRISE", "ULTRA"] as CompanyPlan[]
-            ).map((plan) => (
-              <Line
-                key={plan}
-                type="monotone"
-                dataKey={plan}
-                name={plan.charAt(0) + plan.slice(1).toLowerCase()}
-                stroke={PLAN_COLORS[plan]}
-                strokeWidth={2}
-                dot={false}
-                activeDot={{ r: 4 }}
-              />
-            ))}
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="overflow-x-auto">
+          <div className="min-w-[500px]">
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={deviceGrowthData}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border) / 0.3)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={fmtK}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={TOOLTIP_STYLE}
+                  formatter={(v, name) => [fmtK(Number(v)), name]}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {(
+                  [
+                    "BASIC",
+                    "PROFESSIONAL",
+                    "ENTERPRISE",
+                    "ULTRA",
+                  ] as CompanyPlan[]
+                ).map((plan) => (
+                  <Line
+                    key={plan}
+                    type="monotone"
+                    dataKey={plan}
+                    name={plan.charAt(0) + plan.slice(1).toLowerCase()}
+                    stroke={PLAN_COLORS[plan]}
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 4 }}
+                  />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </GlassCard>
 
       {/* Alert Trends Stacked Bar */}
@@ -569,40 +582,44 @@ export default function GlobalAnalytics() {
         <SectionTitle>
           Alert Trends — Last 13 Weeks (Quarterly View)
         </SectionTitle>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={alertStackData}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="hsl(var(--border) / 0.3)"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="week"
-              tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tickFormatter={fmtK}
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <Tooltip
-              contentStyle={TOOLTIP_STYLE}
-              formatter={(v, name) => [Number(v).toLocaleString(), name]}
-            />
-            <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="Critical" stackId="a" fill="#ef4444" />
-            <Bar dataKey="Warning" stackId="a" fill="#f59e0b" />
-            <Bar
-              dataKey="Info"
-              stackId="a"
-              fill="#3b82f6"
-              radius={[3, 3, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+        <div className="overflow-x-auto">
+          <div className="min-w-[500px]">
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={alertStackData}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border) / 0.3)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="week"
+                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={fmtK}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={TOOLTIP_STYLE}
+                  formatter={(v, name) => [Number(v).toLocaleString(), name]}
+                />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Bar dataKey="Critical" stackId="a" fill="#ef4444" />
+                <Bar dataKey="Warning" stackId="a" fill="#f59e0b" />
+                <Bar
+                  dataKey="Info"
+                  stackId="a"
+                  fill="#3b82f6"
+                  radius={[3, 3, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </GlassCard>
 
       {/* Usage Heatmap */}
@@ -741,55 +758,61 @@ export default function GlobalAnalytics() {
               <span>Below 3.5% benchmark</span>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={100}>
-            <LineChart
-              data={MONTH_LABELS.map((month, i) => ({
-                month,
-                churn: +(2.8 + Math.sin(i * 0.8) * 0.8 + i * 0.05).toFixed(2),
-                benchmark: 3.5,
-              }))}
-            >
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(var(--border) / 0.3)"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                domain={[0, 5]}
-                tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => `${v}%`}
-              />
-              <Tooltip
-                contentStyle={TOOLTIP_STYLE}
-                formatter={(v) => [`${v}%`, ""]}
-              />
-              <Line
-                type="monotone"
-                dataKey="churn"
-                stroke="#ef4444"
-                strokeWidth={2}
-                dot={false}
-                name="Churn Rate"
-              />
-              <Line
-                type="monotone"
-                dataKey="benchmark"
-                stroke="hsl(var(--border))"
-                strokeWidth={1.5}
-                strokeDasharray="4 4"
-                dot={false}
-                name="Benchmark"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+          <div className="overflow-x-auto">
+            <div className="min-w-[400px]">
+              <ResponsiveContainer width="100%" height={100}>
+                <LineChart
+                  data={MONTH_LABELS.map((month, i) => ({
+                    month,
+                    churn: +(2.8 + Math.sin(i * 0.8) * 0.8 + i * 0.05).toFixed(
+                      2,
+                    ),
+                    benchmark: 3.5,
+                  }))}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(var(--border) / 0.3)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    domain={[0, 5]}
+                    tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => `${v}%`}
+                  />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    formatter={(v) => [`${v}%`, ""]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="churn"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    dot={false}
+                    name="Churn Rate"
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="benchmark"
+                    stroke="hsl(var(--border))"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
+                    dot={false}
+                    name="Benchmark"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </GlassCard>
       </div>
 
@@ -797,39 +820,49 @@ export default function GlobalAnalytics() {
       <GlassCard className="p-5">
         <SectionTitle>Revenue by Region</SectionTitle>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={regionalData} barSize={40}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="hsl(var(--border) / 0.3)"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="region"
-                tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tickFormatter={(v) => `$${fmtK(v as number)}`}
-                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip
-                contentStyle={TOOLTIP_STYLE}
-                formatter={(v) => [fmtCurrency(Number(v)), "MRR"]}
-              />
-              <Bar dataKey="mrr" name="MRR" radius={[4, 4, 0, 0]}>
-                {regionalData.map((entry) => (
-                  <Cell
-                    key={entry.region}
-                    fill={REGION_COLORS[entry.region] ?? "#8b5cf6"}
+          <div className="overflow-x-auto">
+            <div className="min-w-[400px]">
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={regionalData} barSize={40}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="hsl(var(--border) / 0.3)"
+                    vertical={false}
                   />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+                  <XAxis
+                    dataKey="region"
+                    tick={{
+                      fontSize: 12,
+                      fill: "hsl(var(--muted-foreground))",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tickFormatter={(v) => `$${fmtK(v as number)}`}
+                    tick={{
+                      fontSize: 11,
+                      fill: "hsl(var(--muted-foreground))",
+                    }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip
+                    contentStyle={TOOLTIP_STYLE}
+                    formatter={(v) => [fmtCurrency(Number(v)), "MRR"]}
+                  />
+                  <Bar dataKey="mrr" name="MRR" radius={[4, 4, 0, 0]}>
+                    {regionalData.map((entry) => (
+                      <Cell
+                        key={entry.region}
+                        fill={REGION_COLORS[entry.region] ?? "#8b5cf6"}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
           {/* Regional table */}
           <div className="space-y-2">
@@ -874,55 +907,59 @@ export default function GlobalAnalytics() {
       {/* Revenue Trend */}
       <GlassCard className="p-5">
         <SectionTitle>MRR &amp; ARR Trend — 12 Month View</SectionTitle>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={revenueTrendData}>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="hsl(var(--border) / 0.3)"
-              vertical={false}
-            />
-            <XAxis
-              dataKey="month"
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <YAxis
-              tickFormatter={(v) => `$${fmtK(v as number)}`}
-              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-              axisLine={false}
-              tickLine={false}
-            />
-            <Tooltip
-              contentStyle={TOOLTIP_STYLE}
-              formatter={(v, name) => [
-                fmtCurrency(Number(v)),
-                name === "mrr" ? "MRR" : "ARR",
-              ]}
-            />
-            <Legend
-              wrapperStyle={{ fontSize: 11 }}
-              formatter={(v) => (v === "mrr" ? "MRR" : "ARR")}
-            />
-            <Line
-              type="monotone"
-              dataKey="mrr"
-              stroke="#10b981"
-              strokeWidth={2.5}
-              dot={false}
-              activeDot={{ r: 5 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="arr"
-              stroke="#8b5cf6"
-              strokeWidth={2}
-              strokeDasharray="6 3"
-              dot={false}
-              activeDot={{ r: 4 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        <div className="overflow-x-auto">
+          <div className="min-w-[500px]">
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={revenueTrendData}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border) / 0.3)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tickFormatter={(v) => `$${fmtK(v as number)}`}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={TOOLTIP_STYLE}
+                  formatter={(v, name) => [
+                    fmtCurrency(Number(v)),
+                    name === "mrr" ? "MRR" : "ARR",
+                  ]}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: 11 }}
+                  formatter={(v) => (v === "mrr" ? "MRR" : "ARR")}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="mrr"
+                  stroke="#10b981"
+                  strokeWidth={2.5}
+                  dot={false}
+                  activeDot={{ r: 5 }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="arr"
+                  stroke="#8b5cf6"
+                  strokeWidth={2}
+                  strokeDasharray="6 3"
+                  dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </GlassCard>
     </div>
   );

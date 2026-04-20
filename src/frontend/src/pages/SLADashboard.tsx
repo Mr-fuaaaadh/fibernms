@@ -149,66 +149,70 @@ function SLATrendChart({ timeRange }: { timeRange: TimeRange }) {
         <Activity size={11} className="text-primary" />
         SLA Compliance Trend
       </p>
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart
-          data={data}
-          margin={{ top: 4, right: 4, left: -16, bottom: 0 }}
-        >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="oklch(0.26 0.01 265 / 0.5)"
-          />
-          <XAxis
-            dataKey="day"
-            tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
-            tickLine={false}
-            axisLine={false}
-            interval={timeRange === "30d" ? 6 : 0}
-          />
-          <YAxis
-            tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
-            tickLine={false}
-            axisLine={false}
-            domain={[0, 100]}
-          />
-          <Tooltip
-            contentStyle={{
-              background: "oklch(0.18 0.008 265 / 0.95)",
-              border: "1px solid oklch(0.26 0.01 265)",
-              borderRadius: 8,
-              fontSize: 11,
-              color: "oklch(0.92 0.005 260)",
-            }}
-          />
-          <Legend wrapperStyle={{ fontSize: 10 }} />
-          <Line
-            type="monotone"
-            dataKey="compliance"
-            name="Compliance %"
-            stroke="oklch(0.72 0.22 210)"
-            strokeWidth={2}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="warnings"
-            name="Warnings"
-            stroke="oklch(0.70 0.25 55)"
-            strokeWidth={1.5}
-            dot={false}
-            strokeDasharray="4 2"
-          />
-          <Line
-            type="monotone"
-            dataKey="breaches"
-            name="Breaches"
-            stroke="oklch(0.62 0.28 22)"
-            strokeWidth={1.5}
-            dot={false}
-            strokeDasharray="4 2"
-          />
-        </LineChart>
-      </ResponsiveContainer>
+      <div className="overflow-x-auto">
+        <div className="min-w-[500px]">
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart
+              data={data}
+              margin={{ top: 4, right: 4, left: -16, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="oklch(0.26 0.01 265 / 0.5)"
+              />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
+                tickLine={false}
+                axisLine={false}
+                interval={timeRange === "30d" ? 6 : 0}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
+                tickLine={false}
+                axisLine={false}
+                domain={[0, 100]}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "oklch(0.18 0.008 265 / 0.95)",
+                  border: "1px solid oklch(0.26 0.01 265)",
+                  borderRadius: 8,
+                  fontSize: 11,
+                  color: "oklch(0.92 0.005 260)",
+                }}
+              />
+              <Legend wrapperStyle={{ fontSize: 10 }} />
+              <Line
+                type="monotone"
+                dataKey="compliance"
+                name="Compliance %"
+                stroke="oklch(0.72 0.22 210)"
+                strokeWidth={2}
+                dot={false}
+              />
+              <Line
+                type="monotone"
+                dataKey="warnings"
+                name="Warnings"
+                stroke="oklch(0.70 0.25 55)"
+                strokeWidth={1.5}
+                dot={false}
+                strokeDasharray="4 2"
+              />
+              <Line
+                type="monotone"
+                dataKey="breaches"
+                name="Breaches"
+                stroke="oklch(0.62 0.28 22)"
+                strokeWidth={1.5}
+                dot={false}
+                strokeDasharray="4 2"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </GlassCard>
   );
 }

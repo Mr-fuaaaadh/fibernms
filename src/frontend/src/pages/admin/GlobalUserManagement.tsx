@@ -30,12 +30,15 @@ import {
   type UserRole,
   type UserStatus,
 } from "@/data/superAdminMockData";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   Clock,
   Download,
   FileText,
@@ -221,6 +224,191 @@ function UserAvatar({
       </div>
       {sessionActive && (
         <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+      )}
+    </div>
+  );
+}
+
+// ─── Mobile User Card ──────────────────────────────────────────────────────────
+
+function UserCard({
+  user,
+  index,
+  companyPlan,
+  onSessions,
+  onForceLogout,
+  onToggleStatus,
+  onEditRole,
+}: {
+  user: AdminUser;
+  index: number;
+  companyPlan: string;
+  onSessions: () => void;
+  onForceLogout: () => void;
+  onToggleStatus: () => void;
+  onEditRole: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const activeSessionCount = user.activeSessions.filter(
+    (s) => s.isActive,
+  ).length;
+
+  return (
+    <div
+      className="rounded-xl border border-border/30 bg-card/60 backdrop-blur-sm overflow-hidden"
+      data-ocid={`user-card-${index}`}
+    >
+      {/* Main row — tap to expand */}
+      <button
+        type="button"
+        className="w-full flex items-center gap-3 p-4 text-left hover:bg-muted/10 transition-colors"
+        onClick={() => setExpanded((e) => !e)}
+        aria-expanded={expanded}
+        data-ocid={`user-card-toggle-${index}`}
+      >
+        <UserAvatar name={user.name} sessionActive={user.sessionActive} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-semibold text-foreground truncate">
+              {user.name}
+            </p>
+            <Badge
+              className={cn("text-[9px] border", STATUS_COLORS[user.status])}
+            >
+              <span
+                className={cn(
+                  "w-1.5 h-1.5 rounded-full mr-1 inline-block",
+                  user.status === "active" ? "bg-emerald-400" : "bg-red-400",
+                )}
+              />
+              {user.status}
+            </Badge>
+          </div>
+          <p className="text-[11px] text-muted-foreground truncate">
+            {user.email}
+          </p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <Badge
+              className={cn(
+                "text-[9px] border",
+                ROLE_COLORS[user.role] ??
+                  "bg-muted/30 text-muted-foreground border-border/40",
+              )}
+            >
+              {user.role}
+            </Badge>
+            <span className="text-[10px] text-muted-foreground truncate">
+              {user.company}
+            </span>
+            <Badge
+              className={cn(
+                "text-[8px] border",
+                PLAN_BADGE[companyPlan] ?? PLAN_BADGE.BASIC,
+              )}
+            >
+              {companyPlan}
+            </Badge>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          {user.mfaEnabled ? (
+            <Shield className="w-3.5 h-3.5 text-emerald-400" />
+          ) : (
+            <ShieldOff className="w-3.5 h-3.5 text-muted-foreground/30" />
+          )}
+          {expanded ? (
+            <ChevronUp className="w-4 h-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          )}
+        </div>
+      </button>
+
+      {/* Expanded details */}
+      {expanded && (
+        <div className="border-t border-border/20 px-4 pb-4 pt-3 space-y-3 bg-muted/5">
+          {/* Details grid */}
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">{user.region}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Clock className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">{relativeTime(user.lastLogin)}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Wifi className="w-3 h-3 flex-shrink-0" />
+              <span>
+                {activeSessionCount}/{user.activeSessions.length} sessions
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Shield className="w-3 h-3 flex-shrink-0" />
+              <span>MFA {user.mfaEnabled ? "enabled" : "disabled"}</span>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {user.activeSessions.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 flex-1 text-xs gap-1.5 min-w-0 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10"
+                onClick={onSessions}
+                data-ocid={`user-card-sessions-${index}`}
+              >
+                <Wifi className="w-3 h-3" />
+                Sessions
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 flex-1 text-xs gap-1.5 min-w-0"
+              onClick={onEditRole}
+              data-ocid={`user-card-role-${index}`}
+            >
+              <Shield className="w-3 h-3" />
+              Role
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "h-9 flex-1 text-xs gap-1.5 min-w-0",
+                user.status === "active"
+                  ? "border-red-500/30 text-red-400 hover:bg-red-500/10"
+                  : "border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10",
+              )}
+              onClick={onToggleStatus}
+              data-ocid={`user-card-toggle-status-${index}`}
+            >
+              {user.status === "active" ? (
+                <>
+                  <UserX className="w-3 h-3" /> Disable
+                </>
+              ) : (
+                <>
+                  <UserCheck className="w-3 h-3" /> Enable
+                </>
+              )}
+            </Button>
+            {user.activeSessions.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 flex-1 text-xs gap-1.5 min-w-0 border-orange-500/30 text-orange-400 hover:bg-orange-500/10"
+                onClick={onForceLogout}
+                data-ocid={`user-card-force-logout-${index}`}
+              >
+                <LogOut className="w-3 h-3" />
+                Logout
+              </Button>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -1645,6 +1833,7 @@ type ModalState =
   | { type: "bulkRole" };
 
 export default function GlobalUserManagement(): React.ReactElement {
+  const isMobile = useIsMobile();
   const [users, setUsers] = useState<AdminUser[]>(() => [...MOCK_ADMIN_USERS]);
   const [search, setSearch] = useState("");
   const [companyFilter, setCompanyFilter] = useState("all");
@@ -1876,7 +2065,7 @@ export default function GlobalUserManagement(): React.ReactElement {
     modal.type === "toggleStatus" ? getUser(modal.userId) : undefined;
 
   return (
-    <div className="p-6 space-y-5 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-5 max-w-[1600px] mx-auto">
       {/* ── Page Header ── */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
@@ -1896,28 +2085,32 @@ export default function GlobalUserManagement(): React.ReactElement {
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs gap-1.5"
+            className="h-9 text-xs gap-1.5"
             onClick={() => exportCsv(filtered)}
             data-ocid="btn-export-csv"
           >
-            <Download className="w-3.5 h-3.5" /> Export CSV
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Export CSV</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs gap-1.5"
+            className="h-9 text-xs gap-1.5"
             onClick={() => setModal({ type: "import" })}
             data-ocid="btn-bulk-import"
           >
-            <Upload className="w-3.5 h-3.5" /> Bulk Import
+            <Upload className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Bulk Import</span>
           </Button>
           <Button
             size="sm"
-            className="h-8 text-xs gap-1.5"
+            className="h-9 text-xs gap-1.5"
             onClick={() => setModal({ type: "invite" })}
             data-ocid="btn-invite-user"
           >
-            <UserPlus className="w-3.5 h-3.5" /> Invite User
+            <UserPlus className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Invite User</span>
+            <span className="sm:hidden">Invite</span>
           </Button>
         </div>
       </div>
@@ -1958,13 +2151,13 @@ export default function GlobalUserManagement(): React.ReactElement {
       <GlassCard className="p-3">
         <div className="flex flex-wrap gap-2 items-center">
           {/* Search */}
-          <div className="relative min-w-[220px] flex-1 max-w-sm">
+          <div className="relative w-full sm:min-w-[220px] sm:flex-1 sm:max-w-sm">
             <Users className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
             <Input
               placeholder="Search name or email…"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-8 h-8 text-xs bg-background/50"
+              className="pl-8 h-10 md:h-8 text-xs bg-background/50"
               data-ocid="input-user-search"
             />
             {search && (
@@ -1978,291 +2171,369 @@ export default function GlobalUserManagement(): React.ReactElement {
             )}
           </div>
 
-          {/* Company filter */}
-          <Select
-            value={companyFilter}
-            onValueChange={(v) => {
-              setCompanyFilter(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger
-              className="h-8 text-xs w-48 bg-background/50"
-              data-ocid="filter-company"
+          {/* Filters — horizontal scroll on mobile */}
+          <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0 w-full sm:w-auto flex-nowrap sm:flex-wrap">
+            {/* Company filter */}
+            <Select
+              value={companyFilter}
+              onValueChange={(v) => {
+                setCompanyFilter(v);
+                setPage(1);
+              }}
             >
-              <SelectValue placeholder="All Companies" />
-            </SelectTrigger>
-            <SelectContent className="max-h-60">
-              <SelectItem value="all">All Companies</SelectItem>
-              {allCompanies.map((c) => (
-                <SelectItem key={c.id} value={c.id} className="text-xs">
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectTrigger
+                className="h-9 md:h-8 text-xs w-44 flex-shrink-0 bg-background/50"
+                data-ocid="filter-company"
+              >
+                <SelectValue placeholder="All Companies" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                <SelectItem value="all">All Companies</SelectItem>
+                {allCompanies.map((c) => (
+                  <SelectItem key={c.id} value={c.id} className="text-xs">
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          {/* Role filter */}
-          <Select
-            value={roleFilter}
-            onValueChange={(v) => {
-              setRoleFilter(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger
-              className="h-8 text-xs w-44 bg-background/50"
-              data-ocid="filter-role"
+            {/* Role filter */}
+            <Select
+              value={roleFilter}
+              onValueChange={(v) => {
+                setRoleFilter(v);
+                setPage(1);
+              }}
             >
-              <SelectValue placeholder="All Roles" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              {ALL_ROLES.map((r) => (
-                <SelectItem key={r} value={r} className="text-xs">
-                  {r}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectTrigger
+                className="h-9 md:h-8 text-xs w-40 flex-shrink-0 bg-background/50"
+                data-ocid="filter-role"
+              >
+                <SelectValue placeholder="All Roles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                {ALL_ROLES.map((r) => (
+                  <SelectItem key={r} value={r} className="text-xs">
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          {/* Status filter */}
-          <Select
-            value={statusFilter}
-            onValueChange={(v) => {
-              setStatusFilter(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger
-              className="h-8 text-xs w-36 bg-background/50"
-              data-ocid="filter-user-status"
+            {/* Status filter */}
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => {
+                setStatusFilter(v);
+                setPage(1);
+              }}
             >
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="disabled">Disabled</SelectItem>
-            </SelectContent>
-          </Select>
+              <SelectTrigger
+                className="h-9 md:h-8 text-xs w-36 flex-shrink-0 bg-background/50"
+                data-ocid="filter-user-status"
+              >
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="disabled">Disabled</SelectItem>
+              </SelectContent>
+            </Select>
 
-          {/* Region filter */}
-          <Select
-            value={regionFilter}
-            onValueChange={(v) => {
-              setRegionFilter(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger
-              className="h-8 text-xs w-32 bg-background/50"
-              data-ocid="filter-region"
+            {/* Region filter */}
+            <Select
+              value={regionFilter}
+              onValueChange={(v) => {
+                setRegionFilter(v);
+                setPage(1);
+              }}
             >
-              <SelectValue placeholder="All Regions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Regions</SelectItem>
-              {REGION_LIST.map((r) => (
-                <SelectItem key={r} value={r} className="text-xs">
-                  {r}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <SelectTrigger
+                className="h-9 md:h-8 text-xs w-32 flex-shrink-0 bg-background/50"
+                data-ocid="filter-region"
+              >
+                <SelectValue placeholder="All Regions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
+                {REGION_LIST.map((r) => (
+                  <SelectItem key={r} value={r} className="text-xs">
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          {hasFilters && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
-              onClick={clearFilters}
-            >
-              <X className="w-3 h-3" /> Clear
-            </Button>
-          )}
+            {hasFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 md:h-8 text-xs gap-1 text-muted-foreground hover:text-foreground flex-shrink-0"
+                onClick={clearFilters}
+              >
+                <X className="w-3 h-3" /> Clear
+              </Button>
+            )}
+          </div>
 
           <div className="flex items-center gap-1.5 ml-auto">
             <Filter className="w-3 h-3 text-muted-foreground" />
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              Showing{" "}
               <span className="font-medium text-foreground">
                 {filtered.length.toLocaleString()}
-              </span>{" "}
-              of{" "}
+              </span>
+              {" / "}
               <span className="font-medium text-foreground">
                 {users.length.toLocaleString()}
-              </span>{" "}
-              users
+              </span>
             </span>
           </div>
         </div>
       </GlassCard>
 
-      {/* ── Users Table ── */}
-      <GlassCard className="overflow-hidden">
-        {selectedIds.size > 0 && (
-          <BulkActionBar
-            count={selectedIds.size}
-            onClear={() => setSelectedIds(new Set())}
-            onBulkRole={() => setModal({ type: "bulkRole" })}
-            onBulkDisable={handleBulkDisable}
-            onBulkExport={() => exportCsv(selectedUsers)}
-            onBulkForceLogout={handleBulkForceLogout}
-          />
-        )}
-        <div className="overflow-x-auto noc-scrollbar">
-          <table className="w-full">
-            <thead className="border-b border-border/40 bg-muted/20">
-              <tr className="text-muted-foreground text-[10px] uppercase tracking-wide">
-                <th className="py-2.5 pl-4 pr-2 w-9">
-                  <Checkbox
-                    checked={allPageSelected}
-                    onCheckedChange={(v) => toggleSelectAll(!!v)}
-                    className="w-3.5 h-3.5"
-                    data-ocid="select-all"
-                  />
-                </th>
-                <th className="text-left py-2.5 px-3 font-medium">User</th>
-                <th className="text-left py-2.5 px-3 font-medium">Company</th>
-                <th className="text-left py-2.5 px-3 font-medium">Role</th>
-                <th className="text-left py-2.5 px-3 font-medium">Status</th>
-                <th className="text-left py-2.5 px-3 font-medium">
-                  Last Login
-                </th>
-                <th className="text-left py-2.5 px-3 font-medium">Sessions</th>
-                <th className="text-left py-2.5 px-3 font-medium">MFA</th>
-                <th className="text-left py-2.5 px-3 font-medium">Region</th>
-                <th className="py-2.5 px-3 w-24" />
-              </tr>
-            </thead>
-            <tbody>
-              {pageUsers.map((user) => (
-                <UserTableRow
-                  key={user.id}
-                  user={user}
-                  companyPlan={companyPlanMap[user.companyId] ?? "BASIC"}
-                  selected={selectedIds.has(user.id)}
-                  onSelect={(checked) => toggleSelect(user.id, !!checked)}
-                  onSessions={() =>
-                    setModal({ type: "sessions", userId: user.id })
-                  }
-                  onEditRole={() =>
-                    setModal({ type: "editRole", userId: user.id })
-                  }
-                  onToggleStatus={() =>
-                    setModal({ type: "toggleStatus", userId: user.id })
-                  }
-                  onForceLogout={() =>
-                    setModal({ type: "forceLogout", userId: user.id })
-                  }
-                />
-              ))}
+      {/* ── Mobile: Card list / Desktop: Table ── */}
+      {isMobile ? (
+        <div className="space-y-3" data-ocid="user-card-list">
+          {pageUsers.length === 0 ? (
+            <div
+              className="flex flex-col items-center py-16 text-muted-foreground gap-3"
+              data-ocid="empty-state-users"
+            >
+              <Users className="w-8 h-8 opacity-20" />
+              <p className="text-sm font-medium">No users match your filters</p>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-xs"
+                onClick={clearFilters}
+              >
+                Clear filters
+              </Button>
+            </div>
+          ) : (
+            pageUsers.map((user, idx) => (
+              <UserCard
+                key={user.id}
+                user={user}
+                index={idx + 1}
+                companyPlan={companyPlanMap[user.companyId] ?? "BASIC"}
+                onSessions={() =>
+                  setModal({ type: "sessions", userId: user.id })
+                }
+                onForceLogout={() =>
+                  setModal({ type: "forceLogout", userId: user.id })
+                }
+                onToggleStatus={() =>
+                  setModal({ type: "toggleStatus", userId: user.id })
+                }
+                onEditRole={() =>
+                  setModal({ type: "editRole", userId: user.id })
+                }
+              />
+            ))
+          )}
 
-              {pageUsers.length === 0 && (
-                <tr>
-                  <td colSpan={10}>
-                    <div
-                      className="flex flex-col items-center py-16 text-muted-foreground gap-3"
-                      data-ocid="empty-state-users"
-                    >
-                      <Users className="w-8 h-8 opacity-20" />
-                      <p className="text-sm font-medium">
-                        No users match your filters
-                      </p>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-xs"
-                        onClick={clearFilters}
-                      >
-                        Clear filters
-                      </Button>
-                    </div>
-                  </td>
+          {/* Mobile Pagination */}
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs text-muted-foreground">
+                {pageStart + 1}–{pageEnd} of {filtered.length.toLocaleString()}
+              </p>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  disabled={safePage === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  data-ocid="pagination-prev"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  disabled={safePage === totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  data-ocid="pagination-next"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Desktop Table */
+        <GlassCard className="overflow-hidden">
+          {selectedIds.size > 0 && (
+            <BulkActionBar
+              count={selectedIds.size}
+              onClear={() => setSelectedIds(new Set())}
+              onBulkRole={() => setModal({ type: "bulkRole" })}
+              onBulkDisable={handleBulkDisable}
+              onBulkExport={() => exportCsv(selectedUsers)}
+              onBulkForceLogout={handleBulkForceLogout}
+            />
+          )}
+          <div className="overflow-x-auto noc-scrollbar">
+            <table className="w-full">
+              <thead className="border-b border-border/40 bg-muted/20">
+                <tr className="text-muted-foreground text-[10px] uppercase tracking-wide">
+                  <th className="py-2.5 pl-4 pr-2 w-9">
+                    <Checkbox
+                      checked={allPageSelected}
+                      onCheckedChange={(v) => toggleSelectAll(!!v)}
+                      className="w-3.5 h-3.5"
+                      data-ocid="select-all"
+                    />
+                  </th>
+                  <th className="text-left py-2.5 px-3 font-medium">User</th>
+                  <th className="text-left py-2.5 px-3 font-medium">Company</th>
+                  <th className="text-left py-2.5 px-3 font-medium">Role</th>
+                  <th className="text-left py-2.5 px-3 font-medium">Status</th>
+                  <th className="text-left py-2.5 px-3 font-medium">
+                    Last Login
+                  </th>
+                  <th className="text-left py-2.5 px-3 font-medium">
+                    Sessions
+                  </th>
+                  <th className="text-left py-2.5 px-3 font-medium">MFA</th>
+                  <th className="text-left py-2.5 px-3 font-medium">Region</th>
+                  <th className="py-2.5 px-3 w-24" />
                 </tr>
-              )}
+              </thead>
+              <tbody>
+                {pageUsers.map((user) => (
+                  <UserTableRow
+                    key={user.id}
+                    user={user}
+                    companyPlan={companyPlanMap[user.companyId] ?? "BASIC"}
+                    selected={selectedIds.has(user.id)}
+                    onSelect={(checked) => toggleSelect(user.id, !!checked)}
+                    onSessions={() =>
+                      setModal({ type: "sessions", userId: user.id })
+                    }
+                    onEditRole={() =>
+                      setModal({ type: "editRole", userId: user.id })
+                    }
+                    onToggleStatus={() =>
+                      setModal({ type: "toggleStatus", userId: user.id })
+                    }
+                    onForceLogout={() =>
+                      setModal({ type: "forceLogout", userId: user.id })
+                    }
+                  />
+                ))}
 
-              {/* Skeleton rows when initially loading */}
-              {pageUsers.length === 0 &&
-                !hasFilters &&
-                (["sk-1", "sk-2", "sk-3"] as const).map((k) => (
-                  <tr key={k} className="border-b border-border/10">
-                    <td colSpan={10} className="py-3 px-4">
-                      <Skeleton className="h-4 w-full" />
+                {pageUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={10}>
+                      <div
+                        className="flex flex-col items-center py-16 text-muted-foreground gap-3"
+                        data-ocid="empty-state-users"
+                      >
+                        <Users className="w-8 h-8 opacity-20" />
+                        <p className="text-sm font-medium">
+                          No users match your filters
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-xs"
+                          onClick={clearFilters}
+                        >
+                          Clear filters
+                        </Button>
+                      </div>
                     </td>
                   </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
+                )}
 
-        {/* Pagination */}
-        {filtered.length > 0 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-border/30 bg-muted/10">
-            <div className="flex items-center gap-3">
-              <p className="text-xs text-muted-foreground">
-                Showing{" "}
-                <span className="font-medium text-foreground">
-                  {pageStart + 1}–{pageEnd}
-                </span>{" "}
-                of{" "}
-                <span className="font-medium text-foreground">
-                  {filtered.length.toLocaleString()}
-                </span>{" "}
-                users
-              </p>
-              {filtered.length < users.length && (
-                <Badge className="text-[9px] border bg-primary/10 text-primary border-primary/20">
-                  <Filter className="w-2.5 h-2.5 mr-1" />
-                  Filtered
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7"
-                disabled={safePage === 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                data-ocid="pagination-prev"
-              >
-                <ChevronLeft className="w-3.5 h-3.5" />
-              </Button>
-              {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                const offset = Math.max(
-                  0,
-                  Math.min(safePage - 3, totalPages - 5),
-                );
-                const p = offset + i + 1;
-                return (
-                  <Button
-                    key={p}
-                    variant={p === safePage ? "default" : "ghost"}
-                    size="icon"
-                    className="h-7 w-7 text-xs"
-                    onClick={() => setPage(p)}
-                    data-ocid={`pagination-page-${p}`}
-                  >
-                    {p}
-                  </Button>
-                );
-              })}
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-7 w-7"
-                disabled={safePage === totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                data-ocid="pagination-next"
-              >
-                <ChevronRight className="w-3.5 h-3.5" />
-              </Button>
-            </div>
+                {/* Skeleton rows when initially loading */}
+                {pageUsers.length === 0 &&
+                  !hasFilters &&
+                  (["sk-1", "sk-2", "sk-3"] as const).map((k) => (
+                    <tr key={k} className="border-b border-border/10">
+                      <td colSpan={10} className="py-3 px-4">
+                        <Skeleton className="h-4 w-full" />
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </GlassCard>
+
+          {/* Pagination */}
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-border/30 bg-muted/10">
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-muted-foreground">
+                  Showing{" "}
+                  <span className="font-medium text-foreground">
+                    {pageStart + 1}–{pageEnd}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-medium text-foreground">
+                    {filtered.length.toLocaleString()}
+                  </span>{" "}
+                  users
+                </p>
+                {filtered.length < users.length && (
+                  <Badge className="text-[9px] border bg-primary/10 text-primary border-primary/20">
+                    <Filter className="w-2.5 h-2.5 mr-1" />
+                    Filtered
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={safePage === 1}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  data-ocid="pagination-prev"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </Button>
+                {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                  const offset = Math.max(
+                    0,
+                    Math.min(safePage - 3, totalPages - 5),
+                  );
+                  const p = offset + i + 1;
+                  return (
+                    <Button
+                      key={p}
+                      variant={p === safePage ? "default" : "ghost"}
+                      size="icon"
+                      className="h-7 w-7 text-xs"
+                      onClick={() => setPage(p)}
+                      data-ocid={`pagination-page-${p}`}
+                    >
+                      {p}
+                    </Button>
+                  );
+                })}
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-7 w-7"
+                  disabled={safePage === totalPages}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  data-ocid="pagination-next"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </GlassCard>
+      )}
 
       {/* ── Modals ── */}
       {modal.type === "sessions" && sessionsUser && (

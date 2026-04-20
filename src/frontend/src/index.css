@@ -321,6 +321,70 @@
     @apply px-3 py-1.5 rounded-md text-xs font-medium transition-smooth;
   }
 
+  /* ─── Topology Visualization Enhancements ─── */
+  .topology-node-glow-active {
+    box-shadow: 0 0 0 2px oklch(var(--layer-l1) / 0.4), 0 0 12px
+      oklch(var(--layer-l1) / 0.6), 0 0 24px oklch(var(--layer-l1) / 0.3);
+  }
+
+  .topology-node-glow-warning {
+    box-shadow: 0 0 0 2px oklch(var(--layer-l2) / 0.5), 0 0 14px
+      oklch(var(--layer-l2) / 0.7), 0 0 28px oklch(var(--layer-l2) / 0.4);
+  }
+
+  .topology-node-glow-critical {
+    box-shadow: 0 0 0 2px oklch(var(--destructive) / 0.5), 0 0 16px
+      oklch(var(--destructive) / 0.8), 0 0 32px oklch(var(--destructive) / 0.5);
+  }
+
+  .topology-canvas {
+    backdrop-filter: blur(6px);
+    background: linear-gradient(
+      135deg,
+      oklch(var(--card) / 0.95) 0%,
+      oklch(var(--background) / 0.98) 100%
+    );
+    border: 1px solid oklch(var(--border) / 0.5);
+    position: relative;
+  }
+
+  .topology-stat-pill {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono;
+    background-color: oklch(var(--card) / 0.7);
+    border-color: oklch(var(--border) / 0.4);
+    box-shadow: 0 2px 8px oklch(0 0 0 / 0.08);
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .topology-stat-pill:hover {
+    @apply shadow-md;
+    background-color: oklch(var(--card) / 0.9);
+    border-color: oklch(var(--border) / 0.6);
+  }
+
+  .topology-layer-toggle {
+    @apply relative px-3 py-1.5 rounded-lg border text-xs font-mono transition-smooth flex items-center gap-1.5;
+  }
+
+  .topology-layer-toggle-active {
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2), 0 0 12px currentColor;
+  }
+
+  .topology-panel-card {
+    @apply glass-elevated p-4 rounded-lg;
+    backdrop-filter: blur(10px);
+  }
+
+  .topology-status-bar {
+    @apply flex items-center justify-between px-4 py-2.5 border-b;
+    border-color: oklch(var(--border) / 0.3);
+    background: linear-gradient(
+      90deg,
+      oklch(var(--background) / 0.5) 0%,
+      oklch(var(--card) / 0.3) 100%
+    );
+  }
+
   /* Audit Event Timeline */
   .audit-timeline-item {
     @apply relative pl-6 py-2;
@@ -383,7 +447,10 @@
   }
 
   .command-palette-item {
-    @apply px-4 py-2 cursor-pointer hover:bg-accent/10 transition-smooth;
+    @apply px-4 py-2 cursor-pointer transition-smooth;
+  }
+  .command-palette-item:hover {
+    background-color: oklch(var(--accent) / 0.1);
   }
 
   /* NOC scan-line overlay */
@@ -421,15 +488,20 @@
   }
 
   .admin-table-header {
-    @apply bg-muted/30 text-foreground font-semibold;
+    @apply text-foreground font-semibold;
+    background-color: oklch(var(--muted) / 0.3);
   }
 
   .admin-table-row {
-    @apply border-b border-border transition-smooth hover:bg-muted/40;
+    @apply border-b transition-smooth;
+    border-color: oklch(var(--border));
+  }
+  .admin-table-row:hover {
+    background-color: oklch(var(--muted) / 0.4);
   }
 
   .admin-table-row-alt {
-    @apply bg-muted/10;
+    background-color: oklch(var(--muted) / 0.1);
   }
 
   /* Admin Status Badges */
@@ -438,15 +510,18 @@
   }
 
   .admin-badge-active {
-    @apply bg-emerald-500/15 text-emerald-400;
+    @apply text-emerald-400;
+    background-color: rgb(16 185 129 / 0.15);
   }
 
   .admin-badge-pending {
-    @apply bg-amber-500/15 text-amber-400;
+    @apply text-amber-400;
+    background-color: rgb(245 158 11 / 0.15);
   }
 
   .admin-badge-inactive {
-    @apply bg-muted/30 text-muted-foreground;
+    @apply text-muted-foreground;
+    background-color: oklch(var(--muted) / 0.3);
   }
 
   /* Admin Stat Card */
@@ -473,6 +548,40 @@
 
   .admin-switch-off {
     @apply bg-muted;
+  }
+
+  /* ─── Map containment — prevent Leaflet canvas from overflowing mobile layout ─── */
+  .leaflet-container,
+  .leaflet-map-pane,
+  .mapboxgl-map,
+  .mapboxgl-canvas-container,
+  .mapboxgl-canvas {
+    max-height: 100% !important;
+  }
+
+  /* Ensure the map root never creates a new stacking context above mobile chrome */
+  @media (max-width: 768px) {
+    .leaflet-container {
+      contain: strict;
+      z-index: 0 !important;
+    }
+    .leaflet-pane,
+    .leaflet-tile-pane,
+    .leaflet-overlay-pane,
+    .leaflet-shadow-pane,
+    .leaflet-marker-pane,
+    .leaflet-tooltip-pane,
+    .leaflet-popup-pane {
+      z-index: auto !important;
+    }
+    /* Keep leaflet control panes beneath the app header/nav */
+    .leaflet-top,
+    .leaflet-bottom,
+    .leaflet-left,
+    .leaflet-right,
+    .leaflet-control-container {
+      z-index: 10 !important;
+    }
   }
 
   /* Scrollbar styling */

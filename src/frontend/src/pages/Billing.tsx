@@ -520,6 +520,66 @@ function StatCard({
   );
 }
 
+// ─── Invoice Card (mobile) ────────────────────────────────────────────────────
+function InvoiceCard({
+  record,
+  onDownload,
+}: {
+  record: (typeof MOCK_BILLING_RECORDS)[0];
+  onDownload: () => void;
+}) {
+  return (
+    <div
+      className="rounded-xl border border-border bg-card/60 p-4 space-y-3"
+      data-ocid={`billing-record-${record.id}`}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">
+            {record.description}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {formatDate(record.date)}
+          </p>
+        </div>
+        <Badge
+          variant="outline"
+          className={cn(
+            "text-xs border capitalize shrink-0",
+            record.status === "paid" &&
+              "text-emerald-600 border-emerald-500/30 bg-emerald-500/10 dark:text-emerald-400",
+            record.status === "pending" &&
+              "text-amber-600 border-amber-500/30 bg-amber-500/10 dark:text-amber-400",
+            record.status === "failed" &&
+              "text-rose-600 border-rose-500/30 bg-rose-500/10 dark:text-rose-400",
+          )}
+        >
+          {record.status}
+        </Badge>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-base font-bold font-mono text-foreground">
+          {formatCurrency(record.amount)}
+        </span>
+        {record.status === "paid" ? (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline transition-smooth min-h-[44px] px-2"
+            onClick={onDownload}
+            data-ocid={`billing-invoice-download-${record.id}`}
+            aria-label={`Download invoice for ${record.description}`}
+          >
+            <Download className="size-3.5" />
+            Download PDF
+          </button>
+        ) : (
+          <span className="text-xs text-muted-foreground/50">—</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Billing() {
   const sub = useSubscription();
@@ -619,7 +679,7 @@ export default function Billing() {
         <PaymentMethodModal onClose={() => setShowPaymentModal(false)} />
       )}
 
-      <div className="p-6 space-y-8 max-w-6xl mx-auto">
+      <div className="p-4 md:p-6 space-y-8 max-w-6xl mx-auto">
         {/* ── Hero Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
@@ -639,7 +699,7 @@ export default function Billing() {
           <Button
             variant="outline"
             size="sm"
-            className="shrink-0 gap-2 self-start"
+            className="shrink-0 gap-2 self-start min-h-[44px]"
             onClick={() => setShowPaymentModal(true)}
             data-ocid="billing-update-payment"
           >
@@ -671,7 +731,7 @@ export default function Billing() {
             </div>
             <Button
               size="sm"
-              className="shrink-0 gap-2"
+              className="shrink-0 gap-2 min-h-[44px]"
               onClick={() => {
                 setSelectedPlan(Plan.PROFESSIONAL);
                 setShowChangePlanModal(true);
@@ -1064,7 +1124,7 @@ export default function Billing() {
                 <Button
                   size="sm"
                   variant={isUpgrade ? "default" : "outline"}
-                  className="shrink-0 gap-2"
+                  className="shrink-0 gap-2 min-h-[44px]"
                   onClick={() => setShowChangePlanModal(true)}
                   data-ocid="billing-change-plan-btn"
                 >
@@ -1090,8 +1150,26 @@ export default function Billing() {
             <FileText className="size-5 text-primary" />
             Billing History
           </h2>
+
+          {/* Mobile: card list */}
+          <div
+            className="md:hidden space-y-3"
+            data-ocid="billing-history-cards"
+          >
+            {MOCK_BILLING_RECORDS.map((record) => (
+              <InvoiceCard
+                key={record.id}
+                record={record}
+                onDownload={() =>
+                  addToast(`Invoice ${record.id}.pdf downloaded.`, "info")
+                }
+              />
+            ))}
+          </div>
+
+          {/* Desktop: table */}
           <Card
-            className="glass-card border-border"
+            className="glass-card border-border hidden md:block"
             data-ocid="billing-history-table"
           >
             <CardContent className="p-0">
@@ -1217,7 +1295,7 @@ export default function Billing() {
               <Button
                 variant="outline"
                 size="sm"
-                className="shrink-0 gap-2"
+                className="shrink-0 gap-2 min-h-[44px]"
                 onClick={() => setShowPaymentModal(true)}
                 data-ocid="billing-open-payment-modal"
               >

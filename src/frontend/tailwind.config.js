@@ -128,6 +128,14 @@ export default {
           "0%, 100%": { boxShadow: "0 0 8px oklch(0.62 0.22 142 / 0.25)" },
           "50%": { boxShadow: "0 0 18px oklch(0.62 0.22 142 / 0.55)" },
         },
+        "topology-glow": {
+          "0%, 100%": { boxShadow: "0 0 12px oklch(0.72 0.22 210 / 0.4), 0 0 24px oklch(0.72 0.22 210 / 0.2)" },
+          "50%": { boxShadow: "0 0 18px oklch(0.72 0.22 210 / 0.6), 0 0 32px oklch(0.72 0.22 210 / 0.3)" },
+        },
+        "topology-pulse": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
         "slide-in": {
           from: { opacity: "0", transform: "translateY(10px)" },
           to: { opacity: "1", transform: "translateY(0)" },
@@ -150,6 +158,8 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-soft": "pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
+        "topology-glow": "topology-glow 3s ease-in-out infinite",
+        "topology-pulse": "topology-pulse 2.5s ease-in-out infinite",
         "slide-in": "slide-in 0.3s ease-out",
         "slide-in-right": "slide-in-right 0.25s ease-out",
         "fade-in": "fade-in 0.2s ease-in",

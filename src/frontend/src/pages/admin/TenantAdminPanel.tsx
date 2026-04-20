@@ -1067,7 +1067,7 @@ export default function TenantAdminPanel() {
   ];
 
   return (
-    <div className="p-6 space-y-6 max-w-[1600px]">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6 max-w-[1600px]">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}

@@ -685,9 +685,9 @@ export default function GlobalBilling(): React.ReactElement {
   });
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 md:p-6 space-y-5 md:space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-start sm:items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <CreditCard className="w-5 h-5 text-amber-400" />
           <div>
@@ -726,7 +726,7 @@ export default function GlobalBilling(): React.ReactElement {
       </div>
 
       {/* KPI Row — 4 cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <MetricCard
           label="Monthly Recurring Revenue"
           value={fmtCurrency(REVENUE_METRICS.totalMRR)}
@@ -787,88 +787,92 @@ export default function GlobalBilling(): React.ReactElement {
               +8.2% MoM
             </Badge>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart
-              data={trendData}
-              margin={{ top: 4, right: 4, left: -10, bottom: 0 }}
-            >
-              <defs>
-                {Object.values(Plan).map((plan) => {
-                  const cfg = PLAN_CONFIG[plan];
-                  return (
-                    <linearGradient
-                      key={cfg.gradId}
-                      id={cfg.gradId}
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor={cfg.chartColor}
-                        stopOpacity={0.25}
+          <div className="overflow-x-auto">
+            <div className="min-w-[400px]">
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart
+                  data={trendData}
+                  margin={{ top: 4, right: 4, left: -10, bottom: 0 }}
+                >
+                  <defs>
+                    {Object.values(Plan).map((plan) => {
+                      const cfg = PLAN_CONFIG[plan];
+                      return (
+                        <linearGradient
+                          key={cfg.gradId}
+                          id={cfg.gradId}
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor={cfg.chartColor}
+                            stopOpacity={0.25}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor={cfg.chartColor}
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      );
+                    })}
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="oklch(0.5 0 0 / 0.08)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 9, fill: "oklch(0.52 0.008 260)" }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 9, fill: "oklch(0.52 0.008 260)" }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => fmtCurrency(v)}
+                  />
+                  <Tooltip content={<MultiLineTooltip />} />
+                  <Legend
+                    wrapperStyle={{ fontSize: "10px", paddingTop: "8px" }}
+                    iconType="circle"
+                    iconSize={7}
+                  />
+                  {(
+                    ["Basic", "Professional", "Enterprise", "Ultra"] as const
+                  ).map((key) => {
+                    const planKey =
+                      key === "Basic"
+                        ? Plan.BASIC
+                        : key === "Professional"
+                          ? Plan.PROFESSIONAL
+                          : key === "Enterprise"
+                            ? Plan.ENTERPRISE
+                            : Plan.ULTRA;
+                    const cfg = PLAN_CONFIG[planKey];
+                    return (
+                      <Area
+                        key={key}
+                        type="monotone"
+                        dataKey={key}
+                        name={key}
+                        stroke={cfg.chartColor}
+                        strokeWidth={1.5}
+                        fill={`url(#${cfg.gradId})`}
+                        dot={false}
+                        stackId="1"
                       />
-                      <stop
-                        offset="95%"
-                        stopColor={cfg.chartColor}
-                        stopOpacity={0}
-                      />
-                    </linearGradient>
-                  );
-                })}
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="oklch(0.5 0 0 / 0.08)"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="month"
-                tick={{ fontSize: 9, fill: "oklch(0.52 0.008 260)" }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 9, fill: "oklch(0.52 0.008 260)" }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => fmtCurrency(v)}
-              />
-              <Tooltip content={<MultiLineTooltip />} />
-              <Legend
-                wrapperStyle={{ fontSize: "10px", paddingTop: "8px" }}
-                iconType="circle"
-                iconSize={7}
-              />
-              {(["Basic", "Professional", "Enterprise", "Ultra"] as const).map(
-                (key) => {
-                  const planKey =
-                    key === "Basic"
-                      ? Plan.BASIC
-                      : key === "Professional"
-                        ? Plan.PROFESSIONAL
-                        : key === "Enterprise"
-                          ? Plan.ENTERPRISE
-                          : Plan.ULTRA;
-                  const cfg = PLAN_CONFIG[planKey];
-                  return (
-                    <Area
-                      key={key}
-                      type="monotone"
-                      dataKey={key}
-                      name={key}
-                      stroke={cfg.chartColor}
-                      strokeWidth={1.5}
-                      fill={`url(#${cfg.gradId})`}
-                      dot={false}
-                      stackId="1"
-                    />
-                  );
-                },
-              )}
-            </AreaChart>
-          </ResponsiveContainer>
+                    );
+                  })}
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </GlassCard>
       </motion.div>
 

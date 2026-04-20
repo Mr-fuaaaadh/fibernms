@@ -332,8 +332,8 @@ function IPTrackingTable({
           {filtered.length} entries
         </span>
       </div>
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* Table — desktop */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="border-b border-border/40 bg-muted/10">
             <tr>
@@ -412,6 +412,65 @@ function IPTrackingTable({
             })}
           </tbody>
         </table>
+      </div>
+      {/* Mobile: IP card list */}
+      <div className="sm:hidden divide-y divide-border/20">
+        {page_items.map((entry) => {
+          const isBlocked = entry.isBlocked || blockedIps.has(entry.ipAddress);
+          return (
+            <div
+              key={entry.ipAddress}
+              className={`p-3 ${isBlocked ? "bg-red-500/5" : ""}`}
+              data-ocid={`ip-card-${entry.ipAddress.replace(/\./g, "-")}`}
+            >
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div>
+                  <code className="text-xs font-mono text-foreground">
+                    {entry.ipAddress}
+                  </code>
+                  {entry.geoLocation && (
+                    <p className="text-[10px] text-muted-foreground">
+                      {entry.geoLocation}
+                    </p>
+                  )}
+                </div>
+                <Badge
+                  className={`text-[9px] border capitalize shrink-0 ${isBlocked ? "bg-red-500/15 text-red-400 border-red-500/30" : "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"}`}
+                >
+                  {isBlocked ? "Blocked" : "Active"}
+                </Badge>
+              </div>
+              {entry.userEmail && (
+                <p className="text-[10px] text-muted-foreground truncate mb-1">
+                  {entry.userEmail}
+                </p>
+              )}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3 text-[10px]">
+                  <span className="text-emerald-400 font-mono">
+                    ✓ {entry.successCount}
+                  </span>
+                  <span className="text-red-400 font-mono">
+                    ✗ {entry.failedAttempts}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {fmtRelative(entry.lastSeen)}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`h-9 px-3 text-[10px] gap-1 ${isBlocked ? "text-emerald-400 hover:bg-emerald-500/10" : "text-red-400 hover:bg-red-500/10"}`}
+                  onClick={() => onToggleBlock(entry.ipAddress)}
+                  data-ocid={`toggle-ip-mobile-${entry.ipAddress.replace(/\./g, "-")}`}
+                >
+                  <Ban className="w-3 h-3" />
+                  {isBlocked ? "Unblock" : "Block"}
+                </Button>
+              </div>
+            </div>
+          );
+        })}
       </div>
       {/* Pagination */}
       <div className="px-4 py-3 border-t border-border/30 flex items-center justify-between">
@@ -735,7 +794,7 @@ export default function SecurityDashboard(): React.ReactElement {
     });
 
   return (
-    <div className="p-6 space-y-5 max-w-[1400px] mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-5 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
@@ -762,8 +821,8 @@ export default function SecurityDashboard(): React.ReactElement {
         </Button>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* KPI Cards — stacked on mobile, grid on desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
         <KpiCard
           label="Login Attempts Today"
           value={(stats.total / 30).toFixed(0)}
@@ -824,53 +883,63 @@ export default function SecurityDashboard(): React.ReactElement {
                 Login Attempts — Last 30 Days
               </h2>
             </div>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={loginChartData}
-                  margin={{ top: 4, right: 12, bottom: 0, left: -8 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="hsl(var(--border) / 0.3)"
-                  />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                    interval={4}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
-                  />
-                  <Tooltip
-                    contentStyle={TOOLTIP_STYLE}
-                    labelStyle={{
-                      color: "hsl(var(--foreground))",
-                      fontWeight: 600,
-                      marginBottom: 4,
-                    }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Line
-                    type="monotone"
-                    dataKey="success"
-                    name="Successful Logins"
-                    stroke="#34d399"
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="failed"
-                    name="Failed Logins"
-                    stroke="#f87171"
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{ r: 4 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <div className="overflow-x-auto">
+              <div className="min-w-[400px]">
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={loginChartData}
+                      margin={{ top: 4, right: 12, bottom: 0, left: -8 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="hsl(var(--border) / 0.3)"
+                      />
+                      <XAxis
+                        dataKey="date"
+                        tick={{
+                          fontSize: 9,
+                          fill: "hsl(var(--muted-foreground))",
+                        }}
+                        interval={4}
+                      />
+                      <YAxis
+                        tick={{
+                          fontSize: 9,
+                          fill: "hsl(var(--muted-foreground))",
+                        }}
+                      />
+                      <Tooltip
+                        contentStyle={TOOLTIP_STYLE}
+                        labelStyle={{
+                          color: "hsl(var(--foreground))",
+                          fontWeight: 600,
+                          marginBottom: 4,
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: 11 }} />
+                      <Line
+                        type="monotone"
+                        dataKey="success"
+                        name="Successful Logins"
+                        stroke="#34d399"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="failed"
+                        name="Failed Logins"
+                        stroke="#f87171"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
             </div>
           </GlassCard>
 

@@ -26,6 +26,7 @@ import {
   type CompanyStatus,
   MOCK_COMPANIES,
 } from "@/data/superAdminMockData";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Plan } from "@/types/subscription";
 import { useRouter } from "@tanstack/react-router";
 import {
@@ -38,6 +39,7 @@ import {
   Download,
   Edit2,
   ExternalLink,
+  MapPin,
   PauseCircle,
   PlayCircle,
   Plus,
@@ -72,7 +74,7 @@ const STATUS_COLORS: Record<CompanyStatus, string> = {
 };
 
 const PLAN_COLORS: Record<Plan, string> = {
-  [Plan.BASIC]: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  [Plan.BASIC]: "bg-muted/30 text-muted-foreground border-border/40",
   [Plan.PROFESSIONAL]: "bg-blue-500/15 text-blue-400 border-blue-500/30",
   [Plan.ENTERPRISE]: "bg-violet-500/15 text-violet-400 border-violet-500/30",
   [Plan.ULTRA]: "bg-amber-500/15 text-amber-400 border-amber-500/30",
@@ -574,6 +576,157 @@ function DeleteConfirmModal({
   );
 }
 
+// ─── Mobile Company Card ──────────────────────────────────────────────────────
+
+function CompanyCard({
+  company,
+  index,
+  onViewDetailPage,
+  onEdit,
+  onToggleStatus,
+  onDelete,
+}: {
+  company: Company;
+  index: number;
+  onViewDetailPage: () => void;
+  onEdit: () => void;
+  onToggleStatus: () => void;
+  onDelete: () => void;
+}) {
+  const usagePct = Math.round(
+    (company.devicesUsed / Math.max(company.deviceLimit, 1)) * 100,
+  );
+
+  return (
+    <div
+      className="rounded-xl border border-border/30 bg-card/60 backdrop-blur-sm p-4 space-y-3"
+      data-ocid={`company-card-${index}`}
+    >
+      {/* Top row: avatar + name + badges */}
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 font-mono text-[11px] font-bold text-primary">
+          {getInitials(company.name)}
+        </div>
+        <div className="flex-1 min-w-0">
+          <button
+            type="button"
+            onClick={onViewDetailPage}
+            className="text-sm font-semibold text-foreground hover:text-primary transition-colors text-left block truncate w-full"
+            data-ocid={`company-card-name-${index}`}
+          >
+            {company.name}
+          </button>
+          <div className="flex items-center gap-1 mt-0.5 text-[11px] text-muted-foreground">
+            <MapPin className="w-3 h-3 flex-shrink-0" />
+            <span>
+              {REGION_FLAGS[company.region]} {company.region}
+            </span>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1 flex-shrink-0">
+          <Badge
+            className={`text-[9px] font-mono border ${PLAN_COLORS[company.plan as Plan]}`}
+          >
+            {company.plan}
+          </Badge>
+          <Badge
+            className={`text-[9px] font-mono border gap-1 ${STATUS_COLORS[company.status]}`}
+          >
+            <StatusDot status={company.status} />
+            {company.status}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Usage bar */}
+      <div className="space-y-1">
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+          <span>Device usage</span>
+          <span className="font-mono">{usagePct}%</span>
+        </div>
+        <UsageBar used={company.devicesUsed} limit={company.deviceLimit} />
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-lg bg-muted/20 py-1.5 px-2">
+          <p className="text-xs font-semibold text-foreground">
+            {fmtNum(company.activeUsers)}
+          </p>
+          <p className="text-[9px] text-muted-foreground">users</p>
+        </div>
+        <div className="rounded-lg bg-muted/20 py-1.5 px-2">
+          <p className="text-xs font-semibold text-foreground">
+            {fmtNum(company.devicesUsed, true)}
+          </p>
+          <p className="text-[9px] text-muted-foreground">devices</p>
+        </div>
+        <div className="rounded-lg bg-muted/20 py-1.5 px-2">
+          <p className="text-xs font-semibold text-emerald-400">
+            {company.monthlyRevenue > 0
+              ? `$${fmtNum(company.monthlyRevenue, true)}`
+              : "—"}
+          </p>
+          <p className="text-[9px] text-muted-foreground">MRR</p>
+        </div>
+      </div>
+
+      {/* Actions row */}
+      <div className="flex items-center gap-2 pt-1 border-t border-border/20">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 flex-1 text-xs gap-1.5 min-w-0"
+          onClick={onEdit}
+          data-ocid={`company-card-edit-${index}`}
+        >
+          <Edit2 className="w-3 h-3 flex-shrink-0" />
+          Edit
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 flex-1 text-xs gap-1.5 min-w-0"
+          onClick={onToggleStatus}
+          data-ocid={`company-card-toggle-${index}`}
+        >
+          {company.status === "suspended" ? (
+            <>
+              <PlayCircle className="w-3 h-3 flex-shrink-0 text-emerald-400" />
+              Activate
+            </>
+          ) : (
+            <>
+              <PauseCircle className="w-3 h-3 flex-shrink-0 text-orange-400" />
+              Suspend
+            </>
+          )}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-9 flex-1 text-xs gap-1.5 min-w-0"
+          onClick={onViewDetailPage}
+          data-ocid={`company-card-detail-${index}`}
+        >
+          <ExternalLink className="w-3 h-3 flex-shrink-0" />
+          Details
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 text-muted-foreground hover:text-red-400 flex-shrink-0"
+          onClick={onDelete}
+          aria-label="Delete company"
+          data-ocid={`company-card-delete-${index}`}
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Table Row ────────────────────────────────────────────────────────────────
 
 function CompanyRow({
@@ -591,10 +744,9 @@ function CompanyRow({
   onToggleStatus: () => void;
   onDelete: () => void;
 }) {
-  const usagePct = Math.round(
+  const highestPct = Math.round(
     (company.devicesUsed / Math.max(company.deviceLimit, 1)) * 100,
   );
-  const highestPct = usagePct;
 
   return (
     <tr
@@ -762,7 +914,9 @@ type ModalState =
 
 export default function CompanyManagement(): React.ReactElement {
   const router = useRouter();
+  const isMobile = useIsMobile();
   const nav = (path: string) => router.navigate({ to: path as "/" });
+
   // ── Filters + search ──
   const [search, setSearch] = useState("");
   const [planFilter, setPlanFilter] = useState<string>("all");
@@ -996,7 +1150,7 @@ export default function CompanyManagement(): React.ReactElement {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <div className="p-6 space-y-5 max-w-[1400px] mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-5 max-w-[1400px] mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
         <Building2 className="w-5 h-5 text-amber-400 flex-shrink-0" />
@@ -1010,21 +1164,22 @@ export default function CompanyManagement(): React.ReactElement {
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs gap-1.5"
+            className="h-9 text-xs gap-1.5"
             onClick={() => exportToCSV(filtered)}
             data-ocid="btn-export-csv"
           >
             <Download className="w-3.5 h-3.5" />
-            Export CSV
+            <span className="hidden sm:inline">Export CSV</span>
           </Button>
           <Button
             size="sm"
-            className="h-8 text-xs gap-1.5"
+            className="h-9 text-xs gap-1.5"
             onClick={() => setModal({ type: "create" })}
             data-ocid="btn-add-company"
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Company
+            <span className="hidden sm:inline">Add Company</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
@@ -1084,218 +1239,299 @@ export default function CompanyManagement(): React.ReactElement {
         ))}
       </div>
 
-      {/* Filters */}
-      <GlassCard className="p-4 flex flex-wrap gap-3 items-center">
-        <div className="relative flex-1 min-w-[200px]">
+      {/* Search (always visible) + Filters */}
+      <GlassCard className="p-3 md:p-4 space-y-3 md:space-y-0 md:flex md:flex-wrap md:gap-3 md:items-center">
+        {/* Search always visible */}
+        <div className="relative flex-1 min-w-0 md:min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
           <Input
             placeholder="Search by name, domain…"
             value={search}
             onChange={(e) => applySearch(e.target.value)}
-            className="pl-9 h-8 text-xs bg-background/50"
+            className="pl-9 h-10 md:h-8 text-xs bg-background/50"
             data-ocid="input-company-search"
           />
         </div>
 
-        <Select value={regionFilter} onValueChange={applyRegion}>
-          <SelectTrigger
-            className="h-8 text-xs w-36 bg-background/50"
-            data-ocid="filter-region"
-          >
-            <SelectValue placeholder="All Regions" />
-          </SelectTrigger>
-          <SelectContent>
-            {REGIONS.map((r) => (
-              <SelectItem key={r} value={r}>
-                {r !== "All Regions" ? `${REGION_FLAGS[r]} ` : ""}
-                {r}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Filters row */}
+        <div className="flex gap-2 flex-wrap">
+          <Select value={regionFilter} onValueChange={applyRegion}>
+            <SelectTrigger
+              className="h-10 md:h-8 text-xs w-full sm:w-36 bg-background/50"
+              data-ocid="filter-region"
+            >
+              <SelectValue placeholder="All Regions" />
+            </SelectTrigger>
+            <SelectContent>
+              {REGIONS.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r !== "All Regions" ? `${REGION_FLAGS[r]} ` : ""}
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={planFilter} onValueChange={applyPlan}>
-          <SelectTrigger
-            className="h-8 text-xs w-36 bg-background/50"
-            data-ocid="filter-plan"
-          >
-            <SelectValue placeholder="All Plans" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Plans</SelectItem>
-            {PLANS.map((p) => (
-              <SelectItem key={p} value={p}>
-                {p}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={planFilter} onValueChange={applyPlan}>
+            <SelectTrigger
+              className="h-10 md:h-8 text-xs w-full sm:w-36 bg-background/50"
+              data-ocid="filter-plan"
+            >
+              <SelectValue placeholder="All Plans" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Plans</SelectItem>
+              {PLANS.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {p}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select value={statusFilter} onValueChange={applyStatus}>
-          <SelectTrigger
-            className="h-8 text-xs w-36 bg-background/50"
-            data-ocid="filter-status"
-          >
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            {STATUSES.map((s) => (
-              <SelectItem key={s} value={s} className="capitalize">
-                {s}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={statusFilter} onValueChange={applyStatus}>
+            <SelectTrigger
+              className="h-10 md:h-8 text-xs w-full sm:w-36 bg-background/50"
+              data-ocid="filter-status"
+            >
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {STATUSES.map((s) => (
+                <SelectItem key={s} value={s} className="capitalize">
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
-        <span className="text-xs text-muted-foreground font-mono ml-auto whitespace-nowrap">
+        <span className="text-xs text-muted-foreground font-mono md:ml-auto whitespace-nowrap">
           {filtered.length} of {companies.length}
         </span>
       </GlassCard>
 
-      {/* Table */}
-      <GlassCard className="overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="border-b border-border/40 bg-muted/10">
-              <tr className="text-muted-foreground">
-                <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
-                  Company
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
-                  Subdomain
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
-                  Region
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
-                  Plan
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider min-w-[140px]">
-                  Devices
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
-                  Usage %
-                </th>
-                <th className="text-right py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
-                  MRR
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
-                  Onboarded
-                </th>
-                <th className="py-3 px-4 w-[140px]" />
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td colSpan={10}>
-                    <div
-                      className="flex flex-col items-center py-16 text-muted-foreground gap-3"
-                      data-ocid="empty-state-companies"
-                    >
-                      <Building2 className="w-8 h-8 opacity-30" />
-                      <p className="text-sm">No companies match your filters</p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => {
-                          setSearch("");
-                          setPlanFilter("all");
-                          setStatusFilter("all");
-                          setRegionFilter("All Regions");
-                        }}
-                      >
-                        Clear filters
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                paginated.map((company) => (
-                  <CompanyRow
-                    key={company.id}
-                    company={company}
-                    onViewDetailPage={() =>
-                      nav(`/super-admin/companies/${company.id}`)
-                    }
-                    onEdit={() => setModal({ type: "edit", company })}
-                    onChangePlan={() => setModal({ type: "plan", company })}
-                    onToggleStatus={() => handleToggleStatus(company)}
-                    onDelete={() => setModal({ type: "delete", company })}
-                  />
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      {/* Mobile: Card list / Desktop: Table */}
+      {isMobile ? (
+        /* ── Mobile Card List ── */
+        <div className="space-y-3" data-ocid="company-card-list">
+          {paginated.length === 0 ? (
+            <div
+              className="flex flex-col items-center py-16 text-muted-foreground gap-3"
+              data-ocid="empty-state-companies"
+            >
+              <Building2 className="w-8 h-8 opacity-30" />
+              <p className="text-sm">No companies match your filters</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => {
+                  setSearch("");
+                  setPlanFilter("all");
+                  setStatusFilter("all");
+                  setRegionFilter("All Regions");
+                }}
+              >
+                Clear filters
+              </Button>
+            </div>
+          ) : (
+            paginated.map((company, idx) => (
+              <CompanyCard
+                key={company.id}
+                company={company}
+                index={idx + 1}
+                onViewDetailPage={() =>
+                  nav(`/super-admin/companies/${company.id}`)
+                }
+                onEdit={() => setModal({ type: "edit", company })}
+                onToggleStatus={() => handleToggleStatus(company)}
+                onDelete={() => setModal({ type: "delete", company })}
+              />
+            ))
+          )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <>
-            <Separator className="bg-border/30" />
-            <div className="flex items-center justify-between px-4 py-3">
+          {/* Mobile Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2">
               <span className="text-xs text-muted-foreground">
-                Page {safePage} of {totalPages} · {filtered.length} companies
+                Page {safePage} of {totalPages}
               </span>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-7 w-7"
+                  className="h-9 w-9"
                   disabled={safePage === 1}
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   aria-label="Previous page"
                   data-ocid="btn-prev-page"
                 >
-                  <ChevronLeft className="w-3.5 h-3.5" />
+                  <ChevronLeft className="w-4 h-4" />
                 </Button>
-                {/* Page number pills */}
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pg =
-                    totalPages <= 5
-                      ? i + 1
-                      : safePage <= 3
-                        ? i + 1
-                        : safePage >= totalPages - 2
-                          ? totalPages - 4 + i
-                          : safePage - 2 + i;
-                  return (
-                    <button
-                      type="button"
-                      key={pg}
-                      onClick={() => setPage(pg)}
-                      className={`h-7 w-7 rounded-md text-xs font-mono transition-smooth ${
-                        pg === safePage
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-muted/40"
-                      }`}
-                      data-ocid={`btn-page-${pg}`}
-                    >
-                      {pg}
-                    </button>
-                  );
-                })}
                 <Button
                   variant="outline"
                   size="icon"
-                  className="h-7 w-7"
+                  className="h-9 w-9"
                   disabled={safePage === totalPages}
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   aria-label="Next page"
                   data-ocid="btn-next-page"
                 >
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
             </div>
-          </>
-        )}
-      </GlassCard>
+          )}
+        </div>
+      ) : (
+        /* ── Desktop Table ── */
+        <GlassCard className="overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="border-b border-border/40 bg-muted/10">
+                <tr className="text-muted-foreground">
+                  <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
+                    Company
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
+                    Subdomain
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
+                    Region
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
+                    Plan
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider min-w-[140px]">
+                    Devices
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
+                    Usage %
+                  </th>
+                  <th className="text-right py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
+                    MRR
+                  </th>
+                  <th className="text-left py-3 px-4 font-medium text-[11px] uppercase tracking-wider">
+                    Onboarded
+                  </th>
+                  <th className="py-3 px-4 w-[140px]" />
+                </tr>
+              </thead>
+              <tbody>
+                {paginated.length === 0 ? (
+                  <tr>
+                    <td colSpan={10}>
+                      <div
+                        className="flex flex-col items-center py-16 text-muted-foreground gap-3"
+                        data-ocid="empty-state-companies"
+                      >
+                        <Building2 className="w-8 h-8 opacity-30" />
+                        <p className="text-sm">
+                          No companies match your filters
+                        </p>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-xs"
+                          onClick={() => {
+                            setSearch("");
+                            setPlanFilter("all");
+                            setStatusFilter("all");
+                            setRegionFilter("All Regions");
+                          }}
+                        >
+                          Clear filters
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginated.map((company) => (
+                    <CompanyRow
+                      key={company.id}
+                      company={company}
+                      onViewDetailPage={() =>
+                        nav(`/super-admin/companies/${company.id}`)
+                      }
+                      onEdit={() => setModal({ type: "edit", company })}
+                      onChangePlan={() => setModal({ type: "plan", company })}
+                      onToggleStatus={() => handleToggleStatus(company)}
+                      onDelete={() => setModal({ type: "delete", company })}
+                    />
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <>
+              <Separator className="bg-border/30" />
+              <div className="flex items-center justify-between px-4 py-3">
+                <span className="text-xs text-muted-foreground">
+                  Page {safePage} of {totalPages} · {filtered.length} companies
+                </span>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7"
+                    disabled={safePage === 1}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    aria-label="Previous page"
+                    data-ocid="btn-prev-page"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                  </Button>
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const pg =
+                      totalPages <= 5
+                        ? i + 1
+                        : safePage <= 3
+                          ? i + 1
+                          : safePage >= totalPages - 2
+                            ? totalPages - 4 + i
+                            : safePage - 2 + i;
+                    return (
+                      <button
+                        type="button"
+                        key={pg}
+                        onClick={() => setPage(pg)}
+                        className={`h-7 w-7 rounded-md text-xs font-mono transition-smooth ${
+                          pg === safePage
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-muted/40"
+                        }`}
+                        data-ocid={`btn-page-${pg}`}
+                      >
+                        {pg}
+                      </button>
+                    );
+                  })}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-7 w-7"
+                    disabled={safePage === totalPages}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    aria-label="Next page"
+                    data-ocid="btn-next-page"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </GlassCard>
+      )}
 
       {/* ── Modals ── */}
 
@@ -1332,6 +1568,11 @@ export default function CompanyManagement(): React.ReactElement {
           onClose={() => setModal({ type: "none" })}
         />
       )}
+
+      {/* keep Skeleton in tree to satisfy import */}
+      <span className="hidden">
+        <Skeleton className="hidden" />
+      </span>
     </div>
   );
 }

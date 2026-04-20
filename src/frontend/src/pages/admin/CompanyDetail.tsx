@@ -663,7 +663,7 @@ export default function CompanyDetail(): React.ReactElement {
 
   if (!company) {
     return (
-      <div className="p-6 max-w-[1200px] mx-auto">
+      <div className="p-4 md:p-6 max-w-[1200px] mx-auto">
         <GlassCard className="p-10 flex flex-col items-center gap-3 text-center">
           <Shield className="w-8 h-8 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">Company not found</p>
@@ -683,7 +683,7 @@ export default function CompanyDetail(): React.ReactElement {
   const mrr = company.mrr ?? PLAN_PRICES[company.plan] ?? 0;
 
   return (
-    <div className="p-6 space-y-5 max-w-[1200px] mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-5 max-w-[1200px] mx-auto">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
         <button

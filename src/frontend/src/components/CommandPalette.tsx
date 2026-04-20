@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   Activity,
   AlertTriangle,
+  ArrowLeft,
   ChevronRight,
   Clock,
   Cpu,
@@ -133,6 +134,8 @@ const MAX_RECENT = 5;
 export function CommandPalette() {
   const open = useNetworkStore((s) => s.commandPaletteOpen);
   const toggleCommandPalette = useNetworkStore((s) => s.toggleCommandPalette);
+  const mobileSearchOpen = useNetworkStore((s) => s.mobileSearchOpen);
+  const setMobileSearchOpen = useNetworkStore((s) => s.setMobileSearchOpen);
   const devices = useNetworkStore((s) => s.devices);
   const alerts = useNetworkStore((s) => s.alerts);
   const routes = useNetworkStore((s) => s.routes);
@@ -152,6 +155,9 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // Combined open state — desktop CMD+K or mobile search icon
+  const isOpen = open || mobileSearchOpen;
+
   // ─── Global keyboard shortcut ───────────────────────────────────────────
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -166,12 +172,12 @@ export function CommandPalette() {
 
   // ─── Focus input on open ────────────────────────────────────────────────
   useEffect(() => {
-    if (open) {
+    if (isOpen) {
       setQuery("");
       setCursor(0);
       setTimeout(() => inputRef.current?.focus(), 50);
     }
-  }, [open]);
+  }, [isOpen]);
 
   // ─── Build searchable item pool ─────────────────────────────────────────
   const allItems: CommandPaletteItem[] = [
@@ -273,9 +279,17 @@ export function CommandPalette() {
         });
       }
       navigate({ to: item.href });
-      toggleCommandPalette();
+      if (open) toggleCommandPalette();
+      if (mobileSearchOpen) setMobileSearchOpen(false);
     },
-    [query, navigate, toggleCommandPalette],
+    [
+      query,
+      navigate,
+      open,
+      mobileSearchOpen,
+      toggleCommandPalette,
+      setMobileSearchOpen,
+    ],
   );
 
   // ─── Severity color for alerts ──────────────────────────────────────────
@@ -286,6 +300,163 @@ export function CommandPalette() {
     return "text-foreground";
   }
 
+  // ─── Shared results content ─────────────────────────────────────────────
+  function renderResults() {
+    let globalIdx = 0;
+    return (
+      <>
+        {/* Recent searches (only when no query) */}
+        {!query.trim() && recentSearches.length > 0 && (
+          <div className="mb-2">
+            <p className="px-4 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Recent
+            </p>
+            {recentSearches.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setQuery(r)}
+                className="flex w-full items-center gap-3 px-4 py-2 text-sm text-muted-foreground hover:bg-muted/30 transition-colors"
+              >
+                <Clock className="w-3.5 h-3.5 shrink-0" />
+                {r}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Grouped results */}
+        {Object.entries(grouped).map(([category, items]) => (
+          <div key={category}>
+            <p className="px-4 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+              {category}
+            </p>
+            {items.map((item) => {
+              const idx = globalIdx++;
+              const isActive = idx === cursor;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  data-cursor={idx}
+                  onClick={() => selectItem(item)}
+                  onMouseEnter={() => setCursor(idx)}
+                  className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${
+                    isActive
+                      ? "bg-cyan-500/10 border-l-2 border-cyan-400"
+                      : "border-l-2 border-transparent hover:bg-muted/30"
+                  }`}
+                >
+                  <span className={`shrink-0 ${itemAccent(item)}`}>
+                    {getIcon(item.icon)}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span
+                      className={`block text-sm font-medium truncate ${itemAccent(item)}`}
+                    >
+                      {item.title}
+                    </span>
+                    <span className="block text-xs text-muted-foreground truncate">
+                      {item.subtitle}
+                    </span>
+                  </span>
+                  {isActive && (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ))}
+
+        {/* No results */}
+        {flatItems.length === 0 && query.trim() && (
+          <div
+            className="flex flex-col items-center justify-center py-12 text-center"
+            data-ocid="command-palette-empty"
+          >
+            <Search className="w-8 h-8 text-muted-foreground mb-3" />
+            <p className="text-sm font-medium text-foreground">
+              No results for &ldquo;{query}&rdquo;
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Try searching for device names, alert types, or routes
+            </p>
+          </div>
+        )}
+      </>
+    );
+  }
+
+  // ─── Mobile fullscreen overlay ──────────────────────────────────────────
+  if (mobileSearchOpen) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex flex-col bg-background md:hidden"
+        data-ocid="mobile-search-overlay"
+      >
+        {/* Mobile search header */}
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border/50 bg-card flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setMobileSearchOpen(false)}
+            aria-label="Close search"
+            className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors -ml-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+            data-ocid="mobile-search-back"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1 flex items-center gap-2 bg-muted/40 border border-border/50 rounded-xl px-4 py-2.5">
+            <Search className="w-5 h-5 text-muted-foreground shrink-0" />
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setCursor(0);
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Search devices, alerts, routes…"
+              className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground outline-none text-lg"
+              data-ocid="mobile-search-input"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+            />
+          </div>
+        </div>
+
+        {/* Mobile results — fills remaining screen */}
+        <div
+          ref={listRef}
+          className="flex-1 overflow-y-auto py-2"
+          data-ocid="mobile-search-results"
+        >
+          {renderResults()}
+        </div>
+
+        {/* Mobile footer */}
+        <div className="border-t border-border/50 px-4 py-3 flex items-center justify-between text-[10px] text-muted-foreground flex-shrink-0 bg-card">
+          <span className="flex items-center gap-1">
+            <kbd className="rounded border border-border/60 bg-muted/40 px-1 font-mono text-[10px]">
+              ↑↓
+            </kbd>{" "}
+            Navigate
+          </span>
+          <span className="flex items-center gap-1">
+            <kbd className="rounded border border-border/60 bg-muted/40 px-1 font-mono text-[10px]">
+              ↵
+            </kbd>{" "}
+            Select
+          </span>
+          <span>{flatItems.length} results</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Desktop dialog ─────────────────────────────────────────────────────
   let globalIdx = 0;
 
   return (

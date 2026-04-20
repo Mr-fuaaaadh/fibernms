@@ -105,44 +105,51 @@ function RiskDistributionChart({ alerts }: { alerts: PredictiveAlert[] }) {
         <Activity size={11} className="text-primary" />
         Risk Score Distribution
       </p>
-      <ResponsiveContainer width="100%" height={160}>
-        <BarChart
-          data={data}
-          margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
-        >
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="oklch(0.26 0.01 265 / 0.5)"
-            vertical={false}
-          />
-          <XAxis
-            dataKey="label"
-            tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis
-            tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <Tooltip
-            contentStyle={{
-              background: "oklch(0.18 0.008 265 / 0.95)",
-              border: "1px solid oklch(0.26 0.01 265)",
-              borderRadius: 8,
-              fontSize: 11,
-              color: "oklch(0.92 0.005 260)",
-            }}
-            cursor={{ fill: "oklch(0.92 0.005 260 / 0.04)" }}
-          />
-          <Bar dataKey="count" name="Devices" radius={[4, 4, 0, 0]}>
-            {data.map((entry, i) => (
-              <Cell key={`cell-${entry.label}-${i}`} fill={BUCKET_COLORS[i]} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+      <div className="overflow-x-auto">
+        <div className="min-w-[400px]">
+          <ResponsiveContainer width="100%" height={160}>
+            <BarChart
+              data={data}
+              margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="oklch(0.26 0.01 265 / 0.5)"
+                vertical={false}
+              />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "oklch(0.18 0.008 265 / 0.95)",
+                  border: "1px solid oklch(0.26 0.01 265)",
+                  borderRadius: 8,
+                  fontSize: 11,
+                  color: "oklch(0.92 0.005 260)",
+                }}
+                cursor={{ fill: "oklch(0.92 0.005 260 / 0.04)" }}
+              />
+              <Bar dataKey="count" name="Devices" radius={[4, 4, 0, 0]}>
+                {data.map((entry, i) => (
+                  <Cell
+                    key={`cell-${entry.label}-${i}`}
+                    fill={BUCKET_COLORS[i]}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </GlassCard>
   );
 }
@@ -171,61 +178,65 @@ function AnomalyTrendChart() {
         <TrendingUp size={11} className="text-accent" />
         Anomaly Detection (14 days)
       </p>
-      <ResponsiveContainer width="100%" height={160}>
-        <AreaChart
-          data={ANOMALY_DATA}
-          margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
-        >
-          <defs>
-            <linearGradient id="anomalyGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="5%"
-                stopColor="oklch(0.68 0.25 55)"
-                stopOpacity={0.35}
+      <div className="overflow-x-auto">
+        <div className="min-w-[400px]">
+          <ResponsiveContainer width="100%" height={160}>
+            <AreaChart
+              data={ANOMALY_DATA}
+              margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+            >
+              <defs>
+                <linearGradient id="anomalyGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop
+                    offset="5%"
+                    stopColor="oklch(0.68 0.25 55)"
+                    stopOpacity={0.35}
+                  />
+                  <stop
+                    offset="95%"
+                    stopColor="oklch(0.68 0.25 55)"
+                    stopOpacity={0.03}
+                  />
+                </linearGradient>
+              </defs>
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="oklch(0.26 0.01 265 / 0.5)"
+                vertical={false}
               />
-              <stop
-                offset="95%"
-                stopColor="oklch(0.68 0.25 55)"
-                stopOpacity={0.03}
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
+                tickLine={false}
+                axisLine={false}
+                interval={2}
               />
-            </linearGradient>
-          </defs>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            stroke="oklch(0.26 0.01 265 / 0.5)"
-            vertical={false}
-          />
-          <XAxis
-            dataKey="day"
-            tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
-            tickLine={false}
-            axisLine={false}
-            interval={2}
-          />
-          <YAxis
-            tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
-            tickLine={false}
-            axisLine={false}
-          />
-          <Tooltip
-            contentStyle={{
-              background: "oklch(0.18 0.008 265 / 0.95)",
-              border: "1px solid oklch(0.26 0.01 265)",
-              borderRadius: 8,
-              fontSize: 11,
-              color: "oklch(0.92 0.005 260)",
-            }}
-          />
-          <Area
-            type="monotone"
-            dataKey="anomalies"
-            name="Anomalies"
-            stroke="oklch(0.68 0.25 55)"
-            strokeWidth={2}
-            fill="url(#anomalyGrad)"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+              <YAxis
+                tick={{ fontSize: 10, fill: "oklch(0.52 0.008 260)" }}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: "oklch(0.18 0.008 265 / 0.95)",
+                  border: "1px solid oklch(0.26 0.01 265)",
+                  borderRadius: 8,
+                  fontSize: 11,
+                  color: "oklch(0.92 0.005 260)",
+                }}
+              />
+              <Area
+                type="monotone"
+                dataKey="anomalies"
+                name="Anomalies"
+                stroke="oklch(0.68 0.25 55)"
+                strokeWidth={2}
+                fill="url(#anomalyGrad)"
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </GlassCard>
   );
 }

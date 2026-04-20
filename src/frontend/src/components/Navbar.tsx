@@ -128,6 +128,7 @@ export function Navbar() {
   const alerts = useNetworkStore((s) => s.alerts);
   const resolveAlert = useNetworkStore((s) => s.resolveAlert);
   const slaRecords = useNetworkStore((s) => s.slaRecords);
+  const setMobileSearchOpen = useNetworkStore((s) => s.setMobileSearchOpen);
 
   const { logout, principal, currentUser } = useAuth();
   const router = useRouter();
@@ -223,8 +224,19 @@ export function Navbar() {
       {/* License status dot */}
       <LicenseStatusDot />
 
-      {/* Search */}
-      <div className="relative w-56" data-ocid="navbar-search">
+      {/* Mobile search icon — md and below only */}
+      <button
+        type="button"
+        aria-label="Search"
+        onClick={() => setMobileSearchOpen(true)}
+        className="md:hidden p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-smooth min-w-[44px] min-h-[44px] flex items-center justify-center"
+        data-ocid="mobile-search-btn"
+      >
+        <Search className="w-4 h-4" />
+      </button>
+
+      {/* Search — desktop only */}
+      <div className="relative hidden md:block w-56" data-ocid="navbar-search">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
         <input
           type="text"

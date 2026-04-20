@@ -152,7 +152,7 @@ export default function Devices() {
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 overflow-auto p-6 space-y-5">
+    <div className="flex flex-col h-full min-h-0 overflow-auto p-4 md:p-6 space-y-4 md:space-y-5">
       {/* Page header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <motion.div

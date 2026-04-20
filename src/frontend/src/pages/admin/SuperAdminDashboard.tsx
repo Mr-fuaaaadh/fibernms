@@ -7,6 +7,7 @@ import {
   MOCK_SYSTEM_ALERTS,
   REVENUE_METRICS,
 } from "@/data/superAdminMockData";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Plan } from "@/types/subscription";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -239,6 +240,7 @@ function ChartTooltip({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SuperAdminDashboard(): React.ReactElement {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   // ── Derived stats ──────────────────────────────────────────────────────────
   const totalDevices = MOCK_COMPANIES.reduce((s, c) => s + c.devicesUsed, 0);
   const totalUsers = MOCK_COMPANIES.reduce((s, c) => s + c.activeUsers, 0);
@@ -314,7 +316,7 @@ export default function SuperAdminDashboard(): React.ReactElement {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-w-[1600px] mx-auto">
       {/* ── Header ── */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
@@ -329,38 +331,80 @@ export default function SuperAdminDashboard(): React.ReactElement {
           <h1 className="text-xl font-display font-bold text-foreground">
             Super Admin Control Panel
           </h1>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground truncate">
             {fmtNum(MOCK_COMPANIES.length)} tenants · {fmtNum(totalUsers, true)}{" "}
             users · {fmtNum(totalDevices, true)} devices · MRR{" "}
             {fmtMoney(REVENUE_METRICS.totalMRR)}
           </p>
         </div>
-        <Badge className={`font-mono text-[10px] border ${healthStatus.cls}`}>
-          SYSTEM {healthStatus.label.toUpperCase()}
-        </Badge>
-        <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 font-mono text-[10px]">
-          SUPER ADMIN
-        </Badge>
-        <Button
-          size="sm"
-          variant="outline"
-          className="text-xs border-border/50 gap-1.5"
-          data-ocid="view-all-alerts-btn"
-          onClick={() => navigate({ to: "/super-admin/alerts" as string })}
-        >
-          <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-          View All Alerts
-          {activeAlerts > 0 && (
-            <span className="bg-red-500/20 text-red-400 font-mono text-[9px] px-1.5 py-0.5 rounded-full border border-red-500/20">
-              {activeAlerts}
-            </span>
-          )}
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge className={`font-mono text-[10px] border ${healthStatus.cls}`}>
+            SYSTEM {healthStatus.label.toUpperCase()}
+          </Badge>
+          <Badge className="bg-amber-500/15 text-amber-400 border-amber-500/30 font-mono text-[10px]">
+            SUPER ADMIN
+          </Badge>
+          <Button
+            size="sm"
+            variant="outline"
+            className="text-xs border-border/50 gap-1.5 h-8"
+            data-ocid="view-all-alerts-btn"
+            onClick={() => navigate({ to: "/super-admin/alerts" as string })}
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">View All Alerts</span>
+            <span className="sm:hidden">Alerts</span>
+            {activeAlerts > 0 && (
+              <span className="bg-red-500/20 text-red-400 font-mono text-[9px] px-1.5 py-0.5 rounded-full border border-red-500/20">
+                {activeAlerts}
+              </span>
+            )}
+          </Button>
+        </div>
       </motion.div>
+
+      {/* ── Mobile Compact Stats Row ── */}
+      {isMobile && (
+        <div className="grid grid-cols-2 gap-2" data-ocid="mobile-stat-summary">
+          {[
+            {
+              label: "MRR",
+              value: fmtMoney(REVENUE_METRICS.totalMRR),
+              color: "text-emerald-400",
+            },
+            {
+              label: "Companies",
+              value: fmtNum(MOCK_COMPANIES.length),
+              color: "text-blue-400",
+            },
+            {
+              label: "Devices",
+              value: fmtNum(totalDevices, true),
+              color: "text-violet-400",
+            },
+            {
+              label: "Health",
+              value: healthStatus.label,
+              color:
+                criticalAlerts === 0 ? "text-emerald-400" : "text-amber-400",
+            },
+          ].map(({ label, value, color }) => (
+            <div
+              key={label}
+              className="rounded-xl border border-border/30 bg-card/60 backdrop-blur-sm px-4 py-3"
+            >
+              <p className="text-[10px] text-muted-foreground">{label}</p>
+              <p className={`text-base font-display font-bold ${color}`}>
+                {value}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── KPI Row 1 ── */}
       <div
-        className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4"
         data-ocid="kpi-row-1"
       >
         <KpiCard
@@ -417,7 +461,7 @@ export default function SuperAdminDashboard(): React.ReactElement {
 
       {/* ── KPI Row 2 ── */}
       <div
-        className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4"
         data-ocid="kpi-row-2"
       >
         <KpiCard
@@ -458,487 +502,503 @@ export default function SuperAdminDashboard(): React.ReactElement {
       </div>
 
       {/* ── Charts Row ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* MRR Area Chart */}
-        <motion.div
-          className="lg:col-span-2"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.35 }}
-          data-ocid="mrr-chart"
-        >
-          <div className="admin-card rounded-xl p-5 h-full">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-sm font-display font-semibold text-foreground">
-                  Monthly Recurring Revenue
-                </h2>
-                <p className="text-xs text-muted-foreground">12-month trend</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xl font-display font-bold text-foreground">
-                  {fmtMoney(REVENUE_METRICS.totalMRR)}
-                </p>
-                <p className="text-xs text-emerald-400">
-                  +{mrrGrowthPct}% this month
-                </p>
-              </div>
-            </div>
-            <ResponsiveContainer width="100%" height={180}>
-              <AreaChart
-                data={MRR_TREND}
-                margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="mrrGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <XAxis
-                  dataKey="month"
-                  tick={{ fontSize: 10, fill: "currentColor", opacity: 0.5 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tickFormatter={(v: number) => fmtMoney(v)}
-                  tick={{ fontSize: 9, fill: "currentColor", opacity: 0.5 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={52}
-                />
-                <Tooltip content={<ChartTooltip />} />
-                <Area
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="#a78bfa"
-                  strokeWidth={2}
-                  fill="url(#mrrGrad)"
-                  dot={false}
-                  activeDot={{ r: 4, fill: "#a78bfa" }}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </motion.div>
-
-        {/* Status Pie */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.38 }}
-          data-ocid="status-pie"
-        >
-          <div className="admin-card rounded-xl p-5 h-full">
-            <h2 className="text-sm font-display font-semibold text-foreground mb-1">
-              Company Status
-            </h2>
-            <p className="text-xs text-muted-foreground mb-3">
-              {MOCK_COMPANIES.length} total tenants
-            </p>
-            <ResponsiveContainer width="100%" height={160}>
-              <PieChart>
-                <Pie
-                  data={statusCounts}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={44}
-                  outerRadius={70}
-                  paddingAngle={3}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {statusCounts.map((entry) => (
-                    <Cell
-                      key={entry.name}
-                      fill={
-                        entry.name === "Active"
-                          ? "#34d399"
-                          : entry.name === "Trial"
-                            ? "#60a5fa"
-                            : entry.name === "Suspended"
-                              ? "#fbbf24"
-                              : "#fb7185"
-                      }
-                      fillOpacity={0.85}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  content={({ active, payload }) =>
-                    active && payload?.length ? (
-                      <div className="glass-elevated px-2.5 py-1.5 rounded-lg text-xs border border-border/40">
-                        <p className="text-foreground font-medium">
-                          {payload[0].name}
-                        </p>
-                        <p className="font-mono text-muted-foreground">
-                          {payload[0].value} companies
-                        </p>
-                      </div>
-                    ) : null
-                  }
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="grid grid-cols-2 gap-1.5 mt-1">
-              {statusCounts.map((s) => (
-                <div key={s.name} className="flex items-center gap-1.5">
-                  <div
-                    className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_CFG[s.name.toLowerCase()]?.dot ?? "bg-muted"}`}
-                  />
-                  <span className="text-[10px] text-muted-foreground">
-                    {s.name}
-                  </span>
-                  <span className="text-[10px] font-mono text-foreground ml-auto">
-                    {s.value}
-                  </span>
+      <div className="overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 min-w-[600px] md:min-w-0">
+          {/* MRR Area Chart */}
+          <motion.div
+            className="lg:col-span-2"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.35 }}
+            data-ocid="mrr-chart"
+          >
+            <div className="admin-card rounded-xl p-5 h-full">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-sm font-display font-semibold text-foreground">
+                    Monthly Recurring Revenue
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    12-month trend
+                  </p>
                 </div>
-              ))}
+                <div className="text-right">
+                  <p className="text-xl font-display font-bold text-foreground">
+                    {fmtMoney(REVENUE_METRICS.totalMRR)}
+                  </p>
+                  <p className="text-xs text-emerald-400">
+                    +{mrrGrowthPct}% this month
+                  </p>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={180}>
+                <AreaChart
+                  data={MRR_TREND}
+                  margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                >
+                  <defs>
+                    <linearGradient id="mrrGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.4} />
+                      <stop
+                        offset="95%"
+                        stopColor="#a78bfa"
+                        stopOpacity={0.02}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <XAxis
+                    dataKey="month"
+                    tick={{ fontSize: 10, fill: "currentColor", opacity: 0.5 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tickFormatter={(v: number) => fmtMoney(v)}
+                    tick={{ fontSize: 9, fill: "currentColor", opacity: 0.5 }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={52}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#a78bfa"
+                    strokeWidth={2}
+                    fill="url(#mrrGrad)"
+                    dot={false}
+                    activeDot={{ r: 4, fill: "#a78bfa" }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+
+          {/* Status Pie */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.38 }}
+            data-ocid="status-pie"
+          >
+            <div className="admin-card rounded-xl p-5 h-full">
+              <h2 className="text-sm font-display font-semibold text-foreground mb-1">
+                Company Status
+              </h2>
+              <p className="text-xs text-muted-foreground mb-3">
+                {MOCK_COMPANIES.length} total tenants
+              </p>
+              <ResponsiveContainer width="100%" height={160}>
+                <PieChart>
+                  <Pie
+                    data={statusCounts}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={44}
+                    outerRadius={70}
+                    paddingAngle={3}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {statusCounts.map((entry) => (
+                      <Cell
+                        key={entry.name}
+                        fill={
+                          entry.name === "Active"
+                            ? "#34d399"
+                            : entry.name === "Trial"
+                              ? "#60a5fa"
+                              : entry.name === "Suspended"
+                                ? "#fbbf24"
+                                : "#fb7185"
+                        }
+                        fillOpacity={0.85}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }) =>
+                      active && payload?.length ? (
+                        <div className="glass-elevated px-2.5 py-1.5 rounded-lg text-xs border border-border/40">
+                          <p className="text-foreground font-medium">
+                            {payload[0].name}
+                          </p>
+                          <p className="font-mono text-muted-foreground">
+                            {payload[0].value} companies
+                          </p>
+                        </div>
+                      ) : null
+                    }
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="grid grid-cols-2 gap-1.5 mt-1">
+                {statusCounts.map((s) => (
+                  <div key={s.name} className="flex items-center gap-1.5">
+                    <div
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${STATUS_CFG[s.name.toLowerCase()]?.dot ?? "bg-muted"}`}
+                    />
+                    <span className="text-[10px] text-muted-foreground">
+                      {s.name}
+                    </span>
+                    <span className="text-[10px] font-mono text-foreground ml-auto">
+                      {s.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
       {/* ── Plan Distribution BarChart + Top 5 Revenue ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Plan Distribution */}
-        <motion.div
-          initial={{ opacity: 0, x: -16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.42 }}
-          data-ocid="plan-distribution"
-        >
-          <div className="admin-card rounded-xl p-5 h-full">
-            <h2 className="text-sm font-display font-semibold text-foreground mb-1">
-              Plan Distribution
-            </h2>
-            <p className="text-xs text-muted-foreground mb-4">
-              Revenue by plan tier
-            </p>
-            <ResponsiveContainer width="100%" height={140}>
-              <BarChart
-                data={planCounts}
-                layout="vertical"
-                margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
-                barSize={14}
-              >
-                <XAxis
-                  type="number"
-                  tick={{ fontSize: 9, fill: "currentColor", opacity: 0.5 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  dataKey="plan"
-                  type="category"
-                  tick={{ fontSize: 10, fill: "currentColor", opacity: 0.7 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={90}
-                />
-                <Tooltip
-                  content={({ active, payload, label }) =>
-                    active && payload?.length ? (
-                      <div className="glass-elevated px-2.5 py-1.5 rounded-lg text-xs border border-border/40">
-                        <p className="text-muted-foreground">{label}</p>
-                        <p className="font-mono font-semibold text-foreground">
-                          {payload[0].value} companies
-                        </p>
-                      </div>
-                    ) : null
-                  }
-                />
-                <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                  {planCounts.map((entry) => (
-                    <Cell
-                      key={entry.plan}
-                      fill={PLAN_CFG[entry.plan].fill}
-                      fillOpacity={0.8}
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-            <div className="grid grid-cols-2 gap-2 mt-3">
-              {planCounts.map(({ plan, count }) => (
-                <div
-                  key={plan}
-                  className={`flex items-center justify-between px-3 py-1.5 rounded-lg border ${PLAN_CFG[plan].border} bg-muted/10`}
+      <div className="overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 min-w-[560px] md:min-w-0">
+          {/* Plan Distribution */}
+          <motion.div
+            initial={{ opacity: 0, x: -16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.42 }}
+            data-ocid="plan-distribution"
+          >
+            <div className="admin-card rounded-xl p-5 h-full">
+              <h2 className="text-sm font-display font-semibold text-foreground mb-1">
+                Plan Distribution
+              </h2>
+              <p className="text-xs text-muted-foreground mb-4">
+                Revenue by plan tier
+              </p>
+              <ResponsiveContainer width="100%" height={140}>
+                <BarChart
+                  data={planCounts}
+                  layout="vertical"
+                  margin={{ top: 0, right: 8, left: 0, bottom: 0 }}
+                  barSize={14}
                 >
-                  <span
-                    className={`text-[10px] font-mono font-medium ${PLAN_CFG[plan].text}`}
+                  <XAxis
+                    type="number"
+                    tick={{ fontSize: 9, fill: "currentColor", opacity: 0.5 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    dataKey="plan"
+                    type="category"
+                    tick={{ fontSize: 10, fill: "currentColor", opacity: 0.7 }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={90}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) =>
+                      active && payload?.length ? (
+                        <div className="glass-elevated px-2.5 py-1.5 rounded-lg text-xs border border-border/40">
+                          <p className="text-muted-foreground">{label}</p>
+                          <p className="font-mono font-semibold text-foreground">
+                            {payload[0].value} companies
+                          </p>
+                        </div>
+                      ) : null
+                    }
+                  />
+                  <Bar dataKey="count" radius={[0, 4, 4, 0]}>
+                    {planCounts.map((entry) => (
+                      <Cell
+                        key={entry.plan}
+                        fill={PLAN_CFG[entry.plan].fill}
+                        fillOpacity={0.8}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="grid grid-cols-2 gap-2 mt-3">
+                {planCounts.map(({ plan, count }) => (
+                  <div
+                    key={plan}
+                    className={`flex items-center justify-between px-3 py-1.5 rounded-lg border ${PLAN_CFG[plan].border} bg-muted/10`}
                   >
-                    {plan}
-                  </span>
-                  <span className="text-[10px] font-mono text-foreground">
-                    {count}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Top 5 by Revenue */}
-        <motion.div
-          initial={{ opacity: 0, x: 16 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.42 }}
-          data-ocid="top-revenue-table"
-        >
-          <div className="admin-card rounded-xl p-5 h-full">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="text-sm font-display font-semibold text-foreground">
-                  Top Companies by Revenue
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Highest MRR tenants
-                </p>
+                    <span
+                      className={`text-[10px] font-mono font-medium ${PLAN_CFG[plan].text}`}
+                    >
+                      {plan}
+                    </span>
+                    <span className="text-[10px] font-mono text-foreground">
+                      {count}
+                    </span>
+                  </div>
+                ))}
               </div>
-              <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
             </div>
-            <div className="space-y-2">
-              {top5ByRevenue.map((c, i) => (
-                <motion.div
-                  key={c.id}
-                  initial={{ opacity: 0, x: 12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + i * 0.06 }}
-                  className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/15 border border-border/20 hover:bg-muted/25 transition-smooth"
-                >
-                  <span className="w-5 text-[10px] font-mono text-muted-foreground text-center flex-shrink-0">
-                    #{i + 1}
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium text-foreground truncate">
-                      {c.name}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">
-                      {c.region} · {c.activeUsers} users
-                    </p>
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-xs font-mono font-semibold text-foreground">
-                      {fmtMoney(c.monthlyRevenue)}
-                    </p>
-                    <p className="text-[9px] text-muted-foreground">/mo</p>
-                  </div>
-                  <Badge
-                    className={`text-[9px] font-mono border ${PLAN_CFG[c.plan].border} ${PLAN_CFG[c.plan].text} bg-transparent`}
+          </motion.div>
+
+          {/* Top 5 by Revenue */}
+          <motion.div
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.42 }}
+            data-ocid="top-revenue-table"
+          >
+            <div className="admin-card rounded-xl p-5 h-full">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h2 className="text-sm font-display font-semibold text-foreground">
+                    Top Companies by Revenue
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Highest MRR tenants
+                  </p>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                {top5ByRevenue.map((c, i) => (
+                  <motion.div
+                    key={c.id}
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + i * 0.06 }}
+                    className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/15 border border-border/20 hover:bg-muted/25 transition-smooth"
                   >
-                    {c.plan}
-                  </Badge>
-                  <Badge
-                    className={`text-[9px] border ${STATUS_CFG[c.status]?.badge ?? ""}`}
-                  >
-                    {c.status}
-                  </Badge>
-                </motion.div>
-              ))}
+                    <span className="w-5 text-[10px] font-mono text-muted-foreground text-center flex-shrink-0">
+                      #{i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">
+                        {c.name}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {c.region} · {c.activeUsers} users
+                      </p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs font-mono font-semibold text-foreground">
+                        {fmtMoney(c.monthlyRevenue)}
+                      </p>
+                      <p className="text-[9px] text-muted-foreground">/mo</p>
+                    </div>
+                    <Badge
+                      className={`text-[9px] font-mono border ${PLAN_CFG[c.plan].border} ${PLAN_CFG[c.plan].text} bg-transparent`}
+                    >
+                      {c.plan}
+                    </Badge>
+                    <Badge
+                      className={`text-[9px] border ${STATUS_CFG[c.status]?.badge ?? ""}`}
+                    >
+                      {c.status}
+                    </Badge>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
 
       {/* ── Alerts + Audit + Regional ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* System Alerts */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.48 }}
-          data-ocid="system-alerts-panel"
-        >
-          <div className="admin-card rounded-xl p-5 h-full">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-display font-semibold text-foreground">
-                Platform Alerts
-              </h2>
-              <Badge
-                className={`text-[9px] border ${
-                  criticalAlerts > 0
-                    ? "bg-red-500/10 text-red-400 border-red-500/20"
-                    : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                }`}
-              >
-                {activeAlerts} active
-              </Badge>
-            </div>
-            <ScrollArea className="h-[260px] noc-scrollbar">
-              <div className="space-y-2 pr-2">
-                {recentAlerts.map((alert) => {
-                  const sev = SEVERITY_CFG[alert.severity] ?? SEVERITY_CFG.low;
-                  return (
-                    <div
-                      key={alert.id}
-                      className="p-2.5 rounded-lg bg-muted/15 border border-border/20 space-y-1"
-                    >
-                      <div className="flex items-start gap-2">
-                        <sev.Icon
-                          className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${sev.cls.split(" ")[1]}`}
-                        />
-                        <p className="text-xs font-medium text-foreground leading-tight flex-1 min-w-0">
-                          {alert.title}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 pl-5">
-                        <Badge
-                          className={`text-[8px] font-mono border ${sev.cls}`}
-                        >
-                          {alert.severity}
-                        </Badge>
-                        <span className="text-[10px] text-muted-foreground truncate">
-                          {alert.affectedService}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground ml-auto flex-shrink-0">
-                          {relativeTime(alert.startedAt)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </div>
-        </motion.div>
-
-        {/* Recent Audit Events */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.52 }}
-          data-ocid="audit-events-panel"
-        >
-          <div className="admin-card rounded-xl p-5 h-full">
-            <h2 className="text-sm font-display font-semibold text-foreground mb-3">
-              Recent Audit Events
-            </h2>
-            <div className="space-y-0">
-              {recentAudit.map((ev, i) => (
-                <motion.div
-                  key={ev.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.55 + i * 0.05 }}
-                  className="audit-timeline-item border-l border-border/30 last:border-transparent"
+      <div className="overflow-x-auto md:overflow-visible -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 min-w-[560px] md:min-w-0">
+          {/* System Alerts */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.48 }}
+            data-ocid="system-alerts-panel"
+          >
+            <div className="admin-card rounded-xl p-5 h-full">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-display font-semibold text-foreground">
+                  Platform Alerts
+                </h2>
+                <Badge
+                  className={`text-[9px] border ${
+                    criticalAlerts > 0
+                      ? "bg-red-500/10 text-red-400 border-red-500/20"
+                      : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                  }`}
                 >
-                  <div className="absolute left-[-5px] top-3 w-2.5 h-2.5 rounded-full border-2 border-background bg-border" />
-                  <div className="pb-3">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span
-                        className={`text-[10px] font-mono font-semibold uppercase ${AUDIT_CAT_COLORS[ev.severity] ?? "text-muted-foreground"}`}
+                  {activeAlerts} active
+                </Badge>
+              </div>
+              <ScrollArea className="h-[260px] noc-scrollbar">
+                <div className="space-y-2 pr-2">
+                  {recentAlerts.map((alert) => {
+                    const sev =
+                      SEVERITY_CFG[alert.severity] ?? SEVERITY_CFG.low;
+                    return (
+                      <div
+                        key={alert.id}
+                        className="p-2.5 rounded-lg bg-muted/15 border border-border/20 space-y-1"
                       >
-                        {ev.severity}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        ·
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        {relativeTime(ev.timestamp)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-foreground mt-0.5 leading-tight">
-                      {ev.action}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                      {ev.userName} · {ev.companyName}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
+                        <div className="flex items-start gap-2">
+                          <sev.Icon
+                            className={`w-3.5 h-3.5 flex-shrink-0 mt-0.5 ${sev.cls.split(" ")[1]}`}
+                          />
+                          <p className="text-xs font-medium text-foreground leading-tight flex-1 min-w-0">
+                            {alert.title}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 pl-5">
+                          <Badge
+                            className={`text-[8px] font-mono border ${sev.cls}`}
+                          >
+                            {alert.severity}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground truncate">
+                            {alert.affectedService}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground ml-auto flex-shrink-0">
+                            {relativeTime(alert.startedAt)}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {/* Regional Distribution */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.56 }}
-          data-ocid="regional-distribution"
-        >
-          <div className="admin-card rounded-xl p-5 h-full">
-            <div className="flex items-center gap-2 mb-4">
-              <Globe className="w-4 h-4 text-muted-foreground" />
-              <h2 className="text-sm font-display font-semibold text-foreground">
-                Regional Distribution
+          {/* Recent Audit Events */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.52 }}
+            data-ocid="audit-events-panel"
+          >
+            <div className="admin-card rounded-xl p-5 h-full">
+              <h2 className="text-sm font-display font-semibold text-foreground mb-3">
+                Recent Audit Events
               </h2>
-            </div>
-            <div className="space-y-3">
-              {regionCounts.map(({ region, count }, i) => {
-                const pct = Math.round((count / maxRegionCount) * 100);
-                const rev = REVENUE_METRICS.revenueByRegion[region] ?? 0;
-                return (
+              <div className="space-y-0">
+                {recentAudit.map((ev, i) => (
                   <motion.div
-                    key={region}
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 + i * 0.06 }}
+                    key={ev.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.55 + i * 0.05 }}
+                    className="audit-timeline-item border-l border-border/30 last:border-transparent"
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
-                      <span className="text-xs font-medium text-foreground flex-1">
-                        {region}
-                      </span>
-                      <span className="text-xs font-mono text-muted-foreground">
-                        {count}
-                      </span>
+                    <div className="absolute left-[-5px] top-3 w-2.5 h-2.5 rounded-full border-2 border-background bg-border" />
+                    <div className="pb-3">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className={`text-[10px] font-mono font-semibold uppercase ${AUDIT_CAT_COLORS[ev.severity] ?? "text-muted-foreground"}`}
+                        >
+                          {ev.severity}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          ·
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          {relativeTime(ev.timestamp)}
+                        </span>
+                      </div>
+                      <p className="text-xs text-foreground mt-0.5 leading-tight">
+                        {ev.action}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
+                        {ev.userName} · {ev.companyName}
+                      </p>
                     </div>
-                    <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-violet-500/70 to-violet-400/50"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${pct}%` }}
-                        transition={{ delay: 0.65 + i * 0.06, duration: 0.55 }}
-                      />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {fmtMoney(rev)}/mo
-                    </p>
                   </motion.div>
-                );
-              })}
+                ))}
+              </div>
             </div>
+          </motion.div>
 
-            {/* Revenue by plan mini bars */}
-            <div className="mt-5 pt-4 border-t border-border/20">
-              <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono mb-3">
-                Revenue by Plan
-              </p>
-              <div className="space-y-2">
-                {Object.values(Plan).map((plan) => {
-                  const rev = REVENUE_METRICS.revenueByPlan[plan] ?? 0;
-                  const maxRev = Math.max(
-                    ...Object.values(REVENUE_METRICS.revenueByPlan),
-                  );
-                  const pct = Math.round((rev / maxRev) * 100);
+          {/* Regional Distribution */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.56 }}
+            data-ocid="regional-distribution"
+          >
+            <div className="admin-card rounded-xl p-5 h-full">
+              <div className="flex items-center gap-2 mb-4">
+                <Globe className="w-4 h-4 text-muted-foreground" />
+                <h2 className="text-sm font-display font-semibold text-foreground">
+                  Regional Distribution
+                </h2>
+              </div>
+              <div className="space-y-3">
+                {regionCounts.map(({ region, count }, i) => {
+                  const pct = Math.round((count / maxRegionCount) * 100);
+                  const rev = REVENUE_METRICS.revenueByRegion[region] ?? 0;
                   return (
-                    <div key={plan} className="flex items-center gap-2">
-                      <span
-                        className={`text-[9px] font-mono w-24 ${PLAN_CFG[plan].text}`}
-                      >
-                        {plan}
-                      </span>
-                      <div className="flex-1 h-1.5 bg-muted/20 rounded-full overflow-hidden">
+                    <motion.div
+                      key={region}
+                      initial={{ opacity: 0, x: 12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.6 + i * 0.06 }}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                        <span className="text-xs font-medium text-foreground flex-1">
+                          {region}
+                        </span>
+                        <span className="text-xs font-mono text-muted-foreground">
+                          {count}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-muted/30 rounded-full overflow-hidden">
                         <motion.div
-                          className={`h-full rounded-full ${PLAN_CFG[plan].bar}`}
+                          className="h-full rounded-full bg-gradient-to-r from-violet-500/70 to-violet-400/50"
                           initial={{ width: 0 }}
                           animate={{ width: `${pct}%` }}
-                          transition={{ delay: 0.7, duration: 0.5 }}
+                          transition={{
+                            delay: 0.65 + i * 0.06,
+                            duration: 0.55,
+                          }}
                         />
                       </div>
-                      <span className="text-[9px] font-mono text-muted-foreground w-14 text-right">
-                        {fmtMoney(rev)}
-                      </span>
-                    </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {fmtMoney(rev)}/mo
+                      </p>
+                    </motion.div>
                   );
                 })}
               </div>
+
+              {/* Revenue by plan mini bars */}
+              <div className="mt-5 pt-4 border-t border-border/20">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-mono mb-3">
+                  Revenue by Plan
+                </p>
+                <div className="space-y-2">
+                  {Object.values(Plan).map((plan) => {
+                    const rev = REVENUE_METRICS.revenueByPlan[plan] ?? 0;
+                    const maxRev = Math.max(
+                      ...Object.values(REVENUE_METRICS.revenueByPlan),
+                    );
+                    const pct = Math.round((rev / maxRev) * 100);
+                    return (
+                      <div key={plan} className="flex items-center gap-2">
+                        <span
+                          className={`text-[9px] font-mono w-24 ${PLAN_CFG[plan].text}`}
+                        >
+                          {plan}
+                        </span>
+                        <div className="flex-1 h-1.5 bg-muted/20 rounded-full overflow-hidden">
+                          <motion.div
+                            className={`h-full rounded-full ${PLAN_CFG[plan].bar}`}
+                            initial={{ width: 0 }}
+                            animate={{ width: `${pct}%` }}
+                            transition={{ delay: 0.7, duration: 0.5 }}
+                          />
+                        </div>
+                        <span className="text-[9px] font-mono text-muted-foreground w-14 text-right">
+                          {fmtMoney(rev)}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );

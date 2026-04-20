@@ -1,183 +1,220 @@
-import { GlassCard } from "@/components/GlassCard";
-import { StatusBadge } from "@/components/StatusBadge";
 import { TopologyGraph } from "@/components/topology/TopologyGraph";
 import { TopologyNodePanel } from "@/components/topology/TopologyNodePanel";
-import { cn } from "@/lib/utils";
 import { useNetworkStore } from "@/store/networkStore";
 import {
+  Activity,
   AlertTriangle,
   CheckCircle2,
+  Download,
   GitBranch,
-  Layers,
+  Globe2,
+  Layers3,
+  Network,
   Radio,
+  RefreshCw,
+  Router,
+  Wifi,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 
-function StatPill({
-  icon: Icon,
-  label,
-  value,
-  color,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: number | string;
-  color: string;
-}) {
-  return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-card/60 border border-border/40">
-      <Icon className={`w-3.5 h-3.5 ${color}`} />
-      <span className="text-xs text-muted-foreground font-mono">{label}</span>
-      <span className={`text-xs font-bold font-mono ${color}`}>{value}</span>
-    </div>
-  );
-}
-
-// ── Layer Toggle Bar ──────────────────────────────────────────────────────────
-
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface LayerConfig {
   type: "L1" | "L2" | "L3";
   label: string;
-  sublabel: string;
+  description: string;
   color: string;
-  activeClass: string;
-  borderActive: string;
+  glowColor: string;
+  textClass: string;
+  borderClass: string;
+  bgClass: string;
 }
 
 const LAYER_CONFIGS: LayerConfig[] = [
   {
     type: "L1",
-    label: "L1 Fiber",
-    sublabel: "Physical Routes",
-    color: "oklch(0.72 0.22 210)",
-    activeClass: "bg-primary/15 text-primary border-primary/40",
-    borderActive: "border-primary/40",
+    label: "L1 Backbone",
+    description: "Physical fiber routes",
+    color: "#06b6d4",
+    glowColor: "rgba(6,182,212,0.4)",
+    textClass: "text-cyan-400",
+    borderClass: "border-cyan-500/40",
+    bgClass: "bg-cyan-500/10",
   },
   {
     type: "L2",
-    label: "L2 VLAN",
-    sublabel: "Switching Paths",
-    color: "oklch(0.68 0.22 42)",
-    activeClass: "bg-orange-500/15 text-orange-400 border-orange-500/40",
-    borderActive: "border-orange-500/40",
+    label: "L2 Distribution",
+    description: "VLAN switching paths",
+    color: "#f97316",
+    glowColor: "rgba(249,115,22,0.4)",
+    textClass: "text-orange-400",
+    borderClass: "border-orange-500/40",
+    bgClass: "bg-orange-500/10",
   },
   {
     type: "L3",
-    label: "L3 IP",
-    sublabel: "IP Topology",
-    color: "oklch(0.65 0.22 290)",
-    activeClass: "bg-purple-500/15 text-purple-400 border-purple-500/40",
-    borderActive: "border-purple-500/40",
+    label: "L3 IP Access",
+    description: "IP topology overlay",
+    color: "#a855f7",
+    glowColor: "rgba(168,85,247,0.4)",
+    textClass: "text-purple-400",
+    borderClass: "border-purple-500/40",
+    bgClass: "bg-purple-500/10",
   },
 ];
 
-function LayerToggleBar() {
-  const networkLayers = useNetworkStore((s) => s.networkLayers);
-  const toggleNetworkLayer = useNetworkStore((s) => s.toggleNetworkLayer);
+const REGIONS = [
+  "All",
+  "North America",
+  "Europe",
+  "Asia-Pacific",
+  "Middle East",
+  "South America",
+];
 
+// ── Stat Card ─────────────────────────────────────────────────────────────────
+interface StatCardProps {
+  label: string;
+  value: number | string;
+  icon: React.ElementType;
+  accentColor: string;
+  glowColor: string;
+  delay?: number;
+}
+
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  accentColor,
+  glowColor,
+  delay = 0,
+}: StatCardProps) {
   return (
-    <div className="flex items-center gap-2" data-ocid="layer-toggle-toolbar">
-      <div className="flex items-center gap-1.5 mr-1">
-        <Layers className="w-3.5 h-3.5 text-muted-foreground" />
-        <span className="text-[10px] font-display tracking-widest text-muted-foreground uppercase">
-          Layers
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay, ease: [0.4, 0, 0.2, 1] }}
+      className="relative flex-1 min-w-[110px] flex flex-col gap-1 px-4 py-3 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md overflow-hidden"
+      style={{ borderLeftColor: accentColor, borderLeftWidth: 3 }}
+    >
+      <div
+        className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none"
+        style={{
+          background: `radial-gradient(ellipse at top left, ${accentColor}, transparent 70%)`,
+        }}
+      />
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <Icon className="w-3 h-3" style={{ color: accentColor }} />
+        <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+          {label}
         </span>
       </div>
-      {LAYER_CONFIGS.map((cfg) => {
-        const layer = networkLayers.find((l) => l.type === cfg.type);
-        const isVisible = layer?.visible ?? false;
-        return (
-          <button
-            key={cfg.type}
-            type="button"
-            onClick={() => toggleNetworkLayer(cfg.type)}
-            data-ocid={`layer-toggle-${cfg.type.toLowerCase()}`}
-            aria-pressed={isVisible}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-mono transition-smooth select-none",
-              isVisible
-                ? cfg.activeClass
-                : "text-muted-foreground/50 border-border/30 hover:border-border/60 hover:text-muted-foreground",
-            )}
-          >
-            <span
-              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-              style={{
-                background: isVisible ? cfg.color : "currentColor",
-                opacity: isVisible ? 1 : 0.35,
-                boxShadow: isVisible ? `0 0 6px ${cfg.color}` : "none",
-              }}
-            />
-            {cfg.label}
-          </button>
-        );
-      })}
-    </div>
+      <span
+        className="text-2xl font-display font-bold leading-none"
+        style={{ color: accentColor, textShadow: `0 0 20px ${glowColor}` }}
+      >
+        {value}
+      </span>
+    </motion.div>
   );
 }
 
-// ── Layer Legend ──────────────────────────────────────────────────────────────
-
-function LayerLegend() {
+// ── Layer Toggle Switch ────────────────────────────────────────────────────────
+function LayerToggle({ cfg }: { cfg: LayerConfig }) {
   const networkLayers = useNetworkStore((s) => s.networkLayers);
-
-  const visibleLayers = LAYER_CONFIGS.filter(
-    (cfg) => networkLayers.find((l) => l.type === cfg.type)?.visible,
-  );
-
-  if (visibleLayers.length === 0) return null;
+  const toggleNetworkLayer = useNetworkStore((s) => s.toggleNetworkLayer);
+  const layer = networkLayers.find((l) => l.type === cfg.type);
+  const isOn = layer?.visible ?? false;
 
   return (
-    <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1.5 glass-card rounded-xl px-3 py-2.5">
-      <p className="text-[9px] font-display tracking-widest text-muted-foreground/60 uppercase mb-1">
-        Active Layers
-      </p>
-      {visibleLayers.map((cfg) => (
-        <div key={cfg.type} className="flex items-center gap-2">
-          {cfg.type === "L1" ? (
-            <span
-              className="w-5 h-0.5 rounded"
-              style={{
-                background: cfg.color,
-                boxShadow: `0 0 4px ${cfg.color}`,
-              }}
-            />
-          ) : cfg.type === "L2" ? (
-            <svg width={20} height={4} aria-hidden="true">
-              <line
-                x1={0}
-                y1={2}
-                x2={20}
-                y2={2}
-                stroke={cfg.color}
-                strokeWidth={1.5}
-                strokeDasharray="4 2"
-              />
-            </svg>
-          ) : (
-            <svg width={20} height={4} aria-hidden="true">
-              <line
-                x1={0}
-                y1={2}
-                x2={20}
-                y2={2}
-                stroke={cfg.color}
-                strokeWidth={1.5}
-                strokeDasharray="2 2"
-              />
-            </svg>
-          )}
-          <span className="text-[10px] font-mono text-muted-foreground">
-            {cfg.sublabel}
-          </span>
-        </div>
-      ))}
+    <motion.div
+      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-300 cursor-pointer select-none ${
+        isOn
+          ? `${cfg.bgClass} ${cfg.borderClass}`
+          : "bg-white/5 border-white/10"
+      }`}
+      onClick={() => toggleNetworkLayer(cfg.type)}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      data-ocid={`layer-toggle-${cfg.type.toLowerCase()}`}
+      role="switch"
+      aria-checked={isOn}
+    >
+      {/* Color swatch */}
+      <div
+        className="w-3 h-3 rounded-sm flex-shrink-0"
+        style={{
+          background: isOn ? cfg.color : "rgba(255,255,255,0.15)",
+          boxShadow: isOn ? `0 0 8px ${cfg.glowColor}` : "none",
+          transition: "all 0.3s",
+        }}
+      />
+      {/* Labels */}
+      <div className="flex-1 min-w-0">
+        <p
+          className={`text-xs font-semibold font-mono transition-colors ${isOn ? cfg.textClass : "text-white/40"}`}
+        >
+          {cfg.label}
+        </p>
+        <p className="text-[10px] text-white/30 truncate">{cfg.description}</p>
+      </div>
+      {/* Toggle switch */}
+      <div
+        className={`relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0 ${isOn ? "" : "bg-white/10"}`}
+        style={{
+          background: isOn ? `${cfg.color}33` : undefined,
+          border: `1px solid ${isOn ? cfg.color : "rgba(255,255,255,0.15)"}`,
+        }}
+      >
+        <motion.div
+          className="absolute top-0.5 w-4 h-4 rounded-full"
+          animate={{ left: isOn ? "calc(100% - 18px)" : "2px" }}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+          style={{
+            background: isOn ? cfg.color : "rgba(255,255,255,0.3)",
+            boxShadow: isOn ? `0 0 8px ${cfg.glowColor}` : "none",
+          }}
+        />
+      </div>
+    </motion.div>
+  );
+}
+
+// ── Health Badge ───────────────────────────────────────────────────────────────
+function NetworkHealthBadge({ faultyCount }: { faultyCount: number }) {
+  const healthy = faultyCount === 0;
+  return (
+    <div
+      className="flex items-center gap-2 px-3 py-1.5 rounded-full border"
+      style={{
+        background: healthy ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+        borderColor: healthy ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)",
+      }}
+    >
+      <span
+        className="w-2 h-2 rounded-full animate-pulse"
+        style={{
+          background: healthy ? "#22c55e" : "#ef4444",
+          boxShadow: `0 0 6px ${healthy ? "#22c55e" : "#ef4444"}`,
+        }}
+      />
+      <span
+        className="text-xs font-mono font-semibold"
+        style={{ color: healthy ? "#22c55e" : "#ef4444" }}
+      >
+        {healthy
+          ? "Network Healthy"
+          : `${faultyCount} Fault${faultyCount > 1 ? "s" : ""} Active`}
+      </span>
     </div>
   );
 }
 
+// ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Topology() {
   const devices = useNetworkStore((s) => s.devices);
+  const alerts = useNetworkStore((s) => s.alerts);
   const selectedDeviceId = useNetworkStore((s) => s.selectedDeviceId);
 
   const selectedDevice = selectedDeviceId
@@ -190,105 +227,262 @@ export default function Topology() {
   const oltCount = devices.filter((d) => d.type === "OLT").length;
   const splCount = devices.filter((d) => d.type === "Splitter").length;
   const ontCount = devices.filter((d) => d.type === "ONT").length;
+  const unresolvedAlerts = alerts.filter((a) => !a.resolved).length;
+
+  const [syncSeconds, setSyncSeconds] = useState(0);
+  const [activeRegion, setActiveRegion] = useState("All");
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => setSyncSeconds((s) => s + 1), 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  const syncLabel =
+    syncSeconds < 60
+      ? `${syncSeconds}s ago`
+      : `${Math.floor(syncSeconds / 60)}m ago`;
+
+  const statCards = [
+    {
+      label: "Total Nodes",
+      value: devices.length,
+      icon: Network,
+      accentColor: "#06b6d4",
+      glowColor: "rgba(6,182,212,0.5)",
+    },
+    {
+      label: "Active Nodes",
+      value: activeCount,
+      icon: CheckCircle2,
+      accentColor: "#22c55e",
+      glowColor: "rgba(34,197,94,0.5)",
+    },
+    {
+      label: "Fault Nodes",
+      value: faultyCount,
+      icon: AlertTriangle,
+      accentColor: "#ef4444",
+      glowColor: "rgba(239,68,68,0.5)",
+    },
+    {
+      label: "OLTs Online",
+      value: oltCount,
+      icon: Router,
+      accentColor: "#06b6d4",
+      glowColor: "rgba(6,182,212,0.5)",
+    },
+    {
+      label: "Splitters",
+      value: splCount,
+      icon: GitBranch,
+      accentColor: "#f97316",
+      glowColor: "rgba(249,115,22,0.5)",
+    },
+    {
+      label: "ONTs",
+      value: ontCount,
+      icon: Wifi,
+      accentColor: "#a855f7",
+      glowColor: "rgba(168,85,247,0.5)",
+    },
+  ];
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-col h-full gap-4 p-4"
+      transition={{ duration: 0.4 }}
+      className="flex flex-col h-full gap-0 overflow-hidden"
       data-ocid="topology-page"
+      style={{
+        background: "linear-gradient(180deg, #020817 0%, #0a1628 100%)",
+      }}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      {/* ── Page Header ───────────────────────────────────────────────────────── */}
+      <div className="flex-shrink-0 px-4 sm:px-6 pt-4 md:pt-5 pb-3 md:pb-4 border-b border-white/8">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-4">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: "rgba(6,182,212,0.15)",
+                border: "1px solid rgba(6,182,212,0.3)",
+                boxShadow: "0 0 20px rgba(6,182,212,0.2)",
+              }}
+            >
+              <Layers3 className="w-5 h-5" style={{ color: "#06b6d4" }} />
+            </div>
+            <div>
+              <h1
+                className="text-2xl font-display font-bold tracking-tight"
+                style={{
+                  background:
+                    "linear-gradient(135deg, #ffffff 0%, #06b6d4 60%, #a855f7 100%)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                }}
+              >
+                Network Topology
+              </h1>
+              <div className="flex items-center gap-3 mt-0.5">
+                <p className="text-xs font-mono text-white/40">
+                  OLT → Splitter → ONT · {devices.length.toLocaleString()} nodes
+                  indexed
+                </p>
+                <div className="flex items-center gap-1 text-[10px] font-mono text-white/30">
+                  <RefreshCw className="w-2.5 h-2.5" />
+                  <span>Last sync: {syncLabel}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 flex-wrap">
+            <NetworkHealthBadge faultyCount={faultyCount} />
+            {warnCount > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-yellow-500/30 bg-yellow-500/10">
+                <AlertTriangle className="w-3 h-3 text-yellow-400" />
+                <span className="text-xs font-mono text-yellow-400">
+                  {warnCount} Warnings
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Stat Bar ──────────────────────────────────────────────────────── */}
+        <div className="flex gap-3 mt-4 flex-wrap">
+          {statCards.map((s, i) => (
+            <StatCard key={s.label} {...s} delay={i * 0.06} />
+          ))}
+        </div>
+      </div>
+
+      {/* ── Layer Controls ─────────────────────────────────────────────────────── */}
+      <div className="flex-shrink-0 px-6 py-3 border-b border-white/8">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center">
-            <GitBranch className="w-4 h-4 text-primary" />
+          <div className="flex items-center gap-1.5 mr-2 flex-shrink-0">
+            <Activity className="w-3.5 h-3.5 text-white/30" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">
+              Network Layers
+            </span>
           </div>
-          <div>
-            <h1 className="font-display text-lg font-bold text-foreground tracking-tight">
-              Network Topology
-            </h1>
-            <p className="text-xs text-muted-foreground font-mono">
-              OLT → Splitter → ONT hierarchy — {devices.length} nodes
-            </p>
+          <div className="flex gap-2 flex-wrap flex-1">
+            {LAYER_CONFIGS.map((cfg) => (
+              <LayerToggle key={cfg.type} cfg={cfg} />
+            ))}
           </div>
-        </div>
-
-        {/* Stats row */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <StatPill
-            icon={CheckCircle2}
-            label="Active"
-            value={activeCount}
-            color="text-emerald-400"
-          />
-          <StatPill
-            icon={AlertTriangle}
-            label="Fault"
-            value={faultyCount}
-            color="text-red-400"
-          />
-          <StatPill
-            icon={Radio}
-            label="Warn"
-            value={warnCount}
-            color="text-amber-400"
-          />
-          <span className="w-px h-5 bg-border/50 mx-1" />
-          <StatPill
-            icon={GitBranch}
-            label="OLT"
-            value={oltCount}
-            color="text-primary"
-          />
-          <StatPill
-            icon={GitBranch}
-            label="SPL"
-            value={splCount}
-            color="text-chart-2"
-          />
-          <StatPill
-            icon={Radio}
-            label="ONT"
-            value={ontCount}
-            color="text-chart-3"
-          />
         </div>
       </div>
 
-      {/* Layer toggle toolbar */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <LayerToggleBar />
-      </div>
-
-      {/* Graph + Panel */}
-      <div className="flex gap-4 flex-1 min-h-0">
-        {/* Main graph canvas */}
-        <GlassCard
-          elevated
-          className="flex-1 min-w-0 overflow-hidden relative p-0"
-        >
-          {/* Status bar */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/30">
+      {/* ── Main Canvas + Panel ────────────────────────────────────────────────── */}
+      <div className="flex flex-1 min-h-0 gap-0">
+        {/* Graph canvas */}
+        <div className="flex-1 min-w-0 relative overflow-hidden">
+          {/* Canvas header bar */}
+          <div
+            className="flex items-center justify-between px-5 py-2.5 border-b"
+            style={{
+              background: "rgba(255,255,255,0.03)",
+              borderColor: "rgba(255,255,255,0.08)",
+            }}
+          >
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                Live Topology View
+              <span
+                className="w-2 h-2 rounded-full animate-pulse"
+                style={{ background: "#22c55e", boxShadow: "0 0 8px #22c55e" }}
+              />
+              <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
+                Live Topology View · Real-time
               </span>
             </div>
-            <StatusBadge status="active" label="SYNC" />
+            <div className="flex items-center gap-2">
+              <Radio className="w-3 h-3 text-cyan-400" />
+              <span className="text-[10px] font-mono text-cyan-400">
+                LIVE SYNC
+              </span>
+            </div>
           </div>
 
-          {/* Graph */}
-          <div className="relative" style={{ height: "calc(100% - 44px)" }}>
+          {/* Graph fills remaining space */}
+          <div className="absolute inset-0 top-[41px]">
             <TopologyGraph />
-            <LayerLegend />
           </div>
-        </GlassCard>
+        </div>
 
         {/* Detail panel */}
-        <TopologyNodePanel device={selectedDevice} />
+        <div
+          className="flex-shrink-0 border-l"
+          style={{ borderColor: "rgba(255,255,255,0.08)" }}
+        >
+          <TopologyNodePanel device={selectedDevice} />
+        </div>
+      </div>
+
+      {/* ── Bottom Summary Strip ───────────────────────────────────────────────── */}
+      <div
+        className="flex-shrink-0 flex items-center justify-between gap-4 px-6 py-2.5 border-t flex-wrap"
+        style={{
+          background: "rgba(6,182,212,0.03)",
+          borderColor: "rgba(255,255,255,0.08)",
+        }}
+        data-ocid="topology-bottom-strip"
+      >
+        {/* Region filters */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Globe2 className="w-3.5 h-3.5 text-white/30 mr-1" />
+          {REGIONS.map((region) => (
+            <button
+              key={region}
+              type="button"
+              onClick={() => setActiveRegion(region)}
+              data-ocid={`region-filter-${region.toLowerCase().replace(/\s+/g, "-")}`}
+              className="px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all duration-200"
+              style={{
+                background:
+                  activeRegion === region
+                    ? "rgba(6,182,212,0.15)"
+                    : "transparent",
+                color:
+                  activeRegion === region
+                    ? "#06b6d4"
+                    : "rgba(255,255,255,0.35)",
+                border: `1px solid ${activeRegion === region ? "rgba(6,182,212,0.3)" : "transparent"}`,
+              }}
+            >
+              {region}
+            </button>
+          ))}
+        </div>
+
+        {/* Alerts + Export */}
+        <div className="flex items-center gap-3">
+          {unresolvedAlerts > 0 && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20">
+              <AlertTriangle className="w-3 h-3 text-red-400" />
+              <span className="text-[10px] font-mono text-red-400">
+                {unresolvedAlerts} Active Alerts
+              </span>
+            </div>
+          )}
+          <button
+            type="button"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono transition-all duration-200 border"
+            style={{
+              color: "rgba(255,255,255,0.5)",
+              borderColor: "rgba(255,255,255,0.1)",
+              background: "rgba(255,255,255,0.04)",
+            }}
+            data-ocid="topology-export-svg"
+            aria-label="Export topology as SVG"
+          >
+            <Download className="w-3 h-3" />
+            Export SVG
+          </button>
+        </div>
       </div>
     </motion.div>
   );
