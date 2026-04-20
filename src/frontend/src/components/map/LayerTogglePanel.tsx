@@ -12,7 +12,10 @@ export function LayerTogglePanel() {
   const { layerVisibility, toggleLayer } = useNetworkStore();
 
   return (
-    <GlassCard className="p-3 min-w-[180px]" data-ocid="layer-toggle-panel">
+    <GlassCard
+      className="p-3 min-w-[180px] pointer-events-auto"
+      data-ocid="layer-toggle-panel"
+    >
       <div className="flex items-center gap-2 mb-2.5">
         <Layers className="w-3.5 h-3.5 text-primary" />
         <span className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">

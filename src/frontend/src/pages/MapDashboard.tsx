@@ -178,14 +178,18 @@ interface MobileLayerOverlayProps {
 function MobileLayerOverlay({ open, onClose }: MobileLayerOverlayProps) {
   if (!open) return null;
   return (
-    <div className="absolute inset-0 z-[30]" data-ocid="map.layer-overlay">
+    <div
+      className="absolute inset-0"
+      style={{ zIndex: 1100 }}
+      data-ocid="map.layer-overlay"
+    >
       <div
         className="absolute inset-0 bg-black/50"
         onClick={onClose}
         onKeyDown={(e) => e.key === "Escape" && onClose()}
         role="presentation"
       />
-      <div className="absolute bottom-24 left-4 right-4 rounded-2xl bg-card/95 border border-border/60 backdrop-blur-md p-4 shadow-xl">
+      <div className="absolute bottom-24 left-4 right-4 rounded-2xl bg-card/95 border border-border/60 backdrop-blur-md p-4 shadow-xl pointer-events-auto">
         <div className="flex items-center justify-between mb-3">
           <span className="font-mono text-sm font-semibold text-foreground">
             Map Layers
@@ -488,10 +492,12 @@ export default function MapDashboard() {
       className="relative flex w-full overflow-hidden"
       style={{ height: "100%" }}
     >
-      {/* Map container */}
+      {/* ── Map area (fills space left of right panel) ──────────────────── */}
       <div
         className={`relative flex-1 transition-all duration-300 ${desktopRightPanelOpen ? "mr-[360px]" : ""}`}
+        style={{ isolation: "auto" }}
       >
+        {/* Leaflet MapContainer — pure map tiles + markers, no overlay children */}
         <MapContainer
           center={[40.7128, -74.006]}
           zoom={13}
@@ -581,15 +587,25 @@ export default function MapDashboard() {
           ))}
         </MapContainer>
 
-        {/* Layer toggle — desktop only (top-left) */}
+        {/* ── OVERLAY PANELS — rendered OUTSIDE MapContainer, above the map ── */}
+
+        {/* Layer toggle panel — desktop only, top-left */}
         {!isMobile && (
-          <div className="absolute left-4 top-4 z-[20]">
+          <div
+            className="absolute left-4 top-4 pointer-events-auto"
+            style={{ zIndex: 1000 }}
+            data-ocid="map.layer-panel"
+          >
             <LayerTogglePanel />
           </div>
         )}
 
-        {/* Draw toolbar */}
-        <div className="absolute left-1/2 top-4 z-[20] -translate-x-1/2">
+        {/* Draw toolbar — centered top, both mobile & desktop */}
+        <div
+          className="absolute left-1/2 top-4 -translate-x-1/2 pointer-events-auto"
+          style={{ zIndex: 1000 }}
+          data-ocid="map.draw-toolbar-wrapper"
+        >
           <DrawToolbar
             drawMode={drawMode}
             routeType={drawRouteType}
@@ -607,9 +623,12 @@ export default function MapDashboard() {
           />
         </div>
 
-        {/* Draw instruction */}
+        {/* Draw instruction hint — centered bottom */}
         {drawMode && (
-          <div className="absolute bottom-6 left-1/2 z-[20] -translate-x-1/2">
+          <div
+            className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none"
+            style={{ zIndex: 1000 }}
+          >
             <GlassCard className="px-4 py-2">
               <p className="font-mono text-xs text-primary">
                 {drawWaypoints.length === 0
@@ -623,17 +642,19 @@ export default function MapDashboard() {
         {/* Dismiss overlay for context menu */}
         {contextMenu && (
           <div
-            className="absolute inset-0 z-[25]"
+            className="absolute inset-0"
+            style={{ zIndex: 1050 }}
             onClick={() => setContextMenu(null)}
             onKeyDown={(e) => e.key === "Escape" && setContextMenu(null)}
             role="presentation"
           />
         )}
 
-        {/* ── Mobile FABs ────────────────────────────────────────────── */}
+        {/* ── Mobile FABs ─────────────────────────────────────────────── */}
         {isMobile && (
           <div
-            className="absolute right-4 bottom-4 z-[30] flex flex-col gap-3"
+            className="absolute right-4 bottom-4 flex flex-col gap-3 pointer-events-auto"
+            style={{ zIndex: 1000 }}
             data-ocid="map.fab-stack"
           >
             <FabButton
@@ -658,7 +679,7 @@ export default function MapDashboard() {
           </div>
         )}
 
-        {/* ── Mobile layer overlay ───────────────────────────────────── */}
+        {/* ── Mobile layer overlay ──────────────────────────────────── */}
         {isMobile && (
           <MobileLayerOverlay
             open={layerOverlayOpen}
@@ -667,9 +688,13 @@ export default function MapDashboard() {
         )}
       </div>
 
-      {/* ── Desktop right panel ──────────────────────────────────────── */}
+      {/* ── Desktop right panel (device detail / route edit) ─────────────── */}
       {desktopRightPanelOpen && (
-        <div className="absolute right-0 top-0 h-full w-[360px] z-[20] border-l border-border/40 bg-card/95 backdrop-blur-sm overflow-y-auto noc-scrollbar">
+        <div
+          className="absolute right-0 top-0 h-full w-[360px] border-l border-border/40 bg-card/95 backdrop-blur-sm overflow-y-auto noc-scrollbar pointer-events-auto"
+          style={{ zIndex: 1000 }}
+          data-ocid="map.right-panel"
+        >
           {selectedDevice && (
             <DeviceDetailPanel
               device={selectedDevice}
@@ -689,7 +714,7 @@ export default function MapDashboard() {
         </div>
       )}
 
-      {/* ── Mobile device bottom drawer ──────────────────────────────── */}
+      {/* ── Mobile device bottom drawer ──────────────────────────────────── */}
       {isMobile && (
         <MobileDeviceDrawer
           open={mobileDrawerOpen}
@@ -698,7 +723,7 @@ export default function MapDashboard() {
         />
       )}
 
-      {/* Add Device Dialog */}
+      {/* Add Device Dialog — fixed portal, always on top */}
       {addDeviceCoords && (
         <AddDeviceDialog
           lat={addDeviceCoords.lat}
@@ -720,6 +745,10 @@ export default function MapDashboard() {
         }
         .leaflet-container {
           background: #e8e0d8;
+        }
+        /* Ensure Leaflet map canvas does NOT capture pointer events for our overlay panels */
+        .leaflet-container .leaflet-pane {
+          z-index: auto;
         }
       `}</style>
     </div>

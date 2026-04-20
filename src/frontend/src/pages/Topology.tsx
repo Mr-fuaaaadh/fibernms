@@ -1,3 +1,4 @@
+import { OLTSectionCard } from "@/components/topology/OLTSectionCard";
 import { TopologyGraph } from "@/components/topology/TopologyGraph";
 import { TopologyNodePanel } from "@/components/topology/TopologyNodePanel";
 import { useNetworkStore } from "@/store/networkStore";
@@ -9,14 +10,16 @@ import {
   GitBranch,
   Globe2,
   Layers3,
+  LayoutGrid,
   Network,
   Radio,
   RefreshCw,
   Router,
+  Share2,
   Wifi,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface LayerConfig {
@@ -71,6 +74,8 @@ const REGIONS = [
   "Middle East",
   "South America",
 ];
+
+type ViewMode = "sections" | "graph";
 
 // ── Stat Card ─────────────────────────────────────────────────────────────────
 interface StatCardProps {
@@ -141,7 +146,6 @@ function LayerToggle({ cfg }: { cfg: LayerConfig }) {
       role="switch"
       aria-checked={isOn}
     >
-      {/* Color swatch */}
       <div
         className="w-3 h-3 rounded-sm flex-shrink-0"
         style={{
@@ -150,7 +154,6 @@ function LayerToggle({ cfg }: { cfg: LayerConfig }) {
           transition: "all 0.3s",
         }}
       />
-      {/* Labels */}
       <div className="flex-1 min-w-0">
         <p
           className={`text-xs font-semibold font-mono transition-colors ${isOn ? cfg.textClass : "text-white/40"}`}
@@ -159,11 +162,10 @@ function LayerToggle({ cfg }: { cfg: LayerConfig }) {
         </p>
         <p className="text-[10px] text-white/30 truncate">{cfg.description}</p>
       </div>
-      {/* Toggle switch */}
       <div
-        className={`relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0 ${isOn ? "" : "bg-white/10"}`}
+        className="relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0"
         style={{
-          background: isOn ? `${cfg.color}33` : undefined,
+          background: isOn ? `${cfg.color}33` : "rgba(255,255,255,0.1)",
           border: `1px solid ${isOn ? cfg.color : "rgba(255,255,255,0.15)"}`,
         }}
       >
@@ -211,11 +213,115 @@ function NetworkHealthBadge({ faultyCount }: { faultyCount: number }) {
   );
 }
 
+// ── View Mode Toggle ──────────────────────────────────────────────────────────
+function ViewToggle({
+  mode,
+  onChange,
+}: { mode: ViewMode; onChange: (m: ViewMode) => void }) {
+  const tabs: { value: ViewMode; label: string; icon: React.ElementType }[] = [
+    { value: "sections", label: "OLT Sections", icon: LayoutGrid },
+    { value: "graph", label: "Network Graph", icon: Share2 },
+  ];
+  return (
+    <div
+      className="flex items-center gap-1 p-1 rounded-xl"
+      style={{
+        background: "rgba(255,255,255,0.04)",
+        border: "1px solid rgba(255,255,255,0.1)",
+      }}
+    >
+      {tabs.map((tab) => {
+        const Icon = tab.icon;
+        const active = mode === tab.value;
+        return (
+          <button
+            key={tab.value}
+            type="button"
+            onClick={() => onChange(tab.value)}
+            data-ocid={`topology-view-toggle-${tab.value}`}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all duration-200"
+            style={{
+              background: active ? "rgba(6,182,212,0.15)" : "transparent",
+              color: active ? "#06b6d4" : "rgba(255,255,255,0.4)",
+              border: active
+                ? "1px solid rgba(6,182,212,0.3)"
+                : "1px solid transparent",
+              boxShadow: active ? "0 0 12px rgba(6,182,212,0.2)" : "none",
+            }}
+          >
+            <Icon className="w-3.5 h-3.5" />
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ── OLT Sections Summary Bar ──────────────────────────────────────────────────
+function OLTSummaryBar({
+  olts,
+  filteredOlts,
+}: {
+  olts: import("@/types/network").Device[];
+  filteredOlts: import("@/types/network").Device[];
+}) {
+  const online = olts.filter((o) => o.status === "active").length;
+  const fault = olts.filter((o) => o.status === "faulty").length;
+  const warning = olts.filter((o) => o.status === "warning").length;
+
+  const items = [
+    { label: "Total OLTs", value: olts.length, color: "#06b6d4", icon: Router },
+    { label: "Online", value: online, color: "#22c55e", icon: CheckCircle2 },
+    { label: "Fault", value: fault, color: "#ef4444", icon: AlertTriangle },
+    { label: "Warning", value: warning, color: "#eab308", icon: AlertTriangle },
+    {
+      label: "Showing",
+      value: filteredOlts.length,
+      color: "#a855f7",
+      icon: LayoutGrid,
+    },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      {items.map((item) => {
+        const Icon = item.icon;
+        return (
+          <div
+            key={item.label}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl"
+            style={{
+              background: `${item.color}0d`,
+              border: `1px solid ${item.color}25`,
+            }}
+          >
+            <Icon className="w-3.5 h-3.5" style={{ color: item.color }} />
+            <span
+              className="text-[10px] font-mono"
+              style={{ color: "rgba(255,255,255,0.4)" }}
+            >
+              {item.label}
+            </span>
+            <span
+              className="text-sm font-bold font-mono"
+              style={{ color: item.color }}
+            >
+              {item.value}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Topology() {
   const devices = useNetworkStore((s) => s.devices);
   const alerts = useNetworkStore((s) => s.alerts);
   const selectedDeviceId = useNetworkStore((s) => s.selectedDeviceId);
+  const setSelectedDevice = useNetworkStore((s) => s.setSelectedDevice);
 
   const selectedDevice = selectedDeviceId
     ? (devices.find((d) => d.id === selectedDeviceId) ?? null)
@@ -231,6 +337,7 @@ export default function Topology() {
 
   const [syncSeconds, setSyncSeconds] = useState(0);
   const [activeRegion, setActiveRegion] = useState("All");
+  const [viewMode, setViewMode] = useState<ViewMode>("sections");
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -289,6 +396,50 @@ export default function Topology() {
       glowColor: "rgba(168,85,247,0.5)",
     },
   ];
+
+  // ── Build OLT → Splitter → ONT maps ─────────────────────────────────────
+  const olts = useMemo(
+    () => devices.filter((d) => d.type === "OLT"),
+    [devices],
+  );
+  const splitters = useMemo(
+    () => devices.filter((d) => d.type === "Splitter"),
+    [devices],
+  );
+  const ontsAll = useMemo(
+    () => devices.filter((d) => d.type === "ONT"),
+    [devices],
+  );
+
+  const filteredOlts = useMemo(
+    () =>
+      activeRegion === "All"
+        ? olts
+        : olts.filter((o) => o.region === activeRegion),
+    [olts, activeRegion],
+  );
+
+  // Map: OLT id → its splitters
+  const oltSplittersMap = useMemo(() => {
+    const map: Record<string, import("@/types/network").Device[]> = {};
+    for (const olt of olts) {
+      map[olt.id] = olt.connectedTo
+        .map((sid) => splitters.find((s) => s.id === sid))
+        .filter(Boolean) as import("@/types/network").Device[];
+    }
+    return map;
+  }, [olts, splitters]);
+
+  // Map: OLT id → its ONTs (via splitters)
+  const oltONTsMap = useMemo(() => {
+    const map: Record<string, import("@/types/network").Device[]> = {};
+    for (const olt of olts) {
+      const spls = oltSplittersMap[olt.id] ?? [];
+      const ontIds = new Set(spls.flatMap((s) => s.connectedTo));
+      map[olt.id] = ontsAll.filter((o) => ontIds.has(o.id));
+    }
+    return map;
+  }, [olts, oltSplittersMap, ontsAll]);
 
   return (
     <motion.div
@@ -353,7 +504,7 @@ export default function Topology() {
           </div>
         </div>
 
-        {/* ── Stat Bar ──────────────────────────────────────────────────────── */}
+        {/* ── Stat Bar ────────────────────────────────────────────────────── */}
         <div className="flex gap-3 mt-4 flex-wrap">
           {statCards.map((s, i) => (
             <StatCard key={s.label} {...s} delay={i * 0.06} />
@@ -361,68 +512,184 @@ export default function Topology() {
         </div>
       </div>
 
-      {/* ── Layer Controls ─────────────────────────────────────────────────────── */}
+      {/* ── Toolbar: layer toggles + view toggle ──────────────────────────────── */}
       <div className="flex-shrink-0 px-6 py-3 border-b border-white/8">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 mr-2 flex-shrink-0">
-            <Activity className="w-3.5 h-3.5 text-white/30" />
-            <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">
-              Network Layers
-            </span>
+        <div className="flex items-center gap-3 flex-wrap justify-between">
+          <div className="flex items-center gap-3 flex-wrap flex-1">
+            <div className="flex items-center gap-1.5 mr-2 flex-shrink-0">
+              <Activity className="w-3.5 h-3.5 text-white/30" />
+              <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">
+                Network Layers
+              </span>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {LAYER_CONFIGS.map((cfg) => (
+                <LayerToggle key={cfg.type} cfg={cfg} />
+              ))}
+            </div>
           </div>
-          <div className="flex gap-2 flex-wrap flex-1">
-            {LAYER_CONFIGS.map((cfg) => (
-              <LayerToggle key={cfg.type} cfg={cfg} />
-            ))}
-          </div>
+          {/* View toggle */}
+          <ViewToggle mode={viewMode} onChange={setViewMode} />
         </div>
       </div>
 
-      {/* ── Main Canvas + Panel ────────────────────────────────────────────────── */}
-      <div className="flex flex-1 min-h-0 gap-0">
-        {/* Graph canvas */}
-        <div className="flex-1 min-w-0 relative overflow-hidden">
-          {/* Canvas header bar */}
-          <div
-            className="flex items-center justify-between px-5 py-2.5 border-b"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              borderColor: "rgba(255,255,255,0.08)",
-            }}
+      {/* ── Main Content ─────────────────────────────────────────────────────── */}
+      <div className="flex flex-1 min-h-0">
+        <AnimatePresence mode="wait">
+          {viewMode === "sections" ? (
+            /* ── OLT SECTIONS VIEW ─────────────────────────────────────────── */
+            <motion.div
+              key="sections"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              className="flex-1 min-w-0 overflow-hidden flex flex-col"
+            >
+              {/* Sections canvas sub-header */}
+              <div
+                className="flex-shrink-0 flex items-center justify-between gap-4 px-5 py-2.5 border-b flex-wrap"
+                style={{
+                  background: "rgba(255,255,255,0.02)",
+                  borderColor: "rgba(255,255,255,0.08)",
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-2 h-2 rounded-full animate-pulse"
+                    style={{
+                      background: "#22c55e",
+                      boxShadow: "0 0 8px #22c55e",
+                    }}
+                  />
+                  <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
+                    OLT Section View · {filteredOlts.length} OLTs shown
+                  </span>
+                </div>
+                <OLTSummaryBar olts={olts} filteredOlts={filteredOlts} />
+              </div>
+
+              {/* Scrollable grid */}
+              <div
+                className="flex-1 overflow-y-auto px-4 sm:px-6 py-5"
+                style={{ scrollbarColor: "rgba(6,182,212,0.2) transparent" }}
+                data-ocid="olt-sections-grid"
+              >
+                {filteredOlts.length === 0 ? (
+                  <div
+                    className="flex flex-col items-center justify-center h-64 gap-4"
+                    data-ocid="olt-sections.empty_state"
+                  >
+                    <div
+                      className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                      style={{
+                        background: "rgba(6,182,212,0.1)",
+                        border: "1px solid rgba(6,182,212,0.2)",
+                      }}
+                    >
+                      <Router
+                        className="w-7 h-7"
+                        style={{ color: "#06b6d4" }}
+                      />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm font-mono text-white/40">
+                        No OLTs in this region
+                      </p>
+                      <p className="text-xs font-mono text-white/25 mt-1">
+                        Select "All" or a different region
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {filteredOlts.map((olt, i) => (
+                      <OLTSectionCard
+                        key={olt.id}
+                        olt={olt}
+                        splitters={oltSplittersMap[olt.id] ?? []}
+                        onts={oltONTsMap[olt.id] ?? []}
+                        isSelected={selectedDeviceId === olt.id}
+                        onSelect={(id) =>
+                          setSelectedDevice(selectedDeviceId === id ? null : id)
+                        }
+                        index={i}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          ) : (
+            /* ── NETWORK GRAPH VIEW ─────────────────────────────────────────── */
+            <motion.div
+              key="graph"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              className="flex-1 min-w-0 flex"
+            >
+              {/* Graph canvas */}
+              <div className="flex-1 min-w-0 relative overflow-hidden">
+                <div
+                  className="flex items-center justify-between px-5 py-2.5 border-b"
+                  style={{
+                    background: "rgba(255,255,255,0.03)",
+                    borderColor: "rgba(255,255,255,0.08)",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-2 h-2 rounded-full animate-pulse"
+                      style={{
+                        background: "#22c55e",
+                        boxShadow: "0 0 8px #22c55e",
+                      }}
+                    />
+                    <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
+                      Live Topology View · Real-time
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Radio className="w-3 h-3 text-cyan-400" />
+                    <span className="text-[10px] font-mono text-cyan-400">
+                      LIVE SYNC
+                    </span>
+                  </div>
+                </div>
+                <div className="absolute inset-0 top-[41px]">
+                  <TopologyGraph />
+                </div>
+              </div>
+
+              {/* Detail panel */}
+              <div
+                className="flex-shrink-0 border-l"
+                style={{ borderColor: "rgba(255,255,255,0.08)" }}
+              >
+                <TopologyNodePanel device={selectedDevice} />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Detail panel (sections view — only shown when a node is selected) */}
+        {viewMode === "sections" && selectedDevice && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.25 }}
+            className="flex-shrink-0 border-l"
+            style={{ borderColor: "rgba(255,255,255,0.08)" }}
           >
-            <div className="flex items-center gap-2">
-              <span
-                className="w-2 h-2 rounded-full animate-pulse"
-                style={{ background: "#22c55e", boxShadow: "0 0 8px #22c55e" }}
-              />
-              <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
-                Live Topology View · Real-time
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Radio className="w-3 h-3 text-cyan-400" />
-              <span className="text-[10px] font-mono text-cyan-400">
-                LIVE SYNC
-              </span>
-            </div>
-          </div>
-
-          {/* Graph fills remaining space */}
-          <div className="absolute inset-0 top-[41px]">
-            <TopologyGraph />
-          </div>
-        </div>
-
-        {/* Detail panel */}
-        <div
-          className="flex-shrink-0 border-l"
-          style={{ borderColor: "rgba(255,255,255,0.08)" }}
-        >
-          <TopologyNodePanel device={selectedDevice} />
-        </div>
+            <TopologyNodePanel device={selectedDevice} />
+          </motion.div>
+        )}
       </div>
 
-      {/* ── Bottom Summary Strip ───────────────────────────────────────────────── */}
+      {/* ── Bottom Strip: region filters + alerts + export ───────────────────── */}
       <div
         className="flex-shrink-0 flex items-center justify-between gap-4 px-6 py-2.5 border-t flex-wrap"
         style={{
