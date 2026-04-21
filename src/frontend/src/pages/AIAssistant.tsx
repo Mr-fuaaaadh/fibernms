@@ -22,6 +22,7 @@ import {
   User,
   Wifi,
   Workflow,
+  X,
   Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -508,14 +509,14 @@ function AIMessage({
       initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
-      className="flex items-start gap-3 mb-4 group"
+      className="flex items-start gap-2 sm:gap-3 mb-4 group"
       data-ocid="ai-message"
     >
-      <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0 mt-1">
-        <Bot size={14} className="text-primary" />
+      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0 mt-1">
+        <Bot size={13} className="text-primary" />
       </div>
       <div className="flex-1 min-w-0">
-        <GlassCard className="px-4 py-3 rounded-2xl rounded-tl-sm">
+        <GlassCard className="px-3 py-2.5 sm:px-4 sm:py-3 rounded-2xl rounded-tl-sm">
           <div className="text-sm text-foreground/90 leading-relaxed space-y-0.5">
             {renderMarkdown(msg.content)}
           </div>
@@ -530,7 +531,7 @@ function AIMessage({
                   key={card.label}
                   type="button"
                   onClick={() => onAction(card.query)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border/50 bg-muted/30 text-[11px] text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-smooth"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-border/50 bg-muted/30 text-[11px] text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-smooth min-h-[32px]"
                   data-ocid={`action-card-${card.label.toLowerCase().replace(/\s+/g, "-")}`}
                 >
                   <Icon size={11} />
@@ -545,7 +546,7 @@ function AIMessage({
           <button
             type="button"
             onClick={copyText}
-            className="opacity-0 group-hover:opacity-100 transition-smooth text-muted-foreground hover:text-foreground"
+            className="opacity-0 group-hover:opacity-100 transition-smooth text-muted-foreground hover:text-foreground min-h-[24px] min-w-[24px] flex items-center justify-center"
             aria-label="Copy message"
           >
             {copied ? (
@@ -573,8 +574,8 @@ function UserMessage({ msg }: { msg: Message }) {
       className="flex justify-end mb-4"
       data-ocid="user-message"
     >
-      <div className="max-w-[75%] min-w-0">
-        <div className="bg-primary/20 border border-primary/30 rounded-2xl rounded-tr-sm px-4 py-3 text-sm text-foreground leading-relaxed">
+      <div className="max-w-[85%] sm:max-w-[75%] min-w-0">
+        <div className="bg-primary/20 border border-primary/30 rounded-2xl rounded-tr-sm px-3 py-2.5 sm:px-4 sm:py-3 text-sm text-foreground leading-relaxed">
           {msg.content}
         </div>
         <div className="flex justify-end items-center gap-1.5 mt-1 px-1">
@@ -624,12 +625,14 @@ function makeWelcome(): Message {
   };
 }
 
-// ── Network Context Panel ─────────────────────────────────────────────────────
+// ── Network Context Panel content (shared between desktop panel and drawer) ───
 
-function NetworkContextPanel({
+function NetworkContextContent({
   onItemClick,
+  onClose,
 }: {
   onItemClick: (query: string) => void;
+  onClose?: () => void;
 }) {
   const alerts = useNetworkStore((s) => s.alerts);
   const slaRecords = useNetworkStore((s) => s.slaRecords);
@@ -646,15 +649,25 @@ function NetworkContextPanel({
     .slice(0, 5);
 
   return (
-    <div
-      className="w-72 flex-shrink-0 flex flex-col border-l border-border/30 bg-card/30 overflow-y-auto noc-scrollbar"
-      data-ocid="network-context-panel"
-    >
-      <div className="px-4 py-3 border-b border-border/30 flex items-center gap-2">
-        <Activity size={13} className="text-primary" />
-        <span className="text-xs font-display tracking-widest text-foreground uppercase">
-          Live Context
-        </span>
+    <div className="flex flex-col h-full overflow-y-auto noc-scrollbar">
+      <div className="px-4 py-3 border-b border-border/30 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <Activity size={13} className="text-primary" />
+          <span className="text-xs font-display tracking-widest text-foreground uppercase">
+            Live Context
+          </span>
+        </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-smooth"
+            aria-label="Close network context"
+            data-ocid="network-context-close-btn"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {/* Alert summary */}
@@ -665,12 +678,13 @@ function NetworkContextPanel({
         <div className="space-y-1.5">
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               onItemClick(
                 `Show active faults — ${String(criticalAlerts.length)} critical, ${String(warningAlerts.length)} warning`,
-              )
-            }
-            className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-border/30 hover:border-destructive/40 hover:bg-destructive/5 transition-smooth group"
+              );
+              onClose?.();
+            }}
+            className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-border/30 hover:border-destructive/40 hover:bg-destructive/5 transition-smooth group min-h-[44px]"
             data-ocid="ctx-critical-alerts"
           >
             <div className="flex items-center gap-2">
@@ -685,12 +699,13 @@ function NetworkContextPanel({
           </button>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               onItemClick(
                 `Show warning level faults — ${String(warningAlerts.length)} active`,
-              )
-            }
-            className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-border/30 hover:border-amber-500/40 hover:bg-amber-500/5 transition-smooth group"
+              );
+              onClose?.();
+            }}
+            className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-border/30 hover:border-amber-500/40 hover:bg-amber-500/5 transition-smooth group min-h-[44px]"
             data-ocid="ctx-warning-alerts"
           >
             <div className="flex items-center gap-2">
@@ -722,12 +737,13 @@ function NetworkContextPanel({
               <button
                 key={s.id}
                 type="button"
-                onClick={() =>
+                onClick={() => {
                   onItemClick(
                     `Tell me about the SLA breach for ${s.customerName}`,
-                  )
-                }
-                className="w-full text-left px-2.5 py-2 rounded-lg border border-destructive/30 hover:border-destructive/50 hover:bg-destructive/5 transition-smooth group"
+                  );
+                  onClose?.();
+                }}
+                className="w-full text-left px-2.5 py-2 rounded-lg border border-destructive/30 hover:border-destructive/50 hover:bg-destructive/5 transition-smooth group min-h-[44px]"
                 data-ocid={`ctx-sla-${s.id}`}
               >
                 <div className="flex items-center justify-between">
@@ -779,12 +795,13 @@ function NetworkContextPanel({
                 <button
                   key={a.id}
                   type="button"
-                  onClick={() =>
+                  onClick={() => {
                     onItemClick(
                       `Tell me about the at-risk device ${a.deviceName} with risk score ${String(a.riskScore)}`,
-                    )
-                  }
-                  className="w-full text-left px-2.5 py-2 rounded-lg border border-border/30 hover:border-primary/40 hover:bg-primary/5 transition-smooth group"
+                    );
+                    onClose?.();
+                  }}
+                  className="w-full text-left px-2.5 py-2 rounded-lg border border-border/30 hover:border-primary/40 hover:bg-primary/5 transition-smooth group min-h-[44px]"
                   data-ocid={`ctx-risk-${a.id}`}
                 >
                   <div className="flex items-center justify-between">
@@ -810,25 +827,27 @@ function NetworkContextPanel({
   );
 }
 
-// ── Session sidebar ───────────────────────────────────────────────────────────
+// ── Session sidebar content (shared between desktop sidebar and drawer) ────────
 
-function SessionSidebar({
+function SessionSidebarContent({
   sessions,
   activeId,
   onSelect,
   onNew,
   activeAlerts,
+  onClose,
 }: {
   sessions: ChatSession[];
   activeId: string;
   onSelect: (id: string) => void;
   onNew: () => void;
   activeAlerts: number;
+  onClose?: () => void;
 }) {
   return (
-    <div className="w-64 flex-shrink-0 flex flex-col border-r border-border/30 bg-card/40">
+    <div className="flex flex-col h-full bg-card/40">
       {/* Sidebar header */}
-      <div className="p-4 border-b border-border/30 flex items-center justify-between">
+      <div className="p-4 border-b border-border/30 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-primary/15 border border-primary/30 flex items-center justify-center noc-glow">
             <Sparkles size={14} className="text-primary" />
@@ -842,15 +861,28 @@ function SessionSidebar({
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={onNew}
-          className="w-7 h-7 rounded-lg border border-border/50 hover:border-primary/40 flex items-center justify-center transition-smooth text-muted-foreground hover:text-primary"
-          aria-label="New chat"
-          data-ocid="new-chat-btn"
-        >
-          <Plus size={13} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={onNew}
+            className="min-w-[44px] min-h-[44px] rounded-lg border border-border/50 hover:border-primary/40 flex items-center justify-center transition-smooth text-muted-foreground hover:text-primary"
+            aria-label="New chat"
+            data-ocid="new-chat-btn"
+          >
+            <Plus size={13} />
+          </button>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-w-[44px] min-h-[44px] rounded-lg hover:bg-muted/40 flex items-center justify-center transition-smooth text-muted-foreground hover:text-foreground"
+              aria-label="Close sessions"
+              data-ocid="sessions-close-btn"
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Network status mini bar */}
@@ -873,11 +905,14 @@ function SessionSidebar({
             <motion.button
               key={session.id}
               type="button"
-              onClick={() => onSelect(session.id)}
+              onClick={() => {
+                onSelect(session.id);
+                onClose?.();
+              }}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.05 }}
-              className={`w-full text-left px-3 py-2.5 rounded-xl transition-smooth group ${
+              className={`w-full text-left px-3 py-2.5 rounded-xl transition-smooth group min-h-[56px] ${
                 activeId === session.id
                   ? "bg-primary/15 border border-primary/30 noc-glow"
                   : "hover:bg-muted/40 border border-transparent"
@@ -928,7 +963,7 @@ function SessionSidebar({
       </div>
 
       {/* Sidebar footer */}
-      <div className="p-3 border-t border-border/30">
+      <div className="p-3 border-t border-border/30 flex-shrink-0">
         <div className="flex items-center gap-2 px-2 py-1.5">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-[10px] text-muted-foreground">
@@ -937,6 +972,21 @@ function SessionSidebar({
         </div>
       </div>
     </div>
+  );
+}
+
+// ── Drawer overlay backdrop ───────────────────────────────────────────────────
+
+function DrawerBackdrop({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-40 bg-background/60 backdrop-blur-sm"
+      onClick={onClose}
+      aria-hidden="true"
+    />
   );
 }
 
@@ -949,12 +999,29 @@ export default function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([makeWelcome()]);
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
+
+  // Mobile/tablet drawer state
+  const [sessionDrawerOpen, setSessionDrawerOpen] = useState(false);
+  const [contextDrawerOpen, setContextDrawerOpen] = useState(false);
+
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const activeAlerts = alerts.filter((a) => !a.resolved);
   const faultyDevices = devices.filter((d) => d.status === "faulty");
   const warnDevices = devices.filter((d) => d.status === "warning");
   const onlineDevices = devices.filter((d) => d.status === "active");
+
+  // Close drawers on Escape key
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setSessionDrawerOpen(false);
+        setContextDrawerOpen(false);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   // Inject network context on mount — run once, use stable store snapshot
   useEffect(() => {
@@ -1082,88 +1149,128 @@ export default function AIAssistant() {
       className="flex h-full min-h-0 bg-background overflow-hidden"
       data-ocid="ai-assistant-page"
     >
-      {/* ── Left Sidebar: Conversation History ── */}
-      <SessionSidebar
-        sessions={sessions}
-        activeId={activeSessionId}
-        onSelect={selectSession}
-        onNew={startNewChat}
-        activeAlerts={activeAlerts.length}
-      />
+      {/* ── LEFT SIDEBAR — desktop only (lg+) ── */}
+      <div className="hidden lg:flex w-64 flex-shrink-0 border-r border-border/30 h-full">
+        <SessionSidebarContent
+          sessions={sessions}
+          activeId={activeSessionId}
+          onSelect={selectSession}
+          onNew={startNewChat}
+          activeAlerts={activeAlerts.length}
+        />
+      </div>
 
-      {/* ── Center Panel: Active Chat ── */}
-      <div className="flex flex-col flex-1 min-w-0 h-full">
+      {/* ── CENTER PANEL ── */}
+      <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
         {/* Chat panel header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-border/30 bg-card/30 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center noc-glow">
-              <Bot size={18} className="text-primary" />
+        <div className="flex items-center justify-between px-3 sm:px-5 py-3 sm:py-3.5 border-b border-border/30 bg-card/30 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            {/* Mobile/tablet toolbar buttons */}
+            <div className="flex items-center gap-1 lg:hidden">
+              <button
+                type="button"
+                onClick={() => {
+                  setSessionDrawerOpen(true);
+                  setContextDrawerOpen(false);
+                }}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg border border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-smooth text-muted-foreground hover:text-primary relative"
+                aria-label="Open sessions"
+                data-ocid="sessions-drawer-btn"
+              >
+                <MessageSquare size={16} />
+                {sessions.length > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary" />
+                )}
+              </button>
             </div>
-            <div>
-              <h1 className="font-display text-sm font-semibold text-foreground tracking-wide">
+
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center noc-glow flex-shrink-0">
+              <Bot size={16} className="text-primary" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-display text-xs sm:text-sm font-semibold text-foreground tracking-wide truncate">
                 Network AI Assistant
               </h1>
-              <p className="text-[10px] text-muted-foreground">
+              <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">
                 Powered by FiberNMS Intelligence
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            {/* Quick stats */}
+
+          <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+            {/* Quick stats — hidden on small screens */}
             <div className="hidden md:flex items-center gap-3 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Activity size={10} className="text-primary" />
                 {devices.length} devices
               </span>
-              <span className="flex items-center gap-1">
+              <span className="hidden lg:flex items-center gap-1">
                 <Wifi size={10} className="text-emerald-400" />
                 {onlineDevices.length} online
               </span>
               {faultyDevices.length + warnDevices.length > 0 && (
-                <span className="flex items-center gap-1">
+                <span className="hidden lg:flex items-center gap-1">
                   <AlertTriangle size={10} className="text-yellow-400" />
                   {faultyDevices.length + warnDevices.length} issues
                 </span>
               )}
             </div>
+
             {/* Online status badge */}
             <Badge
               variant="outline"
-              className="text-[10px] border-emerald-500/40 text-emerald-400 gap-1.5"
+              className="text-[9px] sm:text-[10px] border-emerald-500/40 text-emerald-400 gap-1 sm:gap-1.5 px-1.5 sm:px-2"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              Online
+              <span className="hidden sm:inline">Online</span>
             </Badge>
+
+            {/* Network context toggle — mobile/tablet only */}
+            <button
+              type="button"
+              onClick={() => {
+                setContextDrawerOpen(true);
+                setSessionDrawerOpen(false);
+              }}
+              className="lg:hidden min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg border border-border/50 hover:border-primary/40 hover:bg-primary/5 transition-smooth text-muted-foreground hover:text-primary relative"
+              aria-label="Open network context"
+              data-ocid="context-drawer-btn"
+            >
+              <Activity size={16} />
+              {activeAlerts.length > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-destructive" />
+              )}
+            </button>
           </div>
         </div>
 
         {/* Messages area */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-5 noc-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3 sm:p-5 noc-scrollbar">
           {/* Empty / welcome state suggestions */}
           {isEmpty && (
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center justify-center h-full text-center py-8"
+              className="flex flex-col items-center justify-center h-full text-center py-6 sm:py-8"
             >
-              <div className="w-16 h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 noc-glow">
-                <Sparkles size={28} className="text-primary" />
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-4 noc-glow">
+                <Sparkles size={24} className="text-primary" />
               </div>
-              <h2 className="font-display text-base font-semibold text-foreground mb-1">
+              <h2 className="font-display text-sm sm:text-base font-semibold text-foreground mb-1">
                 Ask FiberNMS AI
               </h2>
-              <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+              <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6 max-w-xs sm:max-w-sm px-2">
                 Get instant insights on network faults, SLA compliance,
                 predictive risks, signal quality, and topology analysis.
               </p>
-              <div className="flex flex-wrap gap-2 justify-center max-w-lg">
+              <div className="flex flex-wrap gap-2 justify-center max-w-xs sm:max-w-lg px-2">
                 {SUGGESTED.map((s) => (
                   <button
                     type="button"
                     key={s.label}
                     onClick={() => sendMessage(s.query)}
                     disabled={isThinking}
-                    className="px-3 py-2 rounded-xl text-[11px] border border-border/50 text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-smooth disabled:opacity-40"
+                    className="px-3 py-2 rounded-xl text-[11px] border border-border/50 text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-smooth disabled:opacity-40 min-h-[36px]"
                     data-ocid="suggested-pill"
                   >
                     {s.label}
@@ -1188,14 +1295,14 @@ export default function AIAssistant() {
 
         {/* Suggested pills (shown below messages when not empty) */}
         {!isEmpty && (
-          <div className="px-5 pt-2 pb-1 flex flex-wrap gap-1.5 border-t border-border/20">
+          <div className="px-3 sm:px-5 pt-1.5 sm:pt-2 pb-1 flex flex-wrap gap-1 sm:gap-1.5 border-t border-border/20 overflow-x-auto">
             {SUGGESTED.slice(0, 4).map((s) => (
               <button
                 type="button"
                 key={s.label}
                 onClick={() => sendMessage(s.query)}
                 disabled={isThinking}
-                className="px-2.5 py-1 rounded-full text-[11px] border border-border/40 text-muted-foreground hover:border-primary/40 hover:text-primary transition-smooth disabled:opacity-40"
+                className="flex-shrink-0 px-2.5 py-1 rounded-full text-[11px] border border-border/40 text-muted-foreground hover:border-primary/40 hover:text-primary transition-smooth disabled:opacity-40 min-h-[32px]"
                 data-ocid="suggested-pill"
               >
                 {s.label}
@@ -1205,8 +1312,8 @@ export default function AIAssistant() {
         )}
 
         {/* Input bar */}
-        <div className="px-5 py-4 border-t border-border/30 flex gap-2 items-end bg-card/20 flex-shrink-0">
-          <div className="flex-1 relative">
+        <div className="px-3 py-3 sm:px-5 sm:py-4 border-t border-border/30 flex gap-2 items-end bg-card/20 flex-shrink-0">
+          <div className="flex-1 relative min-w-0">
             <textarea
               rows={1}
               value={input}
@@ -1215,9 +1322,9 @@ export default function AIAssistant() {
               }}
               onKeyDown={handleKeyDown}
               disabled={isThinking}
-              placeholder="Ask about faults, SLA status, predictive risks, OLT status…  (Enter to send)"
-              className="w-full resize-none rounded-xl border border-border/60 bg-muted/30 px-4 py-3 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-smooth noc-scrollbar disabled:opacity-50"
-              style={{ maxHeight: 120, minHeight: 44 }}
+              placeholder="Ask about faults, SLA, OLT status… (Enter to send)"
+              className="w-full resize-none rounded-xl border border-border/60 bg-muted/30 px-3 py-3 sm:px-4 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-smooth noc-scrollbar disabled:opacity-50"
+              style={{ maxHeight: 120, minHeight: 48 }}
               data-ocid="chat-input"
             />
             <span className="absolute right-3 bottom-3 text-[10px] text-muted-foreground/40 tabular-nums">
@@ -1231,17 +1338,70 @@ export default function AIAssistant() {
             }}
             disabled={isThinking || !input.trim()}
             size="sm"
-            className="h-11 px-4 gap-2 bg-primary text-primary-foreground hover:bg-primary/85 transition-smooth"
+            className="h-12 px-3 sm:px-4 gap-1.5 bg-primary text-primary-foreground hover:bg-primary/85 transition-smooth flex-shrink-0 min-w-[44px]"
             data-ocid="send-btn"
           >
             <Send size={14} />
-            Send
+            <span className="hidden sm:inline">Send</span>
           </Button>
         </div>
       </div>
 
-      {/* ── Right Panel: Network Context ── */}
-      <NetworkContextPanel onItemClick={sendMessage} />
+      {/* ── RIGHT PANEL — desktop only (lg+) ── */}
+      <div
+        className="hidden lg:flex w-72 flex-shrink-0 flex-col border-l border-border/30 bg-card/30 h-full"
+        data-ocid="network-context-panel"
+      >
+        <NetworkContextContent onItemClick={sendMessage} />
+      </div>
+
+      {/* ── SESSION DRAWER — mobile/tablet (hidden on lg+) ── */}
+      <AnimatePresence>
+        {sessionDrawerOpen && (
+          <>
+            <DrawerBackdrop onClose={() => setSessionDrawerOpen(false)} />
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed top-0 left-0 bottom-0 z-50 w-72 max-w-[85vw] shadow-2xl border-r border-border/30 bg-card overflow-hidden"
+              data-ocid="sessions-drawer"
+            >
+              <SessionSidebarContent
+                sessions={sessions}
+                activeId={activeSessionId}
+                onSelect={selectSession}
+                onNew={startNewChat}
+                activeAlerts={activeAlerts.length}
+                onClose={() => setSessionDrawerOpen(false)}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── NETWORK CONTEXT DRAWER — mobile/tablet (hidden on lg+) ── */}
+      <AnimatePresence>
+        {contextDrawerOpen && (
+          <>
+            <DrawerBackdrop onClose={() => setContextDrawerOpen(false)} />
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed top-0 right-0 bottom-0 z-50 w-80 max-w-[90vw] shadow-2xl border-l border-border/30 bg-card overflow-hidden"
+              data-ocid="context-drawer"
+            >
+              <NetworkContextContent
+                onItemClick={sendMessage}
+                onClose={() => setContextDrawerOpen(false)}
+              />
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
