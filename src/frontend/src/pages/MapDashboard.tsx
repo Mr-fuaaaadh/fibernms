@@ -7,6 +7,10 @@ import { DeviceDetailPanel } from "@/components/map/DeviceDetailPanel";
 import { DeviceMarker } from "@/components/map/DeviceMarker";
 import { DrawToolbar } from "@/components/map/DrawToolbar";
 import { LayerTogglePanel } from "@/components/map/LayerTogglePanel";
+import {
+  DEVICE_TYPE_META,
+  PlaceDeviceToolbar,
+} from "@/components/map/PlaceDeviceToolbar";
 import { RouteEditPanel } from "@/components/map/RouteEditPanel";
 import {
   Drawer,
@@ -15,9 +19,23 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useNetworkStore } from "@/store/networkStore";
-import type { DeviceStatus, DeviceType, FiberRoute } from "@/types/network";
+import type {
+  Device,
+  DeviceStatus,
+  DeviceType,
+  FiberRoute,
+} from "@/types/network";
 import L from "leaflet";
 import {
   Bell,
@@ -28,6 +46,7 @@ import {
   Layers,
   Locate,
   MapPin,
+  Plus,
   Signal,
   X,
 } from "lucide-react";
@@ -56,8 +75,10 @@ const ROUTE_COLORS: Record<string, string> = {
   drop: "#69ff47",
 };
 
+// ── Map event handler (inside MapContainer) ───────────────────────────────────
 interface MapEventHandlerProps {
   drawMode: boolean;
+  isPlacing: boolean;
   onMapClick: (lat: number, lng: number) => void;
   onMapDblClick: (lat: number, lng: number) => void;
   onRightClick: (lat: number, lng: number) => void;
@@ -65,6 +86,7 @@ interface MapEventHandlerProps {
 
 function MapEventHandler({
   drawMode,
+  isPlacing,
   onMapClick,
   onMapDblClick,
   onRightClick,
@@ -72,12 +94,15 @@ function MapEventHandler({
   const map = useMap();
 
   useEffect(() => {
-    map.getContainer().style.cursor = drawMode ? "crosshair" : "";
-  }, [drawMode, map]);
+    const cursor = drawMode || isPlacing ? "crosshair" : "";
+    map.getContainer().style.cursor = cursor;
+  }, [drawMode, isPlacing, map]);
 
   useMapEvents({
     click(e) {
       if (drawMode) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      } else if (isPlacing) {
         onMapClick(e.latlng.lat, e.latlng.lng);
       }
     },
@@ -94,7 +119,7 @@ function MapEventHandler({
   return null;
 }
 
-// Re-center map controller
+// ── Re-center controller ──────────────────────────────────────────────────────
 interface RecenterControllerProps {
   trigger: number;
   center: [number, number];
@@ -110,6 +135,7 @@ function RecenterController({ trigger, center }: RecenterControllerProps) {
   return null;
 }
 
+// ── Distance helpers ──────────────────────────────────────────────────────────
 function haversineKm(
   lat1: number,
   lng1: number,
@@ -135,7 +161,7 @@ function totalDistance(pts: { lat: number; lng: number }[]): number {
   return Math.round(d * 100) / 100;
 }
 
-// Mobile FAB button
+// ── Mobile FAB button ─────────────────────────────────────────────────────────
 interface FabButtonProps {
   onClick: () => void;
   icon: React.ReactNode;
@@ -169,7 +195,7 @@ function FabButton({
   );
 }
 
-// Mobile layer overlay
+// ── Mobile layer overlay ──────────────────────────────────────────────────────
 interface MobileLayerOverlayProps {
   open: boolean;
   onClose: () => void;
@@ -210,7 +236,7 @@ function MobileLayerOverlay({ open, onClose }: MobileLayerOverlayProps) {
   );
 }
 
-// Mobile device drawer content
+// ── Mobile device drawer ──────────────────────────────────────────────────────
 interface MobileDeviceDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -245,7 +271,6 @@ function MobileDeviceDrawer({
         className="bg-card/95 backdrop-blur-md border-t border-border/50 max-h-[75dvh]"
         data-ocid="map.device-drawer.dialog"
       >
-        {/* Drag handle is rendered by DrawerContent automatically */}
         {device ? (
           <>
             <DrawerHeader className="pb-2 border-b border-border/30">
@@ -270,7 +295,6 @@ function MobileDeviceDrawer({
               </div>
             </DrawerHeader>
 
-            {/* Stats row */}
             <div className="px-4 py-3 overflow-y-auto noc-scrollbar">
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <div className="rounded-xl bg-muted/20 border border-border/30 p-2.5 text-center">
@@ -303,7 +327,6 @@ function MobileDeviceDrawer({
                 </div>
               </div>
 
-              {/* Last seen + location */}
               <div className="flex items-center gap-2 mb-4 px-0.5">
                 <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
                 <span className="text-xs text-muted-foreground font-mono">
@@ -311,7 +334,6 @@ function MobileDeviceDrawer({
                 </span>
               </div>
 
-              {/* Uptime bar */}
               {device.uptime !== undefined && (
                 <div className="mb-4">
                   <div className="flex justify-between mb-1">
@@ -340,7 +362,6 @@ function MobileDeviceDrawer({
               )}
             </div>
 
-            {/* Quick actions */}
             <DrawerFooter className="pt-0 pb-4 gap-2">
               <div className="grid grid-cols-3 gap-2">
                 <button
@@ -387,6 +408,223 @@ function MobileDeviceDrawer({
   );
 }
 
+// ── Inline placement form (shown after clicking map in place mode) ─────────────
+interface PlaceDevicePopupProps {
+  lat: number;
+  lng: number;
+  initialType: DeviceType;
+  deviceCount: number;
+  onConfirm: (device: Device) => void;
+  onCancel: () => void;
+}
+
+function PlaceDevicePopup({
+  lat,
+  lng,
+  initialType,
+  deviceCount,
+  onConfirm,
+  onCancel,
+}: PlaceDevicePopupProps) {
+  const meta =
+    DEVICE_TYPE_META.find((m) => m.type === initialType) ?? DEVICE_TYPE_META[0];
+  const [name, setName] = useState(meta.defaultName(deviceCount + 1));
+  const [type, setType] = useState<DeviceType>(initialType);
+  const [status, setStatus] = useState<DeviceStatus>("active");
+  const [ports, setPorts] = useState(String(meta.defaultPorts));
+  const [nameError, setNameError] = useState("");
+
+  function handleConfirm() {
+    if (!name.trim()) {
+      setNameError("Name required");
+      return;
+    }
+    onConfirm({
+      id: `dev-${Date.now()}`,
+      name: name.trim(),
+      type,
+      lat,
+      lng,
+      ports: Number(ports) || meta.defaultPorts,
+      status,
+      connectedTo: [],
+      location: `${lat.toFixed(4)}, ${lng.toFixed(4)}`,
+    });
+  }
+
+  return (
+    <div
+      className="fixed inset-0 flex items-center justify-center"
+      style={{ zIndex: 10000 }}
+      onClick={(e) => e.target === e.currentTarget && onCancel()}
+      onKeyDown={(e) => e.key === "Escape" && onCancel()}
+      aria-hidden="true"
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+      <section
+        className="relative w-full max-w-sm mx-4 rounded-2xl glass-elevated shadow-noc-elevated p-5"
+        style={{ zIndex: 10001 }}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}
+        data-ocid="place-device-popup"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <span
+              className="flex h-7 w-7 items-center justify-center rounded-lg text-xs font-mono font-bold"
+              style={{
+                background: `${meta.accent}22`,
+                color: meta.accent,
+                border: `1px solid ${meta.accent}60`,
+              }}
+            >
+              {meta.label}
+            </span>
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              New {type}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-smooth"
+            aria-label="Cancel placement"
+            data-ocid="place-device-popup.close_button"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <p className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground mb-4">
+          <MapPin className="w-3 h-3 text-primary" />
+          {lat.toFixed(5)}, {lng.toFixed(5)}
+        </p>
+
+        <div className="space-y-3">
+          {/* Name */}
+          <div className="space-y-1">
+            <Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              Device Name *
+            </Label>
+            <Input
+              value={name}
+              onChange={(e) => {
+                setName(e.target.value);
+                setNameError("");
+              }}
+              className="font-mono text-sm bg-muted/20 border-border/50 h-8"
+              autoFocus
+              data-ocid="place-device-popup.name_input"
+            />
+            {nameError && (
+              <p className="text-[10px] text-red-400 font-mono">{nameError}</p>
+            )}
+          </div>
+
+          {/* Type + Status */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                Type
+              </Label>
+              <Select
+                value={type}
+                onValueChange={(v) => setType(v as DeviceType)}
+              >
+                <SelectTrigger
+                  className="h-8 font-mono text-xs bg-muted/20 border-border/50"
+                  data-ocid="place-device-popup.type_select"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent style={{ zIndex: 10002 }}>
+                  {DEVICE_TYPE_META.map((m) => (
+                    <SelectItem
+                      key={m.type}
+                      value={m.type}
+                      className="font-mono text-xs"
+                    >
+                      {m.type}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                Status
+              </Label>
+              <Select
+                value={status}
+                onValueChange={(v) => setStatus(v as DeviceStatus)}
+              >
+                <SelectTrigger
+                  className="h-8 font-mono text-xs bg-muted/20 border-border/50"
+                  data-ocid="place-device-popup.status_select"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent style={{ zIndex: 10002 }}>
+                  {(["active", "warning", "faulty"] as DeviceStatus[]).map(
+                    (s) => (
+                      <SelectItem
+                        key={s}
+                        value={s}
+                        className="font-mono text-xs capitalize"
+                      >
+                        {s}
+                      </SelectItem>
+                    ),
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Ports */}
+          <div className="space-y-1">
+            <Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              Ports
+            </Label>
+            <Input
+              type="number"
+              value={ports}
+              onChange={(e) => setPorts(e.target.value)}
+              className="font-mono text-sm bg-muted/20 border-border/50 h-8"
+              min="1"
+              max="128"
+              data-ocid="place-device-popup.ports_input"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 rounded-xl py-2 text-xs font-mono bg-muted/20 border border-border/40 text-muted-foreground hover:bg-muted/30 transition-smooth"
+            data-ocid="place-device-popup.cancel_button"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-mono bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/30 transition-smooth"
+            data-ocid="place-device-popup.confirm_button"
+          >
+            <Plus className="w-3 h-3" />
+            Place Device
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+// ── Main MapDashboard component ───────────────────────────────────────────────
 export default function MapDashboard() {
   const {
     devices,
@@ -397,12 +635,14 @@ export default function MapDashboard() {
     setSelectedDevice,
     setSelectedRoute,
     addRoute,
+    addDevice,
     deleteDevice,
     updateDevice,
   } = useNetworkStore();
 
   const isMobile = useIsMobile();
 
+  // ── Draw route state ──────────────────────────────────────────────────────
   const [drawMode, setDrawMode] = useState(false);
   const [drawWaypoints, setDrawWaypoints] = useState<
     { lat: number; lng: number }[]
@@ -410,6 +650,16 @@ export default function MapDashboard() {
   const [drawRouteType, setDrawRouteType] = useState<
     "backbone" | "distribution" | "drop"
   >("distribution");
+
+  // ── Place device state ────────────────────────────────────────────────────
+  const [isPlacing, setIsPlacing] = useState(false);
+  const [placingType, setPlacingType] = useState<DeviceType>("ONT");
+  const [pendingPlacement, setPendingPlacement] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  // ── Right-click / context menu ────────────────────────────────────────────
   const [contextMenu, setContextMenu] = useState<{
     lat: number;
     lng: number;
@@ -418,20 +668,31 @@ export default function MapDashboard() {
     lat: number;
     lng: number;
   } | null>(null);
+
+  // ── UI state ──────────────────────────────────────────────────────────────
   const [layerOverlayOpen, setLayerOverlayOpen] = useState(false);
   const [recenterTrigger, setRecenterTrigger] = useState(0);
 
-  // Mobile drawer open when a device is selected on mobile
   const mobileDrawerOpen = isMobile && !!selectedDeviceId;
-
-  // Alert badge count — count faulty devices as alerts
   const alertCount = devices.filter((d) => d.status === "faulty").length;
-
   const routeIdCounter = useRef(Date.now());
 
-  const handleMapClick = useCallback((lat: number, lng: number) => {
-    setDrawWaypoints((prev) => [...prev, { lat, lng }]);
-  }, []);
+  // ── Draw handlers ─────────────────────────────────────────────────────────
+  const handleMapClick = useCallback(
+    (lat: number, lng: number) => {
+      if (isPlacing) {
+        // Only open popup if not already showing one
+        if (!pendingPlacement) {
+          setPendingPlacement({ lat, lng });
+        }
+        return;
+      }
+      if (drawMode) {
+        setDrawWaypoints((prev) => [...prev, { lat, lng }]);
+      }
+    },
+    [isPlacing, drawMode, pendingPlacement],
+  );
 
   const finishDraw = useCallback(() => {
     if (drawWaypoints.length < 2) {
@@ -454,6 +715,7 @@ export default function MapDashboard() {
 
   const handleMapDblClick = useCallback(
     (lat: number, lng: number) => {
+      if (!drawMode) return;
       setDrawWaypoints((prev) => {
         const updated = [...prev, { lat, lng }];
         if (updated.length >= 2) {
@@ -472,7 +734,7 @@ export default function MapDashboard() {
         return updated;
       });
     },
-    [drawRouteType, addRoute],
+    [drawMode, drawRouteType, addRoute],
   );
 
   const handleRightClick = useCallback((lat: number, lng: number) => {
@@ -480,10 +742,28 @@ export default function MapDashboard() {
     setAddDeviceCoords({ lat, lng });
   }, []);
 
+  // ── Placement handlers ────────────────────────────────────────────────────
+  const handlePlacementConfirm = useCallback(
+    (device: Device) => {
+      addDevice(device);
+      setPendingPlacement(null);
+      // Keep placement mode active so user can place more
+    },
+    [addDevice],
+  );
+
+  const handlePlacementCancel = useCallback(() => {
+    setPendingPlacement(null);
+    // Keep placement mode active, just remove the pending popup
+  }, []);
+
+  const handleExitPlacing = useCallback(() => {
+    setIsPlacing(false);
+    setPendingPlacement(null);
+  }, []);
+
   const selectedDevice = devices.find((d) => d.id === selectedDeviceId) ?? null;
   const selectedRoute = routes.find((r) => r.id === selectedRouteId) ?? null;
-
-  // Desktop: show right panel for device/route; mobile: handled by drawer
   const desktopRightPanelOpen =
     !isMobile && (!!selectedDevice || !!selectedRoute);
 
@@ -492,12 +772,11 @@ export default function MapDashboard() {
       className="relative flex w-full overflow-hidden"
       style={{ height: "100%" }}
     >
-      {/* ── Map area (fills space left of right panel) ──────────────────── */}
+      {/* ── Map area ───────────────────────────────────────────────────────── */}
       <div
         className={`relative flex-1 transition-all duration-300 ${desktopRightPanelOpen ? "mr-[360px]" : ""}`}
-        style={{ isolation: "auto" }}
       >
-        {/* Leaflet MapContainer — pure map tiles + markers, no overlay children */}
+        {/* Leaflet MapContainer */}
         <MapContainer
           center={[40.7128, -74.006]}
           zoom={13}
@@ -513,6 +792,7 @@ export default function MapDashboard() {
 
           <MapEventHandler
             drawMode={drawMode}
+            isPlacing={isPlacing && !pendingPlacement}
             onMapClick={handleMapClick}
             onMapDblClick={handleMapDblClick}
             onRightClick={handleRightClick}
@@ -577,8 +857,10 @@ export default function MapDashboard() {
               device={device}
               isSelected={device.id === selectedDeviceId}
               onSelect={() => {
-                setSelectedDevice(device.id);
-                setSelectedRoute(null);
+                if (!isPlacing) {
+                  setSelectedDevice(device.id);
+                  setSelectedRoute(null);
+                }
               }}
               onPositionChange={(lat, lng) =>
                 updateDevice(device.id, { lat, lng })
@@ -587,7 +869,11 @@ export default function MapDashboard() {
           ))}
         </MapContainer>
 
-        {/* ── OVERLAY PANELS — rendered OUTSIDE MapContainer, above the map ── */}
+        {/* ═══════════════════════════════════════════════════════════════════
+            OVERLAY PANELS — all outside MapContainer, z-index >= 1000
+            CRITICAL: Never nest these inside MapContainer, or Leaflet will
+            capture pointer events before they reach our UI.
+        ════════════════════════════════════════════════════════════════════ */}
 
         {/* Layer toggle panel — desktop only, top-left */}
         {!isMobile && (
@@ -600,10 +886,14 @@ export default function MapDashboard() {
           </div>
         )}
 
-        {/* Draw toolbar — centered top, both mobile & desktop */}
+        {/* Draw toolbar — centered top */}
         <div
-          className="absolute left-1/2 top-4 -translate-x-1/2 pointer-events-auto"
-          style={{ zIndex: 1000 }}
+          className="absolute top-4 pointer-events-auto"
+          style={{
+            zIndex: 1000,
+            left: "50%",
+            transform: "translateX(-50%)",
+          }}
           data-ocid="map.draw-toolbar-wrapper"
         >
           <DrawToolbar
@@ -613,6 +903,8 @@ export default function MapDashboard() {
             onToggleDrawMode={() => {
               setDrawMode((v) => !v);
               setDrawWaypoints([]);
+              // Exit place mode if entering draw mode
+              if (isPlacing) handleExitPlacing();
             }}
             onRouteTypeChange={setDrawRouteType}
             onFinish={finishDraw}
@@ -623,17 +915,58 @@ export default function MapDashboard() {
           />
         </div>
 
-        {/* Draw instruction hint — centered bottom */}
+        {/* Place Device toolbar — right of draw toolbar, or below on mobile */}
+        <div
+          className={`absolute pointer-events-auto ${
+            isMobile ? "top-20 right-4" : "top-4 right-4"
+          }`}
+          style={{ zIndex: 1000 }}
+          data-ocid="map.place-toolbar-wrapper"
+        >
+          <PlaceDeviceToolbar
+            isPlacing={isPlacing}
+            selectedType={placingType}
+            onTogglePlacing={() => {
+              setIsPlacing(true);
+              // Exit draw mode if entering place mode
+              if (drawMode) {
+                setDrawMode(false);
+                setDrawWaypoints([]);
+              }
+            }}
+            onSelectType={(t) => setPlacingType(t)}
+            onCancel={handleExitPlacing}
+          />
+        </div>
+
+        {/* Draw instruction hint */}
         {drawMode && (
           <div
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none"
-            style={{ zIndex: 1000 }}
+            className="absolute bottom-6 pointer-events-none"
+            style={{ zIndex: 1000, left: "50%", transform: "translateX(-50%)" }}
           >
             <GlassCard className="px-4 py-2">
-              <p className="font-mono text-xs text-primary">
+              <p className="font-mono text-xs text-primary whitespace-nowrap">
                 {drawWaypoints.length === 0
                   ? "Click to place waypoints · Double-click or Finish to complete"
                   : `${drawWaypoints.length} waypoints · ${totalDistance(drawWaypoints).toFixed(2)} km · Double-click or Finish`}
+              </p>
+            </GlassCard>
+          </div>
+        )}
+
+        {/* Placement hint */}
+        {isPlacing && !pendingPlacement && (
+          <div
+            className="absolute bottom-6 pointer-events-none"
+            style={{ zIndex: 1000, left: "50%", transform: "translateX(-50%)" }}
+          >
+            <GlassCard className="px-4 py-2">
+              <p
+                className="font-mono text-xs whitespace-nowrap"
+                style={{ color: "#10b981" }}
+              >
+                Click on the map to place a {placingType}
               </p>
             </GlassCard>
           </div>
@@ -650,7 +983,7 @@ export default function MapDashboard() {
           />
         )}
 
-        {/* ── Mobile FABs ─────────────────────────────────────────────── */}
+        {/* Mobile FABs */}
         {isMobile && (
           <div
             className="absolute right-4 bottom-4 flex flex-col gap-3 pointer-events-auto"
@@ -679,7 +1012,7 @@ export default function MapDashboard() {
           </div>
         )}
 
-        {/* ── Mobile layer overlay ──────────────────────────────────── */}
+        {/* Mobile layer overlay */}
         {isMobile && (
           <MobileLayerOverlay
             open={layerOverlayOpen}
@@ -688,7 +1021,7 @@ export default function MapDashboard() {
         )}
       </div>
 
-      {/* ── Desktop right panel (device detail / route edit) ─────────────── */}
+      {/* ── Desktop right panel ─────────────────────────────────────────────── */}
       {desktopRightPanelOpen && (
         <div
           className="absolute right-0 top-0 h-full w-[360px] border-l border-border/40 bg-card/95 backdrop-blur-sm overflow-y-auto noc-scrollbar pointer-events-auto"
@@ -714,7 +1047,7 @@ export default function MapDashboard() {
         </div>
       )}
 
-      {/* ── Mobile device bottom drawer ──────────────────────────────────── */}
+      {/* ── Mobile device bottom drawer ──────────────────────────────────────── */}
       {isMobile && (
         <MobileDeviceDrawer
           open={mobileDrawerOpen}
@@ -723,7 +1056,7 @@ export default function MapDashboard() {
         />
       )}
 
-      {/* Add Device Dialog — fixed portal, always on top */}
+      {/* ── Right-click Add Device Dialog — portal, always on top ──────────── */}
       {addDeviceCoords && (
         <AddDeviceDialog
           lat={addDeviceCoords.lat}
@@ -732,6 +1065,18 @@ export default function MapDashboard() {
             setAddDeviceCoords(null);
             setContextMenu(null);
           }}
+        />
+      )}
+
+      {/* ── Placement popup — rendered as portal above everything ──────────── */}
+      {pendingPlacement && (
+        <PlaceDevicePopup
+          lat={pendingPlacement.lat}
+          lng={pendingPlacement.lng}
+          initialType={placingType}
+          deviceCount={devices.length}
+          onConfirm={handlePlacementConfirm}
+          onCancel={handlePlacementCancel}
         />
       )}
 
@@ -746,10 +1091,15 @@ export default function MapDashboard() {
         .leaflet-container {
           background: #e8e0d8;
         }
-        /* Ensure Leaflet map canvas does NOT capture pointer events for our overlay panels */
-        .leaflet-container .leaflet-pane {
-          z-index: auto;
-        }
+        /* Leaflet pane z-indexes must stay below our overlays */
+        .leaflet-map-pane { z-index: 400 !important; }
+        .leaflet-tile-pane { z-index: 200 !important; }
+        .leaflet-overlay-pane { z-index: 400 !important; }
+        .leaflet-shadow-pane { z-index: 500 !important; }
+        .leaflet-marker-pane { z-index: 600 !important; }
+        .leaflet-tooltip-pane { z-index: 650 !important; }
+        .leaflet-popup-pane { z-index: 700 !important; }
+        .leaflet-top, .leaflet-bottom { z-index: 800 !important; }
       `}</style>
     </div>
   );

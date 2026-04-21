@@ -1,6 +1,14 @@
 import { cn } from "@/lib/utils";
 import type { DeviceStatus, DeviceType } from "@/types/network";
-import { Box, GitFork, Network, Router, Wifi } from "lucide-react";
+import {
+  Box,
+  GitFork,
+  Globe,
+  Link2,
+  Monitor,
+  Network,
+  Wifi,
+} from "lucide-react";
 
 interface DeviceIconProps {
   type: DeviceType;
@@ -10,11 +18,13 @@ interface DeviceIconProps {
 }
 
 const ICONS: Record<DeviceType, React.ElementType> = {
-  OLT: Router,
+  OLT: Monitor,
   ONT: Wifi,
   Splitter: GitFork,
   JJB: Box,
   Switch: Network,
+  Coupler: Link2,
+  Router: Globe,
 };
 
 const STATUS_COLOR: Record<DeviceStatus, string> = {
@@ -35,7 +45,7 @@ export function DeviceIcon({
   size = "md",
   className,
 }: DeviceIconProps) {
-  const Icon = ICONS[type];
+  const Icon = ICONS[type] ?? Monitor;
   const s = SIZE_CLASS[size];
   const color = STATUS_COLOR[status];
 

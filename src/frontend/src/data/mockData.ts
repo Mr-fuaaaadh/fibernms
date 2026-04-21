@@ -210,6 +210,48 @@ export const mockDevices: Device[] = (() => {
     });
   }
 
+  // ── Couplers ──────────────────────────────────────────────────────────────
+  for (let i = 0; i < 8; i++) {
+    const region = REGIONS[i % REGIONS.length];
+    const status =
+      rand() < 0.88 ? "active" : rand() < 0.5 ? "warning" : "faulty";
+    devices.push({
+      id: `cpl-${i}`,
+      name: `CPL-${region.name.slice(0, 2).toUpperCase()}-${String(i + 1).padStart(2, "0")}`,
+      type: "Coupler",
+      lat: region.lat + randFloat(-1.5, 1.5),
+      lng: region.lng + randFloat(-2, 2),
+      ports: randFrom([2, 4]),
+      status: status as Device["status"],
+      connectedTo: [],
+      location: `Fiber Coupling Point, ${region.name}`,
+      signalStrength: randFloat(-28, -18),
+      uptime: randFloat(92, 99.9),
+      region: region.name,
+    });
+  }
+
+  // ── Routers ───────────────────────────────────────────────────────────────
+  for (let i = 0; i < 7; i++) {
+    const region = REGIONS[i % REGIONS.length];
+    const status =
+      rand() < 0.92 ? "active" : rand() < 0.4 ? "warning" : "faulty";
+    devices.push({
+      id: `rtr-${i}`,
+      name: `RTR-EDGE-${String(i + 1).padStart(2, "0")}`,
+      type: "Router",
+      lat: region.lat + randFloat(-0.8, 0.8),
+      lng: region.lng + randFloat(-1.5, 1.5),
+      ports: randFrom([4, 8, 16]),
+      status: status as Device["status"],
+      connectedTo: [],
+      location: `Edge PoP, ${region.name}`,
+      signalStrength: randFloat(-20, -10),
+      uptime: randFloat(98, 99.99),
+      region: region.name,
+    });
+  }
+
   return devices;
 })();
 

@@ -1,4 +1,11 @@
-export type DeviceType = "OLT" | "ONT" | "Splitter" | "JJB" | "Switch";
+export type DeviceType =
+  | "OLT"
+  | "ONT"
+  | "Splitter"
+  | "JJB"
+  | "Switch"
+  | "Coupler"
+  | "Router";
 export type DeviceStatus = "active" | "faulty" | "warning";
 export type RouteType = "backbone" | "distribution" | "drop";
 export type AlertSeverity = "critical" | "warning" | "info";

@@ -20,6 +20,8 @@ const ISSUE_TYPE_MAP: Record<DeviceType, string> = {
   Splitter: "Port Fault",
   JJB: "Junction Error",
   Switch: "Link Down",
+  Coupler: "Coupling Loss",
+  Router: "Route Unreachable",
 };
 
 function relativeTime(ts: number): string {

@@ -18,7 +18,15 @@ interface EditDeviceModalProps {
   onClose: () => void;
 }
 
-const DEVICE_TYPES: DeviceType[] = ["OLT", "ONT", "Splitter", "JJB", "Switch"];
+const DEVICE_TYPES: DeviceType[] = [
+  "OLT",
+  "ONT",
+  "Splitter",
+  "JJB",
+  "Switch",
+  "Coupler",
+  "Router",
+];
 const STATUSES: DeviceStatus[] = ["active", "warning", "faulty"];
 
 export function EditDeviceModal({ device, onClose }: EditDeviceModalProps) {
@@ -117,7 +125,7 @@ export function EditDeviceModal({ device, onClose }: EditDeviceModalProps) {
               >
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[2100]">
                 {DEVICE_TYPES.map((t) => (
                   <SelectItem key={t} value={t} className="font-mono text-sm">
                     {t}
@@ -148,7 +156,7 @@ export function EditDeviceModal({ device, onClose }: EditDeviceModalProps) {
                   <StatusBadge status={status} />
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[2100]">
                 {STATUSES.map((s) => (
                   <SelectItem key={s} value={s}>
                     <StatusBadge status={s} />

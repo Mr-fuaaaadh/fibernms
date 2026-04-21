@@ -131,6 +131,8 @@ export default function Devices() {
       Splitter: 0,
       JJB: 0,
       Switch: 0,
+      Coupler: 0,
+      Router: 0,
     };
     for (const d of devices) counts[d.type]++;
     return counts;

@@ -3,11 +3,13 @@ import type { Device, DeviceStatus, DeviceType } from "@/types/network";
 import {
   Box,
   GitFork,
+  Globe,
+  Link2,
   Maximize2,
   MinusCircle,
+  Monitor,
   Network,
   PlusCircle,
-  Router,
   Wifi,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -26,6 +28,8 @@ const NODE_SIZE: Record<DeviceType, number> = {
   ONT: 11,
   JJB: 12,
   Switch: 15,
+  Coupler: 13,
+  Router: 14,
 };
 
 // ─── Status palette ──────────────────────────────────────────────────────────
@@ -66,11 +70,13 @@ const EDGE_COLOR: Record<number, string> = {
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 const ICON_MAP: Record<DeviceType, React.ElementType> = {
-  OLT: Router,
+  OLT: Monitor,
   ONT: Wifi,
   Splitter: GitFork,
   JJB: Box,
   Switch: Network,
+  Coupler: Link2,
+  Router: Globe,
 };
 
 // ─── Tree types ───────────────────────────────────────────────────────────────
@@ -264,7 +270,7 @@ function TopologyNode({
   index,
 }: NodeProps) {
   const { device, x, y } = node;
-  const Icon = ICON_MAP[device.type] ?? Router;
+  const Icon = ICON_MAP[device.type] ?? Monitor;
   const r = NODE_SIZE[device.type] ?? 14;
   const colors = STATUS_COLOR[device.status];
   const typeAccent = TYPE_ACCENT[device.type];

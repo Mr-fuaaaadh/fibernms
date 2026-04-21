@@ -57,7 +57,7 @@ export function DrawToolbar({
             >
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[2000]">
               {(["backbone", "distribution", "drop"] as const).map((t) => (
                 <SelectItem key={t} value={t} className="text-xs">
                   {ROUTE_TYPE_LABELS[t]}

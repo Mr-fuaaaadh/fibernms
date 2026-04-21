@@ -315,6 +315,16 @@ export const TYPE_BADGE_COLORS: Record<
     bg: "bg-blue-400/10 border border-blue-400/30",
     glow: "shadow-[0_0_12px_oklch(0.65_0.22_240/0.3)]",
   },
+  Coupler: {
+    text: "text-purple-400",
+    bg: "bg-purple-400/10 border border-purple-400/30",
+    glow: "shadow-[0_0_12px_oklch(0.65_0.22_300/0.3)]",
+  },
+  Router: {
+    text: "text-red-400",
+    bg: "bg-red-400/10 border border-red-400/30",
+    glow: "shadow-[0_0_12px_oklch(0.65_0.22_25/0.3)]",
+  },
 };
 
 export const STATUS_FILTER_EMPTY: DeviceStatus[] = [];

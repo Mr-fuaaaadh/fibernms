@@ -18,7 +18,15 @@ interface AddDeviceDialogProps {
   onClose: () => void;
 }
 
-const DEVICE_TYPES: DeviceType[] = ["OLT", "ONT", "Splitter", "JJB", "Switch"];
+const DEVICE_TYPES: DeviceType[] = [
+  "OLT",
+  "ONT",
+  "Splitter",
+  "JJB",
+  "Switch",
+  "Coupler",
+  "Router",
+];
 const STATUSES: DeviceStatus[] = ["active", "warning", "faulty"];
 
 export function AddDeviceDialog({ lat, lng, onClose }: AddDeviceDialogProps) {
@@ -133,7 +141,7 @@ export function AddDeviceDialog({ lat, lng, onClose }: AddDeviceDialogProps) {
                 >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[2100]">
                   {DEVICE_TYPES.map((t) => (
                     <SelectItem key={t} value={t} className="font-mono text-sm">
                       {t}
@@ -161,7 +169,7 @@ export function AddDeviceDialog({ lat, lng, onClose }: AddDeviceDialogProps) {
                 >
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-[2100]">
                   {STATUSES.map((s) => (
                     <SelectItem
                       key={s}

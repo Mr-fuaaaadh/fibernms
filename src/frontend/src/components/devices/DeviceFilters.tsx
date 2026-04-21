@@ -2,7 +2,15 @@ import { cn } from "@/lib/utils";
 import type { DeviceStatus, DeviceType } from "@/types/network";
 import { Filter, X } from "lucide-react";
 
-const DEVICE_TYPES: DeviceType[] = ["OLT", "ONT", "Splitter", "JJB", "Switch"];
+const DEVICE_TYPES: DeviceType[] = [
+  "OLT",
+  "ONT",
+  "Splitter",
+  "JJB",
+  "Switch",
+  "Coupler",
+  "Router",
+];
 const DEVICE_STATUSES: DeviceStatus[] = ["active", "faulty", "warning"];
 
 const TYPE_COLORS: Record<DeviceType, string> = {
@@ -11,6 +19,8 @@ const TYPE_COLORS: Record<DeviceType, string> = {
   Splitter: "text-violet-400 border-violet-400/40 bg-violet-400/10",
   JJB: "text-amber-400 border-amber-400/40 bg-amber-400/10",
   Switch: "text-blue-400 border-blue-400/40 bg-blue-400/10",
+  Coupler: "text-purple-400 border-purple-400/40 bg-purple-400/10",
+  Router: "text-red-400 border-red-400/40 bg-red-400/10",
 };
 
 const STATUS_COLORS: Record<DeviceStatus, string> = {
