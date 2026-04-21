@@ -6,18 +6,58 @@ import type { Device } from "@/types/network";
 import {
   AlertTriangle,
   Edit3,
+  GitBranch,
   MapPin,
   Network,
   Signal,
   Trash2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 interface DeviceDetailPanelProps {
   device: Device;
   onClose: () => void;
   onDelete: () => void;
+}
+
+type ConfirmMode = "none" | "single" | "cascade";
+
+/** Count descendants by type for a summary message */
+function useDescendantSummary(device: Device) {
+  const { devices } = useNetworkStore();
+  return useMemo(() => {
+    if (device.connectedTo.length === 0 && device.type !== "OLT") return null;
+
+    // BFS to collect all descendants
+    const visited = new Set<string>();
+    const stack = [...device.connectedTo];
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      if (visited.has(id)) continue;
+      visited.add(id);
+      const d = devices.find((x) => x.id === id);
+      if (d) {
+        for (const child of d.connectedTo) {
+          if (!visited.has(child)) stack.push(child);
+        }
+      }
+    }
+
+    if (visited.size === 0) return null;
+
+    // Group by type
+    const counts: Partial<Record<string, number>> = {};
+    for (const id of visited) {
+      const d = devices.find((x) => x.id === id);
+      if (d) counts[d.type] = (counts[d.type] ?? 0) + 1;
+    }
+
+    const parts = Object.entries(counts).map(
+      ([type, n]) => `${n} ${type}${n! > 1 ? "s" : ""}`,
+    );
+    return { total: visited.size, summary: parts.join(", ") };
+  }, [device, devices]);
 }
 
 export function DeviceDetailPanel({
@@ -26,7 +66,12 @@ export function DeviceDetailPanel({
   onDelete,
 }: DeviceDetailPanelProps) {
   const [editOpen, setEditOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmMode, setConfirmMode] = useState<ConfirmMode>("none");
+  const { deleteDeviceWithChildren } = useNetworkStore();
+
+  const descendantInfo = useDescendantSummary(device);
+  const showCascadeButton =
+    device.type === "OLT" || device.connectedTo.length > 0;
 
   const signalColor =
     device.status === "active"
@@ -34,6 +79,11 @@ export function DeviceDetailPanel({
       : device.status === "faulty"
         ? "text-red-400"
         : "text-amber-400";
+
+  function handleCascadeDelete() {
+    deleteDeviceWithChildren(device.id);
+    onClose();
+  }
 
   return (
     <div className="flex flex-col h-full" data-ocid="device-detail-panel">
@@ -164,7 +214,7 @@ export function DeviceDetailPanel({
 
       {/* Actions */}
       <div className="p-4 border-t border-border/40 space-y-2">
-        {!confirmDelete ? (
+        {confirmMode === "none" && (
           <>
             <button
               type="button"
@@ -177,18 +227,37 @@ export function DeviceDetailPanel({
             </button>
             <button
               type="button"
-              onClick={() => setConfirmDelete(true)}
+              onClick={() => setConfirmMode("single")}
               className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-mono bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 transition-smooth"
               data-ocid="device-delete-btn"
             >
               <Trash2 className="w-3.5 h-3.5" />
               Delete Device
             </button>
+            {showCascadeButton && (
+              <button
+                type="button"
+                onClick={() => setConfirmMode("cascade")}
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-mono bg-orange-500/10 border border-orange-500/30 text-orange-400 hover:bg-orange-500/20 transition-smooth"
+                data-ocid="device-delete-cascade-btn"
+              >
+                <GitBranch className="w-3.5 h-3.5" />
+                {device.type === "OLT"
+                  ? "Delete Root + All Children"
+                  : "Delete with Children"}
+              </button>
+            )}
           </>
-        ) : (
-          <div className="rounded-xl bg-red-500/10 border border-red-500/30 p-3 space-y-2">
+        )}
+
+        {/* Single delete confirmation */}
+        {confirmMode === "single" && (
+          <div
+            className="rounded-xl bg-red-500/10 border border-red-500/30 p-3 space-y-2"
+            data-ocid="device-delete-confirm-dialog"
+          >
             <div className="flex items-center gap-2 text-red-400">
-              <AlertTriangle className="w-3.5 h-3.5" />
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
               <span className="text-xs font-mono">Confirm deletion?</span>
             </div>
             <div className="flex gap-2">
@@ -202,9 +271,63 @@ export function DeviceDetailPanel({
               </button>
               <button
                 type="button"
-                onClick={() => setConfirmDelete(false)}
+                onClick={() => setConfirmMode("none")}
                 className="flex-1 rounded-lg py-1.5 text-xs font-mono bg-muted/20 border border-border/40 text-muted-foreground hover:bg-muted/30 transition-smooth"
                 data-ocid="device-delete-cancel-btn"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Cascade delete confirmation */}
+        {confirmMode === "cascade" && (
+          <div
+            className="rounded-xl bg-orange-500/10 border border-orange-500/30 p-3 space-y-2"
+            data-ocid="device-cascade-delete-confirm-dialog"
+          >
+            <div className="flex items-center gap-2 text-orange-400">
+              <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+              <span className="text-xs font-mono font-semibold">
+                Delete entire subtree?
+              </span>
+            </div>
+            {descendantInfo ? (
+              <p className="text-[11px] text-orange-300/80 font-mono leading-relaxed">
+                This will permanently delete{" "}
+                <span className="font-bold text-orange-300">
+                  1 {device.type}
+                </span>
+                {" + "}
+                <span className="font-bold text-orange-300">
+                  {descendantInfo.summary}
+                </span>{" "}
+                ({descendantInfo.total + 1} devices total).
+              </p>
+            ) : (
+              <p className="text-[11px] text-orange-300/80 font-mono leading-relaxed">
+                This will permanently delete{" "}
+                <span className="font-bold text-orange-300">
+                  this {device.type}
+                </span>{" "}
+                and all connected devices.
+              </p>
+            )}
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleCascadeDelete}
+                className="flex-1 rounded-lg py-1.5 text-xs font-mono bg-orange-500/20 border border-orange-500/50 text-orange-300 hover:bg-orange-500/30 transition-smooth"
+                data-ocid="device-cascade-delete-confirm-btn"
+              >
+                Delete All
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmMode("none")}
+                className="flex-1 rounded-lg py-1.5 text-xs font-mono bg-muted/20 border border-border/40 text-muted-foreground hover:bg-muted/30 transition-smooth"
+                data-ocid="device-cascade-delete-cancel-btn"
               >
                 Cancel
               </button>

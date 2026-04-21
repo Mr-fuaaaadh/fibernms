@@ -20,6 +20,14 @@ import type {
   SLARecord,
 } from "../types/network";
 
+// Snapshot for undo history
+interface NetworkSnapshot {
+  devices: Device[];
+  routes: FiberRoute[];
+}
+
+const MAX_HISTORY = 20;
+
 interface NetworkState {
   // Core
   devices: Device[];
@@ -30,6 +38,9 @@ interface NetworkState {
   layerVisibility: LayerVisibility;
   sidebarCollapsed: boolean;
   searchQuery: string;
+
+  // Undo history
+  history: NetworkSnapshot[];
 
   // Enterprise
   slaRecords: SLARecord[];
@@ -51,9 +62,13 @@ interface NetworkState {
   addDevice: (device: Device) => void;
   updateDevice: (id: string, updates: Partial<Device>) => void;
   deleteDevice: (id: string) => void;
+  deleteDeviceWithChildren: (id: string) => void;
   addRoute: (route: FiberRoute) => void;
   updateRoute: (id: string, updates: Partial<FiberRoute>) => void;
   deleteRoute: (id: string) => void;
+
+  // Undo
+  undo: () => void;
 
   // Enterprise actions
   setSLARecords: (records: SLARecord[]) => void;
@@ -71,6 +86,39 @@ interface NetworkState {
   setMobileSearchOpen: (open: boolean) => void;
 }
 
+/** Collect all descendant device IDs via DFS on connectedTo[] */
+function collectDescendants(rootId: string, allDevices: Device[]): Set<string> {
+  const visited = new Set<string>();
+  const stack = [rootId];
+  while (stack.length > 0) {
+    const current = stack.pop()!;
+    if (visited.has(current)) continue;
+    visited.add(current);
+    const device = allDevices.find((d) => d.id === current);
+    if (device) {
+      for (const childId of device.connectedTo) {
+        if (!visited.has(childId)) stack.push(childId);
+      }
+    }
+  }
+  return visited;
+}
+
+/** Push a snapshot onto history, capping at MAX_HISTORY entries */
+function pushSnapshot(
+  history: NetworkSnapshot[],
+  devices: Device[],
+  routes: FiberRoute[],
+): NetworkSnapshot[] {
+  const snapshot: NetworkSnapshot = {
+    devices: [...devices],
+    routes: [...routes],
+  };
+  const updated = [...history, snapshot];
+  if (updated.length > MAX_HISTORY) updated.shift();
+  return updated;
+}
+
 export const useNetworkStore = create<NetworkState>((set) => ({
   // Core state
   devices: mockDevices,
@@ -81,6 +129,9 @@ export const useNetworkStore = create<NetworkState>((set) => ({
   layerVisibility: { backbone: true, distribution: true, drop: true },
   sidebarCollapsed: false,
   searchQuery: "",
+
+  // Undo history
+  history: [],
 
   // Enterprise state
   slaRecords: mockSLARecords,
@@ -113,20 +164,80 @@ export const useNetworkStore = create<NetworkState>((set) => ({
     set((s) => ({
       alerts: s.alerts.map((a) => (a.id === id ? { ...a, resolved: true } : a)),
     })),
-  addDevice: (device) => set((s) => ({ devices: [...s.devices, device] })),
+
+  addDevice: (device) =>
+    set((s) => ({
+      history: pushSnapshot(s.history, s.devices, s.routes),
+      devices: [...s.devices, device],
+    })),
+
   updateDevice: (id, updates) =>
     set((s) => ({
+      history: pushSnapshot(s.history, s.devices, s.routes),
       devices: s.devices.map((d) => (d.id === id ? { ...d, ...updates } : d)),
     })),
+
   deleteDevice: (id) =>
-    set((s) => ({ devices: s.devices.filter((d) => d.id !== id) })),
-  addRoute: (route) => set((s) => ({ routes: [...s.routes, route] })),
+    set((s) => ({
+      history: pushSnapshot(s.history, s.devices, s.routes),
+      devices: s.devices.filter((d) => d.id !== id),
+    })),
+
+  deleteDeviceWithChildren: (id) =>
+    set((s) => {
+      const toDelete = collectDescendants(id, s.devices);
+      const remainingDevices = s.devices.filter((d) => !toDelete.has(d.id));
+      // Remove routes that reference only devices within the deleted set.
+      // Since FiberRoute waypoints are lat/lng only (no device IDs), we remove
+      // routes whose IDs include any deleted device ID (routes created by
+      // the connection system), while preserving drawn fiber routes.
+      const remainingRoutes = s.routes.filter(
+        (route) =>
+          !Array.from(toDelete).some((devId) => route.id.includes(devId)),
+      );
+      return {
+        history: pushSnapshot(s.history, s.devices, s.routes),
+        devices: remainingDevices,
+        routes: remainingRoutes,
+        selectedDeviceId: toDelete.has(s.selectedDeviceId ?? "")
+          ? null
+          : s.selectedDeviceId,
+        selectedRouteId: null,
+      };
+    }),
+
+  addRoute: (route) =>
+    set((s) => ({
+      history: pushSnapshot(s.history, s.devices, s.routes),
+      routes: [...s.routes, route],
+    })),
+
   updateRoute: (id, updates) =>
     set((s) => ({
+      history: pushSnapshot(s.history, s.devices, s.routes),
       routes: s.routes.map((r) => (r.id === id ? { ...r, ...updates } : r)),
     })),
+
   deleteRoute: (id) =>
-    set((s) => ({ routes: s.routes.filter((r) => r.id !== id) })),
+    set((s) => ({
+      history: pushSnapshot(s.history, s.devices, s.routes),
+      routes: s.routes.filter((r) => r.id !== id),
+    })),
+
+  // Undo: restore the last snapshot
+  undo: () =>
+    set((s) => {
+      if (s.history.length === 0) return s;
+      const newHistory = [...s.history];
+      const snapshot = newHistory.pop()!;
+      return {
+        history: newHistory,
+        devices: snapshot.devices,
+        routes: snapshot.routes,
+        selectedDeviceId: null,
+        selectedRouteId: null,
+      };
+    }),
 
   // Enterprise actions
   setSLARecords: (records) => set({ slaRecords: records }),

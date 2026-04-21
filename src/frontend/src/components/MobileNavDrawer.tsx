@@ -5,145 +5,26 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
+import { useRoleNav } from "@/hooks/useRoleNav";
+import type { NavSection } from "@/hooks/useRoleNav";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/store/authStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { Plan } from "@/types/subscription";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import {
-  Activity,
-  BarChart3,
-  BookOpen,
-  Bot,
-  Brain,
-  Building2,
   ChevronDown,
-  ClipboardList,
-  CreditCard,
   Crown,
-  Database,
-  FileText,
-  GitFork,
-  Key,
-  LayoutDashboard,
-  LayoutList,
   Lock,
   LogOut,
-  Map as MapIcon,
   Moon,
-  Palette,
-  Puzzle,
   Radio,
-  Server,
   Shield,
-  ShieldAlert,
-  ShieldCheck,
   Sun,
-  TrendingUp,
   User,
-  Users,
-  Workflow,
-  Wrench,
-  Zap,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-
-type NavItem = {
-  label: string;
-  icon: React.ElementType;
-  to: string;
-  ultraOnly?: boolean;
-};
-
-type NavSection = {
-  id: string;
-  label: string;
-  accent?: string;
-  icon?: React.ElementType;
-  items: readonly NavItem[];
-};
-
-const SUPER_ADMIN_SECTION: NavSection = {
-  id: "super-admin",
-  label: "Super Admin",
-  accent: "text-amber-400",
-  icon: Shield,
-  items: [
-    { label: "SA Dashboard", icon: Zap, to: "/super-admin" },
-    { label: "Companies", icon: Building2, to: "/super-admin/companies" },
-    { label: "Usage & Limits", icon: TrendingUp, to: "/super-admin/usage" },
-    { label: "Global Users", icon: Users, to: "/super-admin/users" },
-    { label: "Global Billing", icon: CreditCard, to: "/super-admin/billing" },
-    { label: "Orders & Invoices", icon: FileText, to: "/super-admin/orders" },
-    { label: "Platform Audit", icon: ClipboardList, to: "/super-admin/audit" },
-    { label: "Access Control", icon: Lock, to: "/super-admin/access" },
-    { label: "System Alerts", icon: ShieldAlert, to: "/super-admin/alerts" },
-    { label: "Security", icon: ShieldCheck, to: "/super-admin/security" },
-    { label: "SA Analytics", icon: TrendingUp, to: "/super-admin/analytics" },
-    {
-      label: "Tenant Panel",
-      icon: LayoutDashboard,
-      to: "/tenant-admin/company-0001",
-    },
-  ],
-};
-
-const CORE_SECTION: NavSection = {
-  id: "core",
-  label: "NOC Platform",
-  accent: "text-primary/80",
-  items: [
-    { label: "Map Dashboard", icon: MapIcon, to: "/" },
-    { label: "Devices", icon: Server, to: "/devices" },
-    { label: "Topology", icon: GitFork, to: "/topology" },
-    { label: "Monitoring", icon: Activity, to: "/monitoring" },
-    { label: "Tools", icon: Wrench, to: "/tools" },
-    { label: "Analytics", icon: BarChart3, to: "/analytics" },
-    { label: "Workflows", icon: Workflow, to: "/workflows" },
-    { label: "AI Assistant", icon: Bot, to: "/ai" },
-  ],
-};
-
-const ENTERPRISE_SECTION: NavSection = {
-  id: "enterprise",
-  label: "Enterprise",
-  items: [
-    { label: "SLA Dashboard", icon: ShieldCheck, to: "/sla" },
-    { label: "Predictive AI", icon: Brain, to: "/predictive" },
-    { label: "Capacity Plan", icon: Database, to: "/capacity" },
-    { label: "Audit Logs", icon: ClipboardList, to: "/audit" },
-  ],
-};
-
-const BILLING_SECTION: NavSection = {
-  id: "billing",
-  label: "Billing & Plans",
-  accent: "text-indigo-400/80",
-  items: [
-    { label: "Plans", icon: LayoutList, to: "/plans" },
-    { label: "Billing", icon: CreditCard, to: "/billing" },
-    { label: "Usage", icon: BarChart3, to: "/usage" },
-  ],
-};
-
-const ADMIN_SECTION: NavSection = {
-  id: "admin",
-  label: "Admin",
-  items: [
-    { label: "Integrations", icon: Puzzle, to: "/integrations" },
-    { label: "Multi-Tenant", icon: Building2, to: "/tenants", ultraOnly: true },
-    {
-      label: "White-Labeling",
-      icon: Palette,
-      to: "/settings/branding",
-      ultraOnly: true,
-    },
-    { label: "License", icon: Key, to: "/settings/license" },
-    { label: "Documentation", icon: BookOpen, to: "/docs" },
-  ],
-};
 
 function CollapsibleSection({
   section,
@@ -256,7 +137,6 @@ interface MobileNavDrawerProps {
 export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
   const routerState = useRouterState();
   const currentPath = routerState.location.pathname;
-  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const { currentPlan } = useSubscriptionStore();
   const { currentUser, logout } = useAuth();
   const router = useRouter();
@@ -265,6 +145,8 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
   useEffect(() => setMounted(true), []);
   const isDark = theme === "dark";
   const isUltra = currentPlan === Plan.ULTRA;
+
+  const { sections, roleLabel, role } = useRoleNav();
 
   function handleNavigate() {
     onOpenChange(false);
@@ -276,13 +158,18 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
     void router.navigate({ to: "/login" });
   }
 
-  const sections = [
-    ...(isSuperAdmin ? [SUPER_ADMIN_SECTION] : []),
-    CORE_SECTION,
-    ENTERPRISE_SECTION,
-    BILLING_SECTION,
-    ADMIN_SECTION,
-  ];
+  const isSuperAdmin = role === "superAdmin";
+
+  // Role badge color config
+  const roleBadgeClass = isSuperAdmin
+    ? "bg-amber-500/15 text-amber-400 border-amber-500/30"
+    : role === "admin"
+      ? "bg-blue-500/15 text-blue-400 border-blue-500/30"
+      : role === "engineer"
+        ? "bg-cyan-500/15 text-cyan-400 border-cyan-500/30"
+        : role === "operator"
+          ? "bg-green-500/15 text-green-400 border-green-500/30"
+          : "bg-muted/40 text-muted-foreground border-border/40";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -299,13 +186,34 @@ export function MobileNavDrawer({ open, onOpenChange }: MobileNavDrawerProps) {
           <SheetTitle className="font-display text-sm font-semibold text-foreground tracking-wider flex-1">
             FiberNMS
           </SheetTitle>
-          {isSuperAdmin && (
-            <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
-              <Shield className="w-2.5 h-2.5" />
-              SA
-            </span>
-          )}
+          {/* Role badge in header */}
+          <span
+            className={cn(
+              "flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold border",
+              roleBadgeClass,
+            )}
+            data-ocid="mobile-drawer-role-badge"
+          >
+            <Shield className="w-2.5 h-2.5" />
+            {isSuperAdmin
+              ? "SA"
+              : role === "admin"
+                ? "ADM"
+                : role === "engineer"
+                  ? "ENG"
+                  : role === "operator"
+                    ? "OPR"
+                    : "VIEW"}
+          </span>
         </SheetHeader>
+
+        {/* Role label sub-header */}
+        <div className="px-4 py-2 border-b border-border/30 bg-muted/20">
+          <p className="text-[10px] font-body text-muted-foreground tracking-wide">
+            Signed in as{" "}
+            <span className="text-foreground font-medium">{roleLabel}</span>
+          </p>
+        </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">

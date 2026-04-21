@@ -47,6 +47,7 @@ import {
   Locate,
   MapPin,
   Plus,
+  RotateCcw,
   Signal,
   X,
 } from "lucide-react";
@@ -638,6 +639,8 @@ export default function MapDashboard() {
     addDevice,
     deleteDevice,
     updateDevice,
+    undo,
+    history,
   } = useNetworkStore();
 
   const isMobile = useIsMobile();
@@ -672,6 +675,20 @@ export default function MapDashboard() {
   // ── UI state ──────────────────────────────────────────────────────────────
   const [layerOverlayOpen, setLayerOverlayOpen] = useState(false);
   const [recenterTrigger, setRecenterTrigger] = useState(0);
+
+  const canUndo = history.length > 0;
+
+  // Keyboard shortcut: Ctrl+Z / Cmd+Z → undo
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        if (history.length > 0) undo();
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [undo, history.length]);
 
   const mobileDrawerOpen = isMobile && !!selectedDeviceId;
   const alertCount = devices.filter((d) => d.status === "faulty").length;
@@ -913,6 +930,32 @@ export default function MapDashboard() {
               setDrawWaypoints([]);
             }}
           />
+        </div>
+
+        {/* Undo button — top-left on desktop, top-left below layers on mobile */}
+        <div
+          className={`absolute pointer-events-auto ${
+            isMobile ? "left-4 top-4" : "left-4 top-16"
+          }`}
+          style={{ zIndex: 1000 }}
+          data-ocid="map.undo-wrapper"
+        >
+          <button
+            type="button"
+            onClick={() => canUndo && undo()}
+            disabled={!canUndo}
+            title="Undo last action (Ctrl+Z)"
+            aria-label="Undo last action"
+            data-ocid="map.undo_button"
+            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-mono border backdrop-blur-sm shadow-md transition-all duration-150 ${
+              canUndo
+                ? "bg-card/90 border-border/60 text-foreground hover:bg-card hover:border-primary/50 hover:text-primary active:scale-95 cursor-pointer"
+                : "bg-card/40 border-border/30 text-muted-foreground/40 cursor-not-allowed"
+            }`}
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Undo</span>
+          </button>
         </div>
 
         {/* Place Device toolbar — right of draw toolbar, or below on mobile */}

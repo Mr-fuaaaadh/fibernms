@@ -1,120 +1,13 @@
+import { useRoleNav } from "@/hooks/useRoleNav";
+import type { NavItem } from "@/hooks/useRoleNav";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/store/authStore";
 import { useNetworkStore } from "@/store/networkStore";
 import { useSubscriptionStore } from "@/store/subscriptionStore";
 import { Plan } from "@/types/subscription";
 import { Link, useRouterState } from "@tanstack/react-router";
-import {
-  Activity,
-  BarChart3,
-  BookOpen,
-  Bot,
-  Brain,
-  Building2,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  CreditCard,
-  Crown,
-  Database,
-  FileText,
-  GitFork,
-  Key,
-  LayoutDashboard,
-  LayoutList,
-  Lock,
-  Map as MapIcon,
-  Palette,
-  Puzzle,
-  Radio,
-  Server,
-  Shield,
-  ShieldAlert,
-  ShieldCheck,
-  TrendingUp,
-  Users,
-  Workflow,
-  Wrench,
-  Zap,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Crown, Radio, Shield } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-
-// ─── Super Admin Navigation ───────────────────────────────────────────────────
-
-const SUPER_ADMIN_NAV = [
-  { label: "SA Dashboard", icon: Zap, to: "/super-admin" },
-  { label: "Companies", icon: Building2, to: "/super-admin/companies" },
-  { label: "Usage & Limits", icon: TrendingUp, to: "/super-admin/usage" },
-  { label: "Global Users", icon: Users, to: "/super-admin/users" },
-  { label: "Global Billing", icon: CreditCard, to: "/super-admin/billing" },
-  { label: "Orders & Invoices", icon: FileText, to: "/super-admin/orders" },
-  { label: "Platform Audit", icon: ClipboardList, to: "/super-admin/audit" },
-  { label: "Access Control", icon: Lock, to: "/super-admin/access" },
-  { label: "System Alerts", icon: ShieldAlert, to: "/super-admin/alerts" },
-  { label: "Security", icon: ShieldCheck, to: "/super-admin/security" },
-  { label: "SA Analytics", icon: TrendingUp, to: "/super-admin/analytics" },
-  {
-    label: "Tenant Panel",
-    icon: LayoutDashboard,
-    to: "/tenant-admin/company-0001",
-  },
-] as const;
-
-// ─── NOC Navigation ───────────────────────────────────────────────────────────
-
-const CORE_NAV = [
-  { label: "Map Dashboard", icon: MapIcon, to: "/" },
-  { label: "Devices", icon: Server, to: "/devices" },
-  { label: "Topology", icon: GitFork, to: "/topology" },
-  { label: "Monitoring", icon: Activity, to: "/monitoring" },
-  { label: "Tools", icon: Wrench, to: "/tools" },
-  { label: "Analytics", icon: BarChart3, to: "/analytics" },
-  { label: "Workflows", icon: Workflow, to: "/workflows" },
-  { label: "AI Assistant", icon: Bot, to: "/ai" },
-] as const;
-
-const ENTERPRISE_NAV = [
-  { label: "SLA Dashboard", icon: ShieldCheck, to: "/sla" },
-  { label: "Predictive AI", icon: Brain, to: "/predictive" },
-  { label: "Capacity Plan", icon: Database, to: "/capacity" },
-  { label: "Audit Logs", icon: ClipboardList, to: "/audit" },
-] as const;
-
-const BILLING_NAV = [
-  { label: "Plans", icon: LayoutList, to: "/plans", ultraOnly: false },
-  { label: "Billing", icon: CreditCard, to: "/billing", ultraOnly: false },
-  { label: "Usage", icon: BarChart3, to: "/usage", ultraOnly: false },
-] as const;
-
-const ADMIN_NAV = [
-  {
-    label: "Integrations",
-    icon: Puzzle,
-    to: "/integrations",
-    ultraOnly: false,
-  },
-  { label: "Multi-Tenant", icon: Building2, to: "/tenants", ultraOnly: true },
-  {
-    label: "White-Labeling",
-    icon: Palette,
-    to: "/settings/branding",
-    ultraOnly: true,
-  },
-  { label: "License", icon: Key, to: "/settings/license", ultraOnly: false },
-  {
-    label: "Documentation",
-    icon: BookOpen,
-    to: "/docs",
-    ultraOnly: false,
-  },
-] as const;
-
-type NavItem = {
-  label: string;
-  icon: React.ElementType;
-  to: string;
-  ultraOnly?: boolean;
-};
 
 function NavItemLink({
   item,
@@ -170,7 +63,6 @@ function NavItemLink({
           </motion.span>
         )}
       </AnimatePresence>
-      {/* ULTRA badge for ultra-only items */}
       {ultraOnly && !collapsed && (
         <motion.span
           initial={{ opacity: 0, scale: 0.8 }}
@@ -183,7 +75,6 @@ function NavItemLink({
           ULTRA
         </motion.span>
       )}
-      {/* Collapsed tooltip */}
       {collapsed && (
         <div className="absolute left-full ml-3 px-2 py-1 bg-popover border border-border rounded-md text-xs text-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-smooth z-50 shadow-noc-elevated flex items-center gap-1.5">
           {label}
@@ -244,11 +135,10 @@ export function Sidebar() {
   const currentPath = routerState.location.pathname;
   const { currentPlan } = useSubscriptionStore();
   const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
+  const { sections, roleLabel } = useRoleNav();
 
   function isActive(to: string) {
-    if (to === "/super-admin") {
-      return currentPath === "/super-admin";
-    }
+    if (to === "/super-admin") return currentPath === "/super-admin";
     return to === "/" ? currentPath === "/" : currentPath.startsWith(to);
   }
 
@@ -283,93 +173,78 @@ export function Sidebar() {
 
       {/* Nav */}
       <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden">
-        {/* ── Super Admin Section (only for superAdmin role) ── */}
-        {isSuperAdmin && (
-          <>
-            <SectionDivider
-              label="Super Admin"
-              collapsed={collapsed}
-              accent="text-amber-400/80"
-              icon={Shield}
-            />
-            {SUPER_ADMIN_NAV.map((item) => (
-              <NavItemLink
-                key={item.to}
-                item={item}
-                isActive={isActive(item.to)}
-                collapsed={collapsed}
-                variant="superAdmin"
-              />
-            ))}
-            <SectionDivider
-              label="NOC Platform"
-              collapsed={collapsed}
-              accent="text-primary/60"
-            />
-          </>
-        )}
+        {sections.map((section, sIdx) => {
+          const isSuperAdminSection = section.id === "super-admin";
+          const variant = isSuperAdminSection ? "superAdmin" : "default";
+          // Second section (core) after super-admin gets "NOC Platform" label
+          const isFirstCoreAfterSA =
+            isSuperAdmin && sIdx === 1 && sections[0].id === "super-admin";
 
-        {/* Core navigation */}
-        {CORE_NAV.map((item) => (
-          <NavItemLink
-            key={item.to}
-            item={item}
-            isActive={isActive(item.to)}
-            collapsed={collapsed}
-          />
-        ))}
+          const dividerLabel = isSuperAdminSection
+            ? "Super Admin"
+            : isFirstCoreAfterSA
+              ? "NOC Platform"
+              : section.label;
 
-        {/* Enterprise separator */}
-        <SectionDivider label="Enterprise" collapsed={collapsed} />
+          const dividerAccent = isSuperAdminSection
+            ? "text-amber-400/80"
+            : isFirstCoreAfterSA
+              ? "text-primary/60"
+              : section.id === "billing"
+                ? "text-indigo-400/60"
+                : section.id === "admin"
+                  ? isUltra
+                    ? "text-violet-400/70"
+                    : "text-muted-foreground/50"
+                  : (section.accent ?? undefined);
 
-        {/* Enterprise navigation */}
-        {ENTERPRISE_NAV.map((item) => (
-          <NavItemLink
-            key={item.to}
-            item={item}
-            isActive={isActive(item.to)}
-            collapsed={collapsed}
-          />
-        ))}
+          const dividerIcon = isSuperAdminSection ? Shield : undefined;
 
-        {/* Billing & Plans separator */}
-        <SectionDivider
-          label="Billing & Plans"
-          collapsed={collapsed}
-          accent="text-indigo-400/60"
-        />
-
-        {/* Billing navigation */}
-        {BILLING_NAV.map((item) => (
-          <NavItemLink
-            key={item.to}
-            item={item}
-            isActive={isActive(item.to)}
-            collapsed={collapsed}
-          />
-        ))}
-
-        {/* Admin separator */}
-        <SectionDivider
-          label="Admin"
-          collapsed={collapsed}
-          accent={isUltra ? "text-violet-400/70" : "text-muted-foreground/50"}
-        />
-
-        {/* Admin navigation */}
-        {ADMIN_NAV.map((item) => (
-          <NavItemLink
-            key={item.to}
-            item={item}
-            isActive={isActive(item.to)}
-            collapsed={collapsed}
-            ultraOnly={item.ultraOnly}
-          />
-        ))}
+          return (
+            <div key={section.id}>
+              {/* Section divider — always show one per section */}
+              {(sIdx > 0 || isSuperAdminSection) && (
+                <SectionDivider
+                  label={dividerLabel}
+                  collapsed={collapsed}
+                  accent={dividerAccent}
+                  icon={dividerIcon}
+                />
+              )}
+              {section.items.map((item) => (
+                <NavItemLink
+                  key={item.to}
+                  item={item}
+                  isActive={isActive(item.to)}
+                  collapsed={collapsed}
+                  variant={variant}
+                  ultraOnly={item.ultraOnly}
+                />
+              ))}
+            </div>
+          );
+        })}
       </nav>
 
-      {/* Collapse toggle */}
-      <div className="border-t border-border/50 p-2">
+      {/* Role badge + collapse toggle */}
+      <div className="border-t border-border/50 p-2 space-y-1">
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.15 }}
+              className="mx-1 px-2 py-1.5 rounded-md bg-muted/30 border border-border/30 flex items-center gap-2"
+              data-ocid="sidebar-role-badge"
+            >
+              <Shield className="w-3 h-3 text-muted-foreground/60 flex-shrink-0" />
+              <span className="text-[10px] font-mono text-muted-foreground truncate">
+                {roleLabel}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <button
           type="button"
           onClick={toggle}

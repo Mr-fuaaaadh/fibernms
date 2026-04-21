@@ -1,6 +1,7 @@
+import { useRoleNav } from "@/hooks/useRoleNav";
 import { cn } from "@/lib/utils";
 import { useNetworkStore } from "@/store/networkStore";
-import { Menu, Radio, Search } from "lucide-react";
+import { Menu, Radio, Search, Shield } from "lucide-react";
 import { useState } from "react";
 import { MobileNavDrawer } from "./MobileNavDrawer";
 
@@ -15,6 +16,19 @@ export function MobileHeader({ className }: MobileHeaderProps) {
   const criticalCount = alerts.filter(
     (a) => !a.resolved && a.severity === "critical",
   ).length;
+  const { roleLabel, role } = useRoleNav();
+
+  // Role badge color
+  const roleBadgeClass =
+    role === "superAdmin"
+      ? "text-amber-400 bg-amber-500/10 border-amber-500/25"
+      : role === "admin"
+        ? "text-blue-400 bg-blue-500/10 border-blue-500/25"
+        : role === "engineer"
+          ? "text-cyan-400 bg-cyan-500/10 border-cyan-500/25"
+          : role === "operator"
+            ? "text-green-400 bg-green-500/10 border-green-500/25"
+            : "text-muted-foreground bg-muted/30 border-border/30";
 
   return (
     <>
@@ -50,8 +64,29 @@ export function MobileHeader({ className }: MobileHeaderProps) {
             </span>
           </div>
 
-          {/* Right actions */}
+          {/* Right actions: role badge + search + alerts */}
           <div className="flex items-center gap-1">
+            {/* Role badge — compact pill, visible when not "viewer" or when it's meaningful */}
+            <span
+              className={cn(
+                "hidden sm:flex items-center gap-1 px-1.5 py-0.5 rounded border text-[9px] font-mono font-semibold tracking-wider",
+                roleBadgeClass,
+              )}
+              data-ocid="mobile-header-role-badge"
+              title={roleLabel}
+            >
+              <Shield className="w-2.5 h-2.5" />
+              {role === "superAdmin"
+                ? "SA"
+                : role === "admin"
+                  ? "ADM"
+                  : role === "engineer"
+                    ? "ENG"
+                    : role === "operator"
+                      ? "OPR"
+                      : "VIEW"}
+            </span>
+
             {/* Search icon */}
             <button
               type="button"
@@ -59,7 +94,7 @@ export function MobileHeader({ className }: MobileHeaderProps) {
               className="flex items-center justify-center w-11 h-11 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-smooth"
               aria-label="Search"
             >
-              <Search className="w-4.5 h-4.5" />
+              <Search className="w-4 h-4" />
             </button>
 
             {/* Alert bell with count badge */}
