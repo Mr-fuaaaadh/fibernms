@@ -55,7 +55,6 @@ function signalBars(dbm: number | undefined) {
   return 1;
 }
 
-// ─── Prop types ──────────────────────────────────────────────────────────────
 interface OLTSectionCardProps {
   olt: Device;
   splitters: Device[];
@@ -65,7 +64,6 @@ interface OLTSectionCardProps {
   index: number;
 }
 
-// ─── Stat pill ────────────────────────────────────────────────────────────────
 function StatPill({
   icon: Icon,
   label,
@@ -79,22 +77,22 @@ function StatPill({
 }) {
   return (
     <div
-      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg flex-1"
-      style={{
-        background: `${color}10`,
-        border: `1px solid ${color}25`,
-      }}
+      className="flex items-center gap-1 sm:gap-1.5 px-2 py-1.5 rounded-lg flex-1 min-w-0"
+      style={{ background: `${color}10`, border: `1px solid ${color}25` }}
     >
-      <Icon className="w-3 h-3 flex-shrink-0" style={{ color }} />
-      <div className="min-w-0">
+      <Icon
+        className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0"
+        style={{ color }}
+      />
+      <div className="min-w-0 flex-1">
         <p
-          className="text-[9px] font-mono uppercase tracking-wider"
+          className="text-[9px] font-mono uppercase tracking-wider truncate"
           style={{ color: `${color}90` }}
         >
           {label}
         </p>
         <p
-          className="text-sm font-bold font-mono leading-none"
+          className="text-xs sm:text-sm font-bold font-mono leading-none"
           style={{ color }}
         >
           {value}
@@ -104,7 +102,6 @@ function StatPill({
   );
 }
 
-// ─── Signal strength bar display ─────────────────────────────────────────────
 function SignalStrength({ dbm }: { dbm?: number }) {
   const bars = signalBars(dbm);
   return (
@@ -114,7 +111,7 @@ function SignalStrength({ dbm }: { dbm?: number }) {
           key={b}
           className="w-1 rounded-sm transition-all"
           style={{
-            height: `${4 + b * 2}px`,
+            height: `${3 + b * 2}px`,
             background: b <= bars ? "#06b6d4" : "rgba(255,255,255,0.12)",
             boxShadow: b <= bars ? "0 0 4px rgba(6,182,212,0.6)" : "none",
           }}
@@ -132,7 +129,6 @@ function SignalStrength({ dbm }: { dbm?: number }) {
   );
 }
 
-// ─── Main Card ────────────────────────────────────────────────────────────────
 export function OLTSectionCard({
   olt,
   splitters,
@@ -143,7 +139,6 @@ export function OLTSectionCard({
 }: OLTSectionCardProps) {
   const badge = STATUS_BADGE[olt.status];
   const StatusIcon = badge.icon;
-
   const activeONTs = onts.filter((o) => o.status === "active").length;
   const faultyONTs = onts.filter((o) => o.status === "faulty").length;
   const warnONTs = onts.filter((o) => o.status === "warning").length;
@@ -179,7 +174,7 @@ export function OLTSectionCard({
         if (e.key === "Enter" || e.key === " ") onSelect(olt.id);
       }}
     >
-      {/* Subtle gradient top accent */}
+      {/* Top accent line */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
         style={{
@@ -189,7 +184,6 @@ export function OLTSectionCard({
         }}
       />
 
-      {/* Radial glow behind — selected only */}
       {isSelected && (
         <div
           className="absolute top-0 right-0 w-32 h-32 pointer-events-none"
@@ -200,27 +194,22 @@ export function OLTSectionCard({
         />
       )}
 
-      {/* ── Card Header ───────────────────────────────────────────────────── */}
-      <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          {/* OLT icon badge */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div className="px-3 sm:px-4 pt-3 sm:pt-4 pb-2 sm:pb-3 flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{
               background: "rgba(6,182,212,0.12)",
               border: "1px solid rgba(6,182,212,0.25)",
               boxShadow: isSelected ? "0 0 14px rgba(6,182,212,0.3)" : "none",
             }}
           >
-            <Router
-              className="w-4.5 h-4.5"
-              style={{ color: "#06b6d4", width: 18, height: 18 }}
-            />
+            <Router style={{ color: "#06b6d4", width: 16, height: 16 }} />
           </div>
-          {/* Name + location */}
           <div className="min-w-0">
             <h3
-              className="text-sm font-display font-semibold truncate"
+              className="text-xs sm:text-sm font-display font-semibold truncate"
               style={{
                 color: isSelected ? "#06b6d4" : "rgba(255,255,255,0.9)",
                 textShadow: isSelected
@@ -239,10 +228,9 @@ export function OLTSectionCard({
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Status badge */}
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <div
-            className="flex items-center gap-1 px-2 py-1 rounded-full"
+            className="flex items-center gap-1 px-1.5 sm:px-2 py-1 rounded-full"
             style={{
               background: badge.bg,
               border: `1px solid ${badge.border}`,
@@ -253,7 +241,7 @@ export function OLTSectionCard({
               style={{ color: badge.color }}
             />
             <span
-              className="text-[10px] font-mono font-semibold"
+              className="text-[10px] font-mono font-semibold hidden sm:inline"
               style={{ color: badge.color }}
             >
               {badge.label}
@@ -266,9 +254,9 @@ export function OLTSectionCard({
         </div>
       </div>
 
-      {/* ── Signal + Uptime row ────────────────────────────────────────────── */}
-      <div className="px-4 pb-3 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+      {/* ── Signal + Uptime ─────────────────────────────────────────────── */}
+      <div className="px-3 sm:px-4 pb-2 sm:pb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-1.5">
           <Signal
             className="w-3 h-3"
             style={{ color: "rgba(255,255,255,0.3)" }}
@@ -299,9 +287,9 @@ export function OLTSectionCard({
         </div>
       </div>
 
-      {/* ── Mini tree ─────────────────────────────────────────────────────── */}
+      {/* ── Mini tree (fully responsive SVG) ────────────────────────────── */}
       <div
-        className="mx-3 mb-3 rounded-xl overflow-hidden"
+        className="mx-2 sm:mx-3 mb-2 sm:mb-3 rounded-xl overflow-hidden"
         style={{
           background: "rgba(0,0,0,0.3)",
           border: "1px solid rgba(255,255,255,0.06)",
@@ -311,7 +299,7 @@ export function OLTSectionCard({
       </div>
 
       {/* ── Stats row ─────────────────────────────────────────────────────── */}
-      <div className="px-3 pb-4 flex gap-2">
+      <div className="px-2 sm:px-3 pb-3 sm:pb-4 grid grid-cols-3 gap-1.5">
         <StatPill
           icon={GitBranch}
           label="Splitters"

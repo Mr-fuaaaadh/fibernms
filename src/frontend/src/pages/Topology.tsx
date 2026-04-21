@@ -1,6 +1,7 @@
 import { OLTSectionCard } from "@/components/topology/OLTSectionCard";
 import { TopologyGraph } from "@/components/topology/TopologyGraph";
 import { TopologyNodePanel } from "@/components/topology/TopologyNodePanel";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useNetworkStore } from "@/store/networkStore";
 import {
   Activity,
@@ -85,6 +86,7 @@ interface StatCardProps {
   accentColor: string;
   glowColor: string;
   delay?: number;
+  compact?: boolean;
 }
 
 function StatCard({
@@ -94,13 +96,16 @@ function StatCard({
   accentColor,
   glowColor,
   delay = 0,
+  compact = false,
 }: StatCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay, ease: [0.4, 0, 0.2, 1] }}
-      className="relative flex-1 min-w-[110px] flex flex-col gap-1 px-4 py-3 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md overflow-hidden"
+      className={`relative flex flex-col gap-1 rounded-xl border border-white/10 bg-white/5 backdrop-blur-md overflow-hidden ${
+        compact ? "px-3 py-2" : "px-4 py-3"
+      }`}
       style={{ borderLeftColor: accentColor, borderLeftWidth: 3 }}
     >
       <div
@@ -110,13 +115,16 @@ function StatCard({
         }}
       />
       <div className="flex items-center gap-1.5 mb-0.5">
-        <Icon className="w-3 h-3" style={{ color: accentColor }} />
-        <span className="text-[10px] font-mono uppercase tracking-widest text-white/40">
+        <Icon
+          className={compact ? "w-2.5 h-2.5" : "w-3 h-3"}
+          style={{ color: accentColor }}
+        />
+        <span className="text-[10px] font-mono uppercase tracking-widest text-white/40 truncate">
           {label}
         </span>
       </div>
       <span
-        className="text-2xl font-display font-bold leading-none"
+        className={`font-display font-bold leading-none ${compact ? "text-xl" : "text-2xl"}`}
         style={{ color: accentColor, textShadow: `0 0 20px ${glowColor}` }}
       >
         {value}
@@ -126,19 +134,21 @@ function StatCard({
 }
 
 // ── Layer Toggle Switch ────────────────────────────────────────────────────────
-function LayerToggle({ cfg }: { cfg: LayerConfig }) {
+function LayerToggle({
+  cfg,
+  compact,
+}: { cfg: LayerConfig; compact?: boolean }) {
   const networkLayers = useNetworkStore((s) => s.networkLayers);
   const toggleNetworkLayer = useNetworkStore((s) => s.toggleNetworkLayer);
   const layer = networkLayers.find((l) => l.type === cfg.type);
   const isOn = layer?.visible ?? false;
 
   return (
-    <motion.div
-      className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all duration-300 cursor-pointer select-none ${
-        isOn
-          ? `${cfg.bgClass} ${cfg.borderClass}`
-          : "bg-white/5 border-white/10"
-      }`}
+    <motion.button
+      type="button"
+      className={`flex items-center gap-2 rounded-xl border transition-all duration-300 cursor-pointer select-none flex-shrink-0 ${
+        compact ? "px-2.5 py-1.5" : "px-4 py-3"
+      } ${isOn ? `${cfg.bgClass} ${cfg.borderClass}` : "bg-white/5 border-white/10"}`}
       onClick={() => toggleNetworkLayer(cfg.type)}
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -147,31 +157,30 @@ function LayerToggle({ cfg }: { cfg: LayerConfig }) {
       aria-checked={isOn}
     >
       <div
-        className="w-3 h-3 rounded-sm flex-shrink-0"
+        className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
         style={{
           background: isOn ? cfg.color : "rgba(255,255,255,0.15)",
           boxShadow: isOn ? `0 0 8px ${cfg.glowColor}` : "none",
           transition: "all 0.3s",
         }}
       />
-      <div className="flex-1 min-w-0">
-        <p
-          className={`text-xs font-semibold font-mono transition-colors ${isOn ? cfg.textClass : "text-white/40"}`}
-        >
-          {cfg.label}
-        </p>
-        <p className="text-[10px] text-white/30 truncate">{cfg.description}</p>
-      </div>
+      <span
+        className={`font-semibold font-mono transition-colors whitespace-nowrap ${
+          compact ? "text-[10px]" : "text-xs"
+        } ${isOn ? cfg.textClass : "text-white/40"}`}
+      >
+        {cfg.label}
+      </span>
       <div
-        className="relative w-9 h-5 rounded-full transition-all duration-300 flex-shrink-0"
+        className="relative w-8 h-4 rounded-full transition-all duration-300 flex-shrink-0"
         style={{
           background: isOn ? `${cfg.color}33` : "rgba(255,255,255,0.1)",
           border: `1px solid ${isOn ? cfg.color : "rgba(255,255,255,0.15)"}`,
         }}
       >
         <motion.div
-          className="absolute top-0.5 w-4 h-4 rounded-full"
-          animate={{ left: isOn ? "calc(100% - 18px)" : "2px" }}
+          className="absolute top-0.5 w-3 h-3 rounded-full"
+          animate={{ left: isOn ? "calc(100% - 14px)" : "2px" }}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
           style={{
             background: isOn ? cfg.color : "rgba(255,255,255,0.3)",
@@ -179,7 +188,7 @@ function LayerToggle({ cfg }: { cfg: LayerConfig }) {
           }}
         />
       </div>
-    </motion.div>
+    </motion.button>
   );
 }
 
@@ -188,26 +197,26 @@ function NetworkHealthBadge({ faultyCount }: { faultyCount: number }) {
   const healthy = faultyCount === 0;
   return (
     <div
-      className="flex items-center gap-2 px-3 py-1.5 rounded-full border"
+      className="flex items-center gap-2 px-3 py-1.5 rounded-full border flex-shrink-0"
       style={{
         background: healthy ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
         borderColor: healthy ? "rgba(34,197,94,0.3)" : "rgba(239,68,68,0.3)",
       }}
     >
       <span
-        className="w-2 h-2 rounded-full animate-pulse"
+        className="w-2 h-2 rounded-full animate-pulse flex-shrink-0"
         style={{
           background: healthy ? "#22c55e" : "#ef4444",
           boxShadow: `0 0 6px ${healthy ? "#22c55e" : "#ef4444"}`,
         }}
       />
       <span
-        className="text-xs font-mono font-semibold"
+        className="text-xs font-mono font-semibold whitespace-nowrap"
         style={{ color: healthy ? "#22c55e" : "#ef4444" }}
       >
         {healthy
-          ? "Network Healthy"
-          : `${faultyCount} Fault${faultyCount > 1 ? "s" : ""} Active`}
+          ? "Healthy"
+          : `${faultyCount} Fault${faultyCount > 1 ? "s" : ""}`}
       </span>
     </div>
   );
@@ -220,11 +229,11 @@ function ViewToggle({
 }: { mode: ViewMode; onChange: (m: ViewMode) => void }) {
   const tabs: { value: ViewMode; label: string; icon: React.ElementType }[] = [
     { value: "sections", label: "OLT Sections", icon: LayoutGrid },
-    { value: "graph", label: "Network Graph", icon: Share2 },
+    { value: "graph", label: "Graph", icon: Share2 },
   ];
   return (
     <div
-      className="flex items-center gap-1 p-1 rounded-xl"
+      className="flex items-center gap-1 p-1 rounded-xl flex-shrink-0"
       style={{
         background: "rgba(255,255,255,0.04)",
         border: "1px solid rgba(255,255,255,0.1)",
@@ -239,7 +248,7 @@ function ViewToggle({
             type="button"
             onClick={() => onChange(tab.value)}
             data-ocid={`topology-view-toggle-${tab.value}`}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all duration-200"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all duration-200 whitespace-nowrap"
             style={{
               background: active ? "rgba(6,182,212,0.15)" : "transparent",
               color: active ? "#06b6d4" : "rgba(255,255,255,0.4)",
@@ -250,7 +259,7 @@ function ViewToggle({
             }}
           >
             <Icon className="w-3.5 h-3.5" />
-            {tab.label}
+            <span className="hidden sm:inline">{tab.label}</span>
           </button>
         );
       })}
@@ -268,15 +277,13 @@ function OLTSummaryBar({
 }) {
   const online = olts.filter((o) => o.status === "active").length;
   const fault = olts.filter((o) => o.status === "faulty").length;
-  const warning = olts.filter((o) => o.status === "warning").length;
 
   const items = [
-    { label: "Total OLTs", value: olts.length, color: "#06b6d4", icon: Router },
+    { label: "Total", value: olts.length, color: "#06b6d4", icon: Router },
     { label: "Online", value: online, color: "#22c55e", icon: CheckCircle2 },
     { label: "Fault", value: fault, color: "#ef4444", icon: AlertTriangle },
-    { label: "Warning", value: warning, color: "#eab308", icon: AlertTriangle },
     {
-      label: "Showing",
+      label: "Shown",
       value: filteredOlts.length,
       color: "#a855f7",
       icon: LayoutGrid,
@@ -284,19 +291,19 @@ function OLTSummaryBar({
   ];
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex gap-2 overflow-x-auto scrollbar-none">
       {items.map((item) => {
         const Icon = item.icon;
         return (
           <div
             key={item.label}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl"
+            className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl flex-shrink-0"
             style={{
               background: `${item.color}0d`,
               border: `1px solid ${item.color}25`,
             }}
           >
-            <Icon className="w-3.5 h-3.5" style={{ color: item.color }} />
+            <Icon className="w-3 h-3" style={{ color: item.color }} />
             <span
               className="text-[10px] font-mono"
               style={{ color: "rgba(255,255,255,0.4)" }}
@@ -318,6 +325,8 @@ function OLTSummaryBar({
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function Topology() {
+  const isMobile = useIsMobile(768);
+
   const devices = useNetworkStore((s) => s.devices);
   const alerts = useNetworkStore((s) => s.alerts);
   const selectedDeviceId = useNetworkStore((s) => s.selectedDeviceId);
@@ -361,21 +370,21 @@ export default function Topology() {
       glowColor: "rgba(6,182,212,0.5)",
     },
     {
-      label: "Active Nodes",
+      label: "Active",
       value: activeCount,
       icon: CheckCircle2,
       accentColor: "#22c55e",
       glowColor: "rgba(34,197,94,0.5)",
     },
     {
-      label: "Fault Nodes",
+      label: "Faults",
       value: faultyCount,
       icon: AlertTriangle,
       accentColor: "#ef4444",
       glowColor: "rgba(239,68,68,0.5)",
     },
     {
-      label: "OLTs Online",
+      label: "OLTs",
       value: oltCount,
       icon: Router,
       accentColor: "#06b6d4",
@@ -419,7 +428,6 @@ export default function Topology() {
     [olts, activeRegion],
   );
 
-  // Map: OLT id → its splitters
   const oltSplittersMap = useMemo(() => {
     const map: Record<string, import("@/types/network").Device[]> = {};
     for (const olt of olts) {
@@ -430,7 +438,6 @@ export default function Topology() {
     return map;
   }, [olts, splitters]);
 
-  // Map: OLT id → its ONTs (via splitters)
   const oltONTsMap = useMemo(() => {
     const map: Record<string, import("@/types/network").Device[]> = {};
     for (const olt of olts) {
@@ -440,6 +447,9 @@ export default function Topology() {
     }
     return map;
   }, [olts, oltSplittersMap, ontsAll]);
+
+  // Show bottom sheet on mobile when device selected
+  const showBottomSheet = isMobile && selectedDevice !== null;
 
   return (
     <motion.div
@@ -453,22 +463,26 @@ export default function Topology() {
       }}
     >
       {/* ── Page Header ───────────────────────────────────────────────────────── */}
-      <div className="flex-shrink-0 px-4 sm:px-6 pt-4 md:pt-5 pb-3 md:pb-4 border-b border-white/8">
-        <div className="flex items-start justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-4">
+      <div className="flex-shrink-0 px-3 sm:px-6 pt-3 md:pt-5 pb-2 md:pb-4 border-b border-white/8">
+        {/* Title row */}
+        <div className="flex items-center justify-between gap-2 mb-2 md:mb-3">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{
                 background: "rgba(6,182,212,0.15)",
                 border: "1px solid rgba(6,182,212,0.3)",
                 boxShadow: "0 0 20px rgba(6,182,212,0.2)",
               }}
             >
-              <Layers3 className="w-5 h-5" style={{ color: "#06b6d4" }} />
+              <Layers3
+                className="w-4 h-4 sm:w-5 sm:h-5"
+                style={{ color: "#06b6d4" }}
+              />
             </div>
-            <div>
+            <div className="min-w-0">
               <h1
-                className="text-2xl font-display font-bold tracking-tight"
+                className="text-lg sm:text-2xl font-display font-bold tracking-tight leading-tight"
                 style={{
                   background:
                     "linear-gradient(135deg, #ffffff 0%, #06b6d4 60%, #a855f7 100%)",
@@ -478,63 +492,56 @@ export default function Topology() {
               >
                 Network Topology
               </h1>
-              <div className="flex items-center gap-3 mt-0.5">
-                <p className="text-xs font-mono text-white/40">
-                  OLT → Splitter → ONT · {devices.length.toLocaleString()} nodes
-                  indexed
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <p className="text-[10px] font-mono text-white/40 truncate">
+                  {devices.length.toLocaleString()} nodes
                 </p>
                 <div className="flex items-center gap-1 text-[10px] font-mono text-white/30">
-                  <RefreshCw className="w-2.5 h-2.5" />
-                  <span>Last sync: {syncLabel}</span>
+                  <RefreshCw className="w-2.5 h-2.5 flex-shrink-0" />
+                  <span className="whitespace-nowrap">{syncLabel}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <NetworkHealthBadge faultyCount={faultyCount} />
-            {warnCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-yellow-500/30 bg-yellow-500/10">
-                <AlertTriangle className="w-3 h-3 text-yellow-400" />
-                <span className="text-xs font-mono text-yellow-400">
-                  {warnCount} Warnings
-                </span>
-              </div>
-            )}
+            <ViewToggle mode={viewMode} onChange={setViewMode} />
           </div>
         </div>
 
-        {/* ── Stat Bar ────────────────────────────────────────────────────── */}
-        <div className="flex gap-3 mt-4 flex-wrap">
+        {/* Stat cards — 3-col on mobile, 6-col on desktop */}
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-2">
           {statCards.map((s, i) => (
-            <StatCard key={s.label} {...s} delay={i * 0.06} />
+            <StatCard
+              key={s.label}
+              {...s}
+              delay={i * 0.06}
+              compact={isMobile}
+            />
           ))}
         </div>
       </div>
 
-      {/* ── Toolbar: layer toggles + view toggle ──────────────────────────────── */}
-      <div className="flex-shrink-0 px-6 py-3 border-b border-white/8">
-        <div className="flex items-center gap-3 flex-wrap justify-between">
-          <div className="flex items-center gap-3 flex-wrap flex-1">
-            <div className="flex items-center gap-1.5 mr-2 flex-shrink-0">
-              <Activity className="w-3.5 h-3.5 text-white/30" />
-              <span className="text-[10px] font-mono uppercase tracking-widest text-white/30">
-                Network Layers
-              </span>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {LAYER_CONFIGS.map((cfg) => (
-                <LayerToggle key={cfg.type} cfg={cfg} />
-              ))}
-            </div>
+      {/* ── Toolbar: layer toggles ────────────────────────────────────────────── */}
+      <div className="flex-shrink-0 px-3 sm:px-6 py-2 border-b border-white/8">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <Activity className="w-3 h-3 text-white/30" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-white/30 hidden sm:block">
+              Layers
+            </span>
           </div>
-          {/* View toggle */}
-          <ViewToggle mode={viewMode} onChange={setViewMode} />
+          <div className="flex gap-2 overflow-x-auto scrollbar-none flex-1 pb-0.5">
+            {LAYER_CONFIGS.map((cfg) => (
+              <LayerToggle key={cfg.type} cfg={cfg} compact={isMobile} />
+            ))}
+          </div>
         </div>
       </div>
 
       {/* ── Main Content ─────────────────────────────────────────────────────── */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex flex-1 min-h-0 relative">
         <AnimatePresence mode="wait">
           {viewMode === "sections" ? (
             /* ── OLT SECTIONS VIEW ─────────────────────────────────────────── */
@@ -546,9 +553,9 @@ export default function Topology() {
               transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
               className="flex-1 min-w-0 overflow-hidden flex flex-col"
             >
-              {/* Sections canvas sub-header */}
+              {/* Sections sub-header */}
               <div
-                className="flex-shrink-0 flex items-center justify-between gap-4 px-5 py-2.5 border-b flex-wrap"
+                className="flex-shrink-0 flex items-center justify-between gap-2 px-3 sm:px-5 py-2 border-b flex-wrap"
                 style={{
                   background: "rgba(255,255,255,0.02)",
                   borderColor: "rgba(255,255,255,0.08)",
@@ -556,14 +563,14 @@ export default function Topology() {
               >
                 <div className="flex items-center gap-2">
                   <span
-                    className="w-2 h-2 rounded-full animate-pulse"
+                    className="w-2 h-2 rounded-full animate-pulse flex-shrink-0"
                     style={{
                       background: "#22c55e",
                       boxShadow: "0 0 8px #22c55e",
                     }}
                   />
                   <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
-                    OLT Section View · {filteredOlts.length} OLTs shown
+                    {filteredOlts.length} OLTs
                   </span>
                 </div>
                 <OLTSummaryBar olts={olts} filteredOlts={filteredOlts} />
@@ -571,7 +578,9 @@ export default function Topology() {
 
               {/* Scrollable grid */}
               <div
-                className="flex-1 overflow-y-auto px-4 sm:px-6 py-5"
+                className={`flex-1 overflow-y-auto px-3 sm:px-6 py-3 sm:py-5 ${
+                  isMobile ? "pb-24" : "pb-4"
+                }`}
                 style={{ scrollbarColor: "rgba(6,182,212,0.2) transparent" }}
                 data-ocid="olt-sections-grid"
               >
@@ -602,7 +611,7 @@ export default function Topology() {
                     </div>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
                     {filteredOlts.map((olt, i) => (
                       <OLTSectionCard
                         key={olt.id}
@@ -628,12 +637,12 @@ export default function Topology() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-              className="flex-1 min-w-0 flex"
+              className="flex-1 min-w-0 flex flex-col md:flex-row min-h-0"
             >
               {/* Graph canvas */}
-              <div className="flex-1 min-w-0 relative overflow-hidden">
+              <div className="flex-1 min-w-0 relative overflow-hidden flex flex-col min-h-0">
                 <div
-                  className="flex items-center justify-between px-5 py-2.5 border-b"
+                  className="flex-shrink-0 flex items-center justify-between px-3 sm:px-5 py-2 border-b"
                   style={{
                     background: "rgba(255,255,255,0.03)",
                     borderColor: "rgba(255,255,255,0.08)",
@@ -641,14 +650,14 @@ export default function Topology() {
                 >
                   <div className="flex items-center gap-2">
                     <span
-                      className="w-2 h-2 rounded-full animate-pulse"
+                      className="w-2 h-2 rounded-full animate-pulse flex-shrink-0"
                       style={{
                         background: "#22c55e",
                         boxShadow: "0 0 8px #22c55e",
                       }}
                     />
                     <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
-                      Live Topology View · Real-time
+                      Live Topology
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -658,30 +667,32 @@ export default function Topology() {
                     </span>
                   </div>
                 </div>
-                <div className="absolute inset-0 top-[41px]">
+                <div className="flex-1 min-h-0 relative">
                   <TopologyGraph />
                 </div>
               </div>
 
-              {/* Detail panel */}
-              <div
-                className="flex-shrink-0 border-l"
-                style={{ borderColor: "rgba(255,255,255,0.08)" }}
-              >
-                <TopologyNodePanel device={selectedDevice} />
-              </div>
+              {/* Detail panel — desktop/tablet: right sidebar */}
+              {!isMobile && (
+                <div
+                  className="flex-shrink-0 border-t md:border-t-0 md:border-l"
+                  style={{ borderColor: "rgba(255,255,255,0.08)" }}
+                >
+                  <TopologyNodePanel device={selectedDevice} />
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Detail panel (sections view — only shown when a node is selected) */}
-        {viewMode === "sections" && selectedDevice && (
+        {/* Desktop sidebar for sections view */}
+        {viewMode === "sections" && selectedDevice && !isMobile && (
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
             transition={{ duration: 0.25 }}
-            className="flex-shrink-0 border-l"
+            className="flex-shrink-0 border-l hidden md:block"
             style={{ borderColor: "rgba(255,255,255,0.08)" }}
           >
             <TopologyNodePanel device={selectedDevice} />
@@ -689,68 +700,124 @@ export default function Topology() {
         )}
       </div>
 
-      {/* ── Bottom Strip: region filters + alerts + export ───────────────────── */}
+      {/* ── Bottom Strip: region filters + export ────────────────────────────── */}
       <div
-        className="flex-shrink-0 flex items-center justify-between gap-4 px-6 py-2.5 border-t flex-wrap"
+        className={`flex-shrink-0 border-t ${isMobile ? "pb-20" : ""}`}
         style={{
           background: "rgba(6,182,212,0.03)",
           borderColor: "rgba(255,255,255,0.08)",
         }}
         data-ocid="topology-bottom-strip"
       >
-        {/* Region filters */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Globe2 className="w-3.5 h-3.5 text-white/30 mr-1" />
-          {REGIONS.map((region) => (
+        <div className="flex items-center gap-2 px-3 sm:px-6 py-2 overflow-x-auto scrollbar-none">
+          <Globe2 className="w-3.5 h-3.5 text-white/30 flex-shrink-0" />
+          <div className="flex items-center gap-1.5 flex-nowrap">
+            {REGIONS.map((region) => (
+              <button
+                key={region}
+                type="button"
+                onClick={() => setActiveRegion(region)}
+                data-ocid={`region-filter-${region.toLowerCase().replace(/\s+/g, "-")}`}
+                className="px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all duration-200 whitespace-nowrap flex-shrink-0"
+                style={{
+                  background:
+                    activeRegion === region
+                      ? "rgba(6,182,212,0.15)"
+                      : "transparent",
+                  color:
+                    activeRegion === region
+                      ? "#06b6d4"
+                      : "rgba(255,255,255,0.35)",
+                  border: `1px solid ${activeRegion === region ? "rgba(6,182,212,0.3)" : "transparent"}`,
+                }}
+              >
+                {region}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+            {unresolvedAlerts > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20">
+                <AlertTriangle className="w-3 h-3 text-red-400" />
+                <span className="text-[10px] font-mono text-red-400 whitespace-nowrap">
+                  {unresolvedAlerts} Alerts
+                </span>
+              </div>
+            )}
+            {warnCount > 0 && (
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                <AlertTriangle className="w-3 h-3 text-yellow-400" />
+                <span className="text-[10px] font-mono text-yellow-400 whitespace-nowrap">
+                  {warnCount} Warn
+                </span>
+              </div>
+            )}
             <button
-              key={region}
               type="button"
-              onClick={() => setActiveRegion(region)}
-              data-ocid={`region-filter-${region.toLowerCase().replace(/\s+/g, "-")}`}
-              className="px-2.5 py-1 rounded-lg text-[10px] font-mono transition-all duration-200"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[10px] font-mono transition-all duration-200 border flex-shrink-0"
               style={{
-                background:
-                  activeRegion === region
-                    ? "rgba(6,182,212,0.15)"
-                    : "transparent",
-                color:
-                  activeRegion === region
-                    ? "#06b6d4"
-                    : "rgba(255,255,255,0.35)",
-                border: `1px solid ${activeRegion === region ? "rgba(6,182,212,0.3)" : "transparent"}`,
+                color: "rgba(255,255,255,0.5)",
+                borderColor: "rgba(255,255,255,0.1)",
+                background: "rgba(255,255,255,0.04)",
               }}
+              data-ocid="topology-export-svg"
+              aria-label="Export topology as SVG"
             >
-              {region}
+              <Download className="w-3 h-3" />
+              <span className="hidden sm:inline">Export SVG</span>
             </button>
-          ))}
-        </div>
-
-        {/* Alerts + Export */}
-        <div className="flex items-center gap-3">
-          {unresolvedAlerts > 0 && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/20">
-              <AlertTriangle className="w-3 h-3 text-red-400" />
-              <span className="text-[10px] font-mono text-red-400">
-                {unresolvedAlerts} Active Alerts
-              </span>
-            </div>
-          )}
-          <button
-            type="button"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono transition-all duration-200 border"
-            style={{
-              color: "rgba(255,255,255,0.5)",
-              borderColor: "rgba(255,255,255,0.1)",
-              background: "rgba(255,255,255,0.04)",
-            }}
-            data-ocid="topology-export-svg"
-            aria-label="Export topology as SVG"
-          >
-            <Download className="w-3 h-3" />
-            Export SVG
-          </button>
+          </div>
         </div>
       </div>
+
+      {/* ── Mobile Bottom Sheet (device detail) ──────────────────────────────── */}
+      <AnimatePresence>
+        {showBottomSheet && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+              onClick={() => setSelectedDevice(null)}
+            />
+            {/* Sheet */}
+            <motion.div
+              key="sheet"
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl overflow-hidden"
+              style={{
+                background: "rgba(2,8,23,0.97)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderBottom: "none",
+                backdropFilter: "blur(20px)",
+                maxHeight: "72vh",
+              }}
+              data-ocid="topology-mobile-sheet"
+            >
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-1">
+                <div className="w-10 h-1 rounded-full bg-white/20" />
+              </div>
+              <div
+                className="overflow-y-auto"
+                style={{
+                  maxHeight: "calc(72vh - 20px)",
+                  scrollbarColor: "rgba(6,182,212,0.2) transparent",
+                }}
+              >
+                <TopologyNodePanel device={selectedDevice} isMobileSheet />
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

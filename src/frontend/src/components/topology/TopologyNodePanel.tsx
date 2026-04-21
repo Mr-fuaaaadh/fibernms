@@ -1,4 +1,5 @@
 import { DeviceIcon } from "@/components/DeviceIcon";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useNetworkStore } from "@/store/networkStore";
 import type { Device, DeviceStatus } from "@/types/network";
 import {
@@ -22,6 +23,8 @@ import { useMemo, useState } from "react";
 
 interface TopologyNodePanelProps {
   device: Device | null;
+  /** When true, renders without the fixed-width wrapper (used inside mobile sheet) */
+  isMobileSheet?: boolean;
 }
 
 // ─── Color map ────────────────────────────────────────────────────────────────
@@ -52,7 +55,7 @@ const STATUS_COLORS: Record<
   },
 };
 
-// ─── Simulated 24h sparkline data ────────────────────────────────────────────
+// ─── Simulated sparkline data ────────────────────────────────────────────────
 function useSpark(base: number, variance: number, len = 24): number[] {
   return useMemo(() => {
     let v = base;
@@ -71,12 +74,18 @@ function Sparkline({
   values,
   color,
   label,
-}: { values: number[]; color: string; label: string }) {
+  compact,
+}: {
+  values: number[];
+  color: string;
+  label: string;
+  compact?: boolean;
+}) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const range = max - min || 1;
   const W = 200;
-  const H = 48;
+  const H = compact ? 32 : 48;
   const pts = values
     .map((v, i) => {
       const x = (i / (values.length - 1)) * W;
@@ -93,16 +102,19 @@ function Sparkline({
         border: "1px solid rgba(255,255,255,0.08)",
       }}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest truncate mr-2">
           {label}
         </span>
-        <span className="text-xs font-mono font-bold" style={{ color }}>
+        <span
+          className="text-xs font-mono font-bold flex-shrink-0"
+          style={{ color }}
+        >
           {values[values.length - 1]}
         </span>
       </div>
       <svg
-        width={W}
+        width="100%"
         height={H}
         viewBox={`0 0 ${W} ${H}`}
         aria-label={`${label} trend chart`}
@@ -120,13 +132,11 @@ function Sparkline({
             <stop offset="100%" stopColor={color} stopOpacity={0} />
           </linearGradient>
         </defs>
-        {/* Fill area */}
         <polyline
           points={`0,${H} ${pts} ${W},${H}`}
           fill={`url(#spark-grad-${label.replace(/\s/g, "")})`}
           stroke="none"
         />
-        {/* Line */}
         <polyline
           points={pts}
           fill="none"
@@ -134,7 +144,6 @@ function Sparkline({
           strokeWidth={1.5}
           style={{ filter: `drop-shadow(0 0 3px ${color})` }}
         />
-        {/* Last point dot */}
         <circle
           cx={((values.length - 1) / (values.length - 1)) * W}
           cy={H - ((values[values.length - 1] - min) / range) * (H - 8) - 4}
@@ -149,7 +158,6 @@ function Sparkline({
 
 // ─── Signal bars ──────────────────────────────────────────────────────────────
 function SignalBars({ dbm }: { dbm: number }) {
-  // dBm range typically -100 (bad) to -40 (excellent)
   const normalized = Math.max(0, Math.min(1, (dbm + 100) / 60));
   const bars = Math.round(normalized * 5);
   const color = bars >= 4 ? "#22c55e" : bars >= 2 ? "#eab308" : "#ef4444";
@@ -220,7 +228,6 @@ function UptimeRing({ uptime }: { uptime: number }) {
   );
 }
 
-// ─── Tab ──────────────────────────────────────────────────────────────────────
 type Tab = "overview" | "metrics" | "connections";
 
 const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
@@ -229,8 +236,11 @@ const TABS: { key: Tab; label: string; icon: React.ElementType }[] = [
   { key: "connections", label: "Connections", icon: GitFork },
 ];
 
-// ─── Panel content (device selected) ─────────────────────────────────────────
-function DevicePanel({ device }: { device: Device }) {
+// ─── Panel content ────────────────────────────────────────────────────────────
+function DevicePanel({
+  device,
+  compact,
+}: { device: Device; compact?: boolean }) {
   const setSelectedDevice = useNetworkStore((s) => s.setSelectedDevice);
   const devices = useNetworkStore((s) => s.devices);
   const [activeTab, setActiveTab] = useState<Tab>("overview");
@@ -242,13 +252,15 @@ function DevicePanel({ device }: { device: Device }) {
   const colors = STATUS_COLORS[device.status];
   const signalBase = device.signalStrength ?? -60;
   const uptimeBase = device.uptime ?? 98.5;
-
   const signalSpark = useSpark(signalBase, 8);
   const latencySpark = useSpark(12, 6);
   const lossSpark = useSpark(0.3, 0.3);
 
   return (
-    <div className="flex flex-col h-full" style={{ width: 340 }}>
+    <div
+      className={`flex flex-col ${compact ? "h-auto" : "h-full"}`}
+      style={compact ? {} : { width: 340 }}
+    >
       {/* ── Panel header ───────────────────────────────────────────────── */}
       <div
         className="flex-shrink-0 px-4 pt-4 pb-3"
@@ -257,7 +269,7 @@ function DevicePanel({ device }: { device: Device }) {
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+              className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center flex-shrink-0"
               style={{
                 background: `${colors.glow.replace("0.4", "0.12")}`,
                 border: `1px solid ${colors.dot}30`,
@@ -302,7 +314,7 @@ function DevicePanel({ device }: { device: Device }) {
         </div>
 
         {/* Status chip */}
-        <div className="flex items-center gap-2 mt-3">
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
           <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
             style={{
@@ -340,7 +352,6 @@ function DevicePanel({ device }: { device: Device }) {
           )}
         </div>
 
-        {/* View in map ghost link */}
         <button
           type="button"
           className="flex items-center gap-1 mt-2 text-[10px] font-mono text-white/25 hover:text-cyan-400 transition-colors"
@@ -383,7 +394,7 @@ function DevicePanel({ device }: { device: Device }) {
 
       {/* ── Tab content ────────────────────────────────────────────────── */}
       <div
-        className="flex-1 overflow-y-auto"
+        className={compact ? "" : "flex-1 overflow-y-auto"}
         style={{ scrollbarColor: "rgba(6,182,212,0.2) transparent" }}
       >
         <AnimatePresence mode="wait">
@@ -396,7 +407,7 @@ function DevicePanel({ device }: { device: Device }) {
               transition={{ duration: 0.2 }}
               className="p-4 flex flex-col gap-3"
             >
-              {/* Signal + Uptime side by side */}
+              {/* Signal + Uptime */}
               <div className="grid grid-cols-2 gap-2">
                 <div
                   className="rounded-xl p-3 flex flex-col gap-2"
@@ -548,17 +559,20 @@ function DevicePanel({ device }: { device: Device }) {
               <Sparkline
                 values={signalSpark}
                 color="#06b6d4"
-                label={`Signal (dBm) · now: ${signalBase}`}
+                label={`Signal (dBm) · ${signalBase}`}
+                compact={compact}
               />
               <Sparkline
                 values={latencySpark}
                 color="#f97316"
                 label="Latency (ms)"
+                compact={compact}
               />
               <Sparkline
                 values={lossSpark.map((v) => Math.max(0, v))}
                 color="#ef4444"
                 label="Packet Loss (%)"
+                compact={compact}
               />
               <div
                 className="rounded-xl p-3 text-center"
@@ -654,7 +668,7 @@ function DevicePanel({ device }: { device: Device }) {
             <button
               key={label}
               type="button"
-              className={`flex flex-col items-center gap-1 py-2 rounded-lg transition-all duration-200 text-center ${color}`}
+              className={`flex flex-col items-center gap-1 py-2.5 rounded-lg transition-all duration-200 text-center ${color} min-h-[44px]`}
               style={{
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.08)",
@@ -679,21 +693,19 @@ function EmptyState() {
       className="flex flex-col items-center justify-center gap-4 text-center h-full"
       style={{ width: 340, padding: "32px 24px" }}
     >
-      {/* Animated network SVG placeholder */}
-      <div className="relative w-24 h-24">
+      <div className="relative w-20 h-20 sm:w-24 sm:h-24">
         <div
-          className="w-24 h-24 rounded-full flex items-center justify-center"
+          className="w-full h-full rounded-full flex items-center justify-center"
           style={{
             background: "rgba(6,182,212,0.06)",
             border: "1px solid rgba(6,182,212,0.15)",
           }}
         >
           <GitFork
-            className="w-10 h-10"
+            className="w-8 h-8 sm:w-10 sm:h-10"
             style={{ color: "rgba(6,182,212,0.4)" }}
           />
         </div>
-        {/* Orbiting dots */}
         {[0, 1, 2].map((i) => (
           <motion.div
             key={i}
@@ -746,38 +758,55 @@ function EmptyState() {
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
-export function TopologyNodePanel({ device }: TopologyNodePanelProps) {
+export function TopologyNodePanel({
+  device,
+  isMobileSheet = false,
+}: TopologyNodePanelProps) {
+  const isMobile = useIsMobile(768);
+  const compact = isMobile || isMobileSheet;
+
   return (
     <div
-      className="h-full overflow-hidden"
+      className={isMobileSheet ? "w-full" : "h-full overflow-hidden"}
       style={{
         background: "rgba(2,8,23,0.6)",
         backdropFilter: "blur(12px)",
+        width: isMobileSheet ? undefined : isMobile ? "100%" : 340,
       }}
     >
       <AnimatePresence mode="wait">
         {device ? (
           <motion.div
             key={device.id}
-            initial={{ x: 30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 30, opacity: 0 }}
+            initial={{
+              x: isMobileSheet ? 0 : 30,
+              opacity: 0,
+              y: isMobileSheet ? 20 : 0,
+            }}
+            animate={{ x: 0, opacity: 1, y: 0 }}
+            exit={{
+              x: isMobileSheet ? 0 : 30,
+              opacity: 0,
+              y: isMobileSheet ? 20 : 0,
+            }}
             transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            className="h-full overflow-hidden"
+            className={isMobileSheet ? "" : "h-full overflow-hidden"}
           >
-            <DevicePanel device={device} />
+            <DevicePanel device={device} compact={compact} />
           </motion.div>
         ) : (
-          <motion.div
-            key="empty"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="h-full flex items-start"
-          >
-            <EmptyState />
-          </motion.div>
+          !isMobileSheet && (
+            <motion.div
+              key="empty"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="h-full flex items-start"
+            >
+              <EmptyState />
+            </motion.div>
+          )
         )}
       </AnimatePresence>
     </div>

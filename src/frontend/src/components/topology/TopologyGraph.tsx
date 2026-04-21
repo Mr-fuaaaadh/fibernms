@@ -1,3 +1,4 @@
+import { useIsMobile } from "@/hooks/use-mobile";
 import { useNetworkStore } from "@/store/networkStore";
 import type { Device, DeviceStatus, DeviceType } from "@/types/network";
 import {
@@ -18,8 +19,9 @@ import { useCallback, useRef, useState } from "react";
 // ─── Layout constants ────────────────────────────────────────────────────────
 const LEVEL_Y: Record<number, number> = { 0: 100, 1: 280, 2: 460 };
 const H_PAD = 80;
-const MIN_W = 1400;
-const MIN_H = 600;
+const MIN_W_DESKTOP = 1400;
+const MIN_W_MOBILE = 800;
+const MIN_H = 520;
 
 // ─── Node radius by device type ──────────────────────────────────────────────
 const NODE_SIZE: Record<DeviceType, number> = {
@@ -54,21 +56,18 @@ const STATUS_COLOR: Record<
   },
 };
 
-// ─── Type-based accent for OLT node glow ────────────────────────────────────
 const TYPE_ACCENT: Partial<Record<DeviceType, string>> = {
   OLT: "#06b6d4",
   Splitter: "#f97316",
   ONT: "#a855f7",
 };
 
-// ─── Edge layer colors ───────────────────────────────────────────────────────
 const EDGE_COLOR: Record<number, string> = {
   0: "#06b6d4",
   1: "#f97316",
   2: "#a855f7",
 };
 
-// ─── Icons ────────────────────────────────────────────────────────────────────
 const ICON_MAP: Record<DeviceType, React.ElementType> = {
   OLT: Monitor,
   ONT: Wifi,
@@ -166,7 +165,11 @@ function flattenNodes(roots: TreeNode[]): TreeNode[] {
   return out;
 }
 
-function assignPositions(roots: TreeNode[]): { w: number; h: number } {
+function assignPositions(
+  roots: TreeNode[],
+  isMobile: boolean,
+): { w: number; h: number } {
+  const minW = isMobile ? MIN_W_MOBILE : MIN_W_DESKTOP;
   const all = flattenNodes(roots);
   const byLevel: Record<number, TreeNode[]> = {};
   for (const n of all) {
@@ -177,7 +180,7 @@ function assignPositions(roots: TreeNode[]): { w: number; h: number } {
   let maxW = 0;
   for (const [lvl, nodes] of Object.entries(byLevel)) {
     const nr = NODE_SIZE[nodes[0].device.type] ?? 18;
-    const totalW = Math.max(MIN_W, nodes.length * (nr * 2 + H_PAD));
+    const totalW = Math.max(minW, nodes.length * (nr * 2 + H_PAD));
     const step = totalW / (nodes.length + 1);
     nodes.forEach((n, i) => {
       n.x = step * (i + 1);
@@ -215,7 +218,7 @@ function NodeTooltip({ data }: { data: TooltipData }) {
       style={{ left: data.x + 16, top: data.y - 60 }}
     >
       <div
-        className="rounded-xl px-3 py-2 min-w-[140px]"
+        className="rounded-xl px-3 py-2 min-w-[120px]"
         style={{
           background: "rgba(2,8,23,0.95)",
           border: `1px solid ${colors.stroke}40`,
@@ -253,13 +256,14 @@ function NodeTooltip({ data }: { data: TooltipData }) {
   );
 }
 
-// ─── SVG Node component ───────────────────────────────────────────────────────
+// ─── SVG Node ─────────────────────────────────────────────────────────────────
 interface NodeProps {
   node: TreeNode;
   isSelected: boolean;
   onClick: (id: string) => void;
   onHover: (data: TooltipData | null) => void;
   index: number;
+  compact?: boolean;
 }
 
 function TopologyNode({
@@ -268,15 +272,16 @@ function TopologyNode({
   onClick,
   onHover,
   index,
+  compact,
 }: NodeProps) {
   const { device, x, y } = node;
   const Icon = ICON_MAP[device.type] ?? Monitor;
-  const r = NODE_SIZE[device.type] ?? 14;
+  const baseR = NODE_SIZE[device.type] ?? 14;
+  const r = compact ? Math.round(baseR * 0.8) : baseR;
   const colors = STATUS_COLOR[device.status];
   const typeAccent = TYPE_ACCENT[device.type];
   const mainColor = typeAccent ?? colors.stroke;
 
-  // Hexagon path for OLT
   function hexPath(cx: number, cy: number, size: number) {
     const pts = Array.from({ length: 6 }, (_, i) => {
       const a = (Math.PI / 3) * i - Math.PI / 6;
@@ -285,17 +290,26 @@ function TopologyNode({
     return `M ${pts.join(" L ")} Z`;
   }
 
-  // Diamond path for Splitter
   function diamondPath(cx: number, cy: number, size: number) {
     return `M ${cx},${cy - size} L ${cx + size},${cy} L ${cx},${cy + size} L ${cx - size},${cy} Z`;
   }
 
   const isOLT = device.type === "OLT";
   const isSplitter = device.type === "Splitter";
-
-  const labelY = y + r + (isOLT ? 20 : 14);
+  const labelY = y + r + (isOLT ? 18 : 12);
+  const fontSize = compact
+    ? isOLT
+      ? 9
+      : isSplitter
+        ? 8
+        : 7
+    : isOLT
+      ? 11
+      : isSplitter
+        ? 10
+        : 9;
   const truncName =
-    device.name.length > 12 ? `${device.name.slice(0, 12)}…` : device.name;
+    device.name.length > 10 ? `${device.name.slice(0, 10)}…` : device.name;
 
   return (
     <motion.g
@@ -309,7 +323,6 @@ function TopologyNode({
       style={{ transformOrigin: `${x}px ${y}px` }}
       data-ocid={`topology-node-${device.id}`}
     >
-      {/* Outer glow ring — selected */}
       {isSelected && (
         <>
           <motion.circle
@@ -338,8 +351,6 @@ function TopologyNode({
           />
         </>
       )}
-
-      {/* Idle ambient glow */}
       {!isSelected && (
         <circle
           cx={x}
@@ -351,10 +362,8 @@ function TopologyNode({
         />
       )}
 
-      {/* Shape */}
       {isOLT ? (
         <>
-          {/* Hex fill */}
           <path
             d={hexPath(x, y, r)}
             fill={`${mainColor}25`}
@@ -366,7 +375,6 @@ function TopologyNode({
                 : `drop-shadow(0 0 4px ${mainColor}60)`
             }
           />
-          {/* Hex inner decoration */}
           <path
             d={hexPath(x, y, r * 0.65)}
             fill="none"
@@ -400,7 +408,6 @@ function TopologyNode({
         />
       )}
 
-      {/* Status indicator dot (top-right) */}
       <circle
         cx={x + r * 0.68}
         cy={y - r * 0.68}
@@ -409,7 +416,6 @@ function TopologyNode({
         style={{ filter: `drop-shadow(0 0 4px ${colors.glow})` }}
       />
 
-      {/* Icon via foreignObject */}
       <foreignObject
         x={x - r * 0.65}
         y={y - r * 0.65}
@@ -437,13 +443,12 @@ function TopologyNode({
         </div>
       </foreignObject>
 
-      {/* Label */}
       <text
         x={x}
         y={labelY}
         textAnchor="middle"
         fill={isSelected ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.7)"}
-        fontSize={isOLT ? 11 : isSplitter ? 10 : 9}
+        fontSize={fontSize}
         fontFamily="var(--font-mono, monospace)"
         fontWeight={isSelected ? 700 : 400}
         style={{
@@ -453,8 +458,7 @@ function TopologyNode({
         {truncName}
       </text>
 
-      {/* Type sub-label for OLT */}
-      {isOLT && (
+      {isOLT && !compact && (
         <text
           x={x}
           y={labelY + 12}
@@ -467,7 +471,6 @@ function TopologyNode({
         </text>
       )}
 
-      {/* Transparent hit area */}
       <circle
         cx={x}
         cy={y}
@@ -476,13 +479,10 @@ function TopologyNode({
         style={{ cursor: "pointer" }}
         onClick={() => onClick(device.id)}
         onMouseEnter={(e) => {
-          const rect = (e.target as Element)
-            .closest("svg")
-            ?.getBoundingClientRect();
           const svgEl = (e.target as Element).closest(
             "svg",
           ) as SVGSVGElement | null;
-          if (!svgEl || !rect) return;
+          if (!svgEl) return;
           const pt = svgEl.createSVGPoint();
           pt.x = e.clientX;
           pt.y = e.clientY;
@@ -518,7 +518,6 @@ function TopologyEdge({ from, to, index, animated = true }: EdgeProps) {
 
   return (
     <g>
-      {/* Glow trail */}
       <motion.path
         d={d}
         fill="none"
@@ -529,7 +528,6 @@ function TopologyEdge({ from, to, index, animated = true }: EdgeProps) {
         animate={{ pathLength: 1 }}
         transition={{ duration: 0.7, delay: index * 0.02, ease: "easeOut" }}
       />
-      {/* Main edge */}
       <motion.path
         d={d}
         fill="none"
@@ -541,27 +539,26 @@ function TopologyEdge({ from, to, index, animated = true }: EdgeProps) {
         animate={{ pathLength: 1, opacity: 0.5 }}
         transition={{ duration: 0.6, delay: index * 0.025, ease: "easeOut" }}
       />
-      {/* Animated data flow dot */}
       {animated && (
-        <circle
-          r={2.5}
-          fill={edgeColor}
-          opacity={0.9}
-          style={{ filter: `drop-shadow(0 0 4px ${edgeColor})` }}
-        >
-          <animateMotion
-            dur={`${2.5 + (dotOffset % 2)}s`}
-            repeatCount="indefinite"
-            begin={`${(index * 0.3) % 3}s`}
+        <>
+          <circle
+            r={2.5}
+            fill={edgeColor}
+            opacity={0.9}
+            style={{ filter: `drop-shadow(0 0 4px ${edgeColor})` }}
           >
-            <mpath href={`#edge-path-${index}`} />
-          </animateMotion>
-        </circle>
-      )}
-      {animated && (
-        <defs>
-          <path id={`edge-path-${index}`} d={d} />
-        </defs>
+            <animateMotion
+              dur={`${2.5 + (dotOffset % 2)}s`}
+              repeatCount="indefinite"
+              begin={`${(index * 0.3) % 3}s`}
+            >
+              <mpath href={`#edge-path-${index}`} />
+            </animateMotion>
+          </circle>
+          <defs>
+            <path id={`edge-path-${index}`} d={d} />
+          </defs>
+        </>
       )}
     </g>
   );
@@ -572,28 +569,33 @@ interface MinimapProps {
   allNodes: TreeNode[];
   totalW: number;
   totalH: number;
+  small?: boolean;
 }
 
-function Minimap({ allNodes, totalW, totalH }: MinimapProps) {
-  const W = 160;
-  const H = 100;
+function Minimap({ allNodes, totalW, totalH, small }: MinimapProps) {
+  const W = small ? 100 : 160;
+  const H = small ? 60 : 100;
   const scaleX = W / totalW;
   const scaleY = H / totalH;
   return (
     <div
-      className="absolute bottom-4 right-4 z-20 rounded-xl overflow-hidden"
+      className="absolute z-20 rounded-xl overflow-hidden"
       style={{
+        bottom: 16,
+        right: 16,
         background: "rgba(2,8,23,0.85)",
         border: "1px solid rgba(6,182,212,0.2)",
         backdropFilter: "blur(8px)",
         boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
       }}
     >
-      <div className="px-2 py-1 border-b border-white/10">
-        <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">
-          Minimap
-        </span>
-      </div>
+      {!small && (
+        <div className="px-2 py-1 border-b border-white/10">
+          <span className="text-[9px] font-mono text-white/30 uppercase tracking-widest">
+            Minimap
+          </span>
+        </div>
+      )}
       <svg
         width={W}
         height={H}
@@ -611,7 +613,7 @@ function Minimap({ allNodes, totalW, totalH }: MinimapProps) {
               cy={n.y * scaleY}
               r={
                 n.device.type === "OLT"
-                  ? 3.5
+                  ? 3
                   : n.device.type === "Splitter"
                     ? 2
                     : 1.5
@@ -629,12 +631,13 @@ function Minimap({ allNodes, totalW, totalH }: MinimapProps) {
 
 // ─── Main graph ───────────────────────────────────────────────────────────────
 export function TopologyGraph() {
+  const isMobile = useIsMobile(768);
   const devices = useNetworkStore((s) => s.devices);
   const selectedDeviceId = useNetworkStore((s) => s.selectedDeviceId);
   const setSelectedDevice = useNetworkStore((s) => s.setSelectedDevice);
 
   const roots = buildTree(devices);
-  const dims = assignPositions(roots);
+  const dims = assignPositions(roots, isMobile);
   const allNodes = flattenNodes(roots);
 
   const edges: { from: TreeNode; to: TreeNode }[] = [];
@@ -673,19 +676,36 @@ export function TopologyGraph() {
           "radial-gradient(ellipse at 40% 30%, #0d1729 0%, #020817 70%)",
       }}
     >
-      {/* Dot grid overlay */}
+      {/* Dot grid */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
             "radial-gradient(circle, rgba(6,182,212,0.12) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
+          backgroundSize: "28px 28px",
         }}
       />
 
-      {/* ── Zoom controls — floating glass pill ──────────────────────────── */}
+      {/* Mobile scroll hint */}
+      {isMobile && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20 pointer-events-none">
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-mono text-white/40"
+            style={{
+              background: "rgba(2,8,23,0.8)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            ← Scroll to pan →
+          </div>
+        </div>
+      )}
+
+      {/* Zoom controls */}
       <div
-        className="absolute top-4 right-4 z-20 flex items-center gap-1 px-2 py-1.5 rounded-xl"
+        className={`absolute z-20 flex items-center gap-1 px-2 py-1.5 rounded-xl ${
+          isMobile ? "bottom-4 right-4" : "top-4 right-4"
+        }`}
         style={{
           background: "rgba(2,8,23,0.85)",
           border: "1px solid rgba(255,255,255,0.1)",
@@ -698,7 +718,7 @@ export function TopologyGraph() {
           onClick={zoomOut}
           aria-label="Zoom out"
           data-ocid="topology-zoom-out"
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-cyan-400 transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-cyan-400 transition-colors"
         >
           <MinusCircle className="w-4 h-4" />
         </button>
@@ -710,7 +730,7 @@ export function TopologyGraph() {
           onClick={zoomIn}
           aria-label="Zoom in"
           data-ocid="topology-zoom-in"
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-cyan-400 transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-cyan-400 transition-colors"
         >
           <PlusCircle className="w-4 h-4" />
         </button>
@@ -720,66 +740,75 @@ export function TopologyGraph() {
           onClick={fitView}
           aria-label="Fit to view"
           data-ocid="topology-fit-view"
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/50 hover:text-cyan-400 transition-colors"
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-cyan-400 transition-colors"
         >
           <Maximize2 className="w-3.5 h-3.5" />
         </button>
-        <div className="w-px h-4 bg-white/10 mx-0.5" />
-        <button
-          type="button"
-          onClick={() => setShowMinimap((v) => !v)}
-          aria-label="Toggle minimap"
-          data-ocid="topology-toggle-minimap"
-          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-colors text-[9px] font-mono font-bold ${showMinimap ? "text-cyan-400" : "text-white/30"}`}
-        >
-          MAP
-        </button>
-      </div>
-
-      {/* ── Level legend (top-left) ───────────────────────────────────────── */}
-      <div
-        className="absolute top-4 left-4 z-20 flex flex-col gap-1.5 rounded-xl px-3 py-2.5"
-        style={{
-          background: "rgba(2,8,23,0.8)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          backdropFilter: "blur(8px)",
-        }}
-      >
-        <p className="text-[9px] font-mono text-white/30 uppercase tracking-widest mb-0.5">
-          Hierarchy
-        </p>
-        {[
-          { label: "OLT — Core", color: "#06b6d4" },
-          { label: "Splitter — Dist.", color: "#f97316" },
-          { label: "ONT — Endpoint", color: "#a855f7" },
-        ].map(({ label, color }) => (
-          <div key={label} className="flex items-center gap-2">
-            <span
-              className="w-5 h-0.5 rounded-full"
-              style={{ background: color, boxShadow: `0 0 6px ${color}` }}
-            />
-            <span
-              className="text-[10px] font-mono"
-              style={{ color: "rgba(255,255,255,0.5)" }}
+        {!isMobile && (
+          <>
+            <div className="w-px h-4 bg-white/10 mx-0.5" />
+            <button
+              type="button"
+              onClick={() => setShowMinimap((v) => !v)}
+              aria-label="Toggle minimap"
+              data-ocid="topology-toggle-minimap"
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors text-[9px] font-mono font-bold ${showMinimap ? "text-cyan-400" : "text-white/30"}`}
             >
-              {label}
-            </span>
-          </div>
-        ))}
+              MAP
+            </button>
+          </>
+        )}
       </div>
 
-      {/* ── Tooltip ───────────────────────────────────────────────────────── */}
+      {/* Level legend — hidden on mobile */}
+      {!isMobile && (
+        <div
+          className="absolute top-4 left-4 z-20 flex flex-col gap-1.5 rounded-xl px-3 py-2.5"
+          style={{
+            background: "rgba(2,8,23,0.8)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <p className="text-[9px] font-mono text-white/30 uppercase tracking-widest mb-0.5">
+            Hierarchy
+          </p>
+          {[
+            { label: "OLT — Core", color: "#06b6d4" },
+            { label: "Splitter — Dist.", color: "#f97316" },
+            { label: "ONT — Endpoint", color: "#a855f7" },
+          ].map(({ label, color }) => (
+            <div key={label} className="flex items-center gap-2">
+              <span
+                className="w-5 h-0.5 rounded-full"
+                style={{ background: color, boxShadow: `0 0 6px ${color}` }}
+              />
+              <span
+                className="text-[10px] font-mono"
+                style={{ color: "rgba(255,255,255,0.5)" }}
+              >
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tooltip */}
       {tooltip && (
         <div className="absolute inset-0 pointer-events-none z-30 overflow-hidden">
           <NodeTooltip data={tooltip} />
         </div>
       )}
 
-      {/* ── SVG canvas ────────────────────────────────────────────────────── */}
+      {/* SVG canvas — horizontally scrollable on mobile */}
       <div
         ref={containerRef}
         className="flex-1 overflow-auto"
-        style={{ scrollbarColor: "rgba(6,182,212,0.2) transparent" }}
+        style={{
+          scrollbarColor: "rgba(6,182,212,0.2) transparent",
+          minHeight: isMobile ? "400px" : undefined,
+        }}
       >
         <div
           style={{
@@ -797,7 +826,6 @@ export function TopologyGraph() {
           >
             <title>Network Topology Graph</title>
             <defs>
-              {/* Subtle horizontal level separators */}
               <linearGradient
                 id="level-line-l1"
                 x1="0%"
@@ -833,7 +861,6 @@ export function TopologyGraph() {
               </linearGradient>
             </defs>
 
-            {/* Level separator bands */}
             <rect
               x={0}
               y={LEVEL_Y[0] - 40}
@@ -859,15 +886,10 @@ export function TopologyGraph() {
               opacity={0.5}
             />
 
-            {/* Level labels on right */}
             {[
-              { y: LEVEL_Y[0], label: "LAYER 1 — BACKBONE", color: "#06b6d4" },
-              {
-                y: LEVEL_Y[1],
-                label: "LAYER 2 — DISTRIBUTION",
-                color: "#f97316",
-              },
-              { y: LEVEL_Y[2], label: "LAYER 3 — ACCESS", color: "#a855f7" },
+              { y: LEVEL_Y[0], label: "L1 — BACKBONE", color: "#06b6d4" },
+              { y: LEVEL_Y[1], label: "L2 — DISTRIBUTION", color: "#f97316" },
+              { y: LEVEL_Y[2], label: "L3 — ACCESS", color: "#a855f7" },
             ].map(({ y, label, color }) => (
               <text
                 key={label}
@@ -875,7 +897,7 @@ export function TopologyGraph() {
                 y={y + 5}
                 textAnchor="end"
                 fill={color}
-                fontSize={9}
+                fontSize={isMobile ? 8 : 9}
                 fontFamily="var(--font-mono, monospace)"
                 opacity={0.4}
                 letterSpacing={1}
@@ -884,7 +906,6 @@ export function TopologyGraph() {
               </text>
             ))}
 
-            {/* Edges */}
             {edges.map(({ from, to }, i) => (
               <TopologyEdge
                 key={`${from.device.id}-${to.device.id}`}
@@ -895,7 +916,6 @@ export function TopologyGraph() {
               />
             ))}
 
-            {/* Nodes */}
             {allNodes.map((node, i) => (
               <TopologyNode
                 key={node.device.id}
@@ -904,6 +924,7 @@ export function TopologyGraph() {
                 onClick={handleNodeClick}
                 onHover={setTooltip}
                 index={i}
+                compact={isMobile}
               />
             ))}
           </svg>
@@ -912,7 +933,12 @@ export function TopologyGraph() {
 
       {/* Minimap */}
       {showMinimap && (
-        <Minimap allNodes={allNodes} totalW={dims.w} totalH={dims.h} />
+        <Minimap
+          allNodes={allNodes}
+          totalW={dims.w}
+          totalH={dims.h}
+          small={isMobile}
+        />
       )}
     </div>
   );

@@ -27,6 +27,10 @@ const STATUS_COLOR: Record<
 const MAX_SPLITTERS = 5;
 const MAX_ONTS_PER_SPL = 3;
 
+// ViewBox dimensions — fixed coordinate space, SVG scales to fit container
+const VB_W = 320;
+const VB_H = 180;
+
 interface OLTSectionMiniTreeProps {
   olt: Device;
   splitters: Device[];
@@ -44,19 +48,16 @@ export function OLTSectionMiniTree({
   splitters,
   onts,
 }: OLTSectionMiniTreeProps) {
-  const CANVAS_W = 320;
-  const CANVAS_H = 180;
-
   const displaySplitters = splitters.slice(0, MAX_SPLITTERS);
   const extraSplitters = splitters.length - displaySplitters.length;
 
   const { oltNode, splitterNodes, ontNodes, edges } = useMemo(() => {
-    const oltCx = CANVAS_W / 2;
+    const oltCx = VB_W / 2;
     const oltCy = 30;
 
     const splCount = displaySplitters.length;
-    const splStep = splCount > 1 ? (CANVAS_W - 40) / (splCount - 1) : 0;
-    const splStart = splCount > 1 ? 20 : CANVAS_W / 2;
+    const splStep = splCount > 1 ? (VB_W - 40) / (splCount - 1) : 0;
+    const splStart = splCount > 1 ? 20 : VB_W / 2;
     const splCy = 90;
 
     const splNodes: LayoutNode[] = displaySplitters.map((s, i) => ({
@@ -85,7 +86,7 @@ export function OLTSectionMiniTree({
       });
     }
 
-    // Splitter → ONT edges + ONT nodes
+    // Splitter → ONT edges + nodes
     for (const sn of splNodes) {
       const connONTs = onts
         .filter((o) => sn.device.connectedTo.includes(o.id))
@@ -132,10 +133,13 @@ export function OLTSectionMiniTree({
   const oltColors = STATUS_COLOR[olt.status];
 
   return (
-    <div className="w-full overflow-hidden">
+    // width="100%" + viewBox = fully responsive, no fixed size
+    <div className="w-full">
       <svg
         width="100%"
-        viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
+        height="auto"
+        viewBox={`0 0 ${VB_W} ${VB_H}`}
+        preserveAspectRatio="xMidYMid meet"
         aria-label={`Mini tree for ${olt.name}`}
         style={{ display: "block" }}
       >
@@ -179,7 +183,7 @@ export function OLTSectionMiniTree({
             stroke="#06b6d440"
             strokeWidth={0.8}
           />
-          {/* status dot */}
+          {/* Status dot */}
           <circle
             cx={oltNode.cx + 9}
             cy={oltNode.cy - 9}
@@ -218,7 +222,7 @@ export function OLTSectionMiniTree({
         {/* Extra splitters badge */}
         {extraSplitters > 0 && (
           <text
-            x={CANVAS_W - 6}
+            x={VB_W - 6}
             y={90}
             textAnchor="end"
             fill="rgba(249,115,22,0.6)"
