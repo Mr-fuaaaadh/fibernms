@@ -94,6 +94,11 @@ export default {
           warning: "oklch(var(--capacity-warning) / <alpha-value>)",
           critical: "oklch(var(--capacity-critical) / <alpha-value>)",
         },
+        fault: {
+          active: "oklch(var(--fault-active) / <alpha-value>)",
+          affected: "oklch(var(--fault-affected) / <alpha-value>)",
+          down: "oklch(var(--fault-down) / <alpha-value>)",
+        },
       },
       fontFamily: {
         display: ["var(--font-display)", "serif"],

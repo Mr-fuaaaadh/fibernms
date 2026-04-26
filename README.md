@@ -1,2148 +1,1834 @@
-# FiberNMS
+# FiberNMS — Optical Fiber Network Management System
 
-> **Carrier-grade, SaaS-based Optical Fiber Network Management System (OFNMS)**
-
-FiberNMS is a production-ready frontend for telecom operators, ISPs, and large infrastructure providers — engineered for **100K–1M+ devices**, multi-tenant SaaS, a 4-tier subscription model, real-time monitoring, predictive AI, and a full enterprise Super Admin control panel.
-
-**GitHub:** https://github.com/Mr-fuaaaadh/fibernms
+> **Carrier-grade, SaaS-based OFNMS frontend** for telecom operators, ISPs, and large infrastructure providers.  
+> Built on **Next.js (App Router) · TypeScript · Tailwind CSS · Shadcn UI · React Query · Zustand · Recharts · Mapbox GL JS · Leaflet.js**
 
 ---
 
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)
-2. [Key Features](#2-key-features)
-3. [Tech Stack](#3-tech-stack)
-4. [Prerequisites](#4-prerequisites)
-5. [Getting Started](#5-getting-started)
-6. [Seed Credentials](#6-seed-credentials)
-7. [Project Directory Tree](#7-project-directory-tree)
-8. [Environment Variables](#8-environment-variables)
-9. [All Pages and Routes](#9-all-pages-and-routes)
-10. [Data Structures and Fields](#10-data-structures-and-fields)
-11. [Zustand Stores](#11-zustand-stores)
-12. [Mock Data Layer](#12-mock-data-layer)
-13. [Feature Gating System](#13-feature-gating-system)
-14. [Authentication and Auth Flow](#14-authentication-and-auth-flow)
-15. [Map Module](#15-map-module)
-16. [Topology Module](#16-topology-module)
-17. [Monitoring Module](#17-monitoring-module)
-18. [Subscription Tiers](#18-subscription-tiers)
-19. [Super Admin System](#19-super-admin-system)
-20. [Design System](#20-design-system)
-21. [Component Architecture](#21-component-architecture)
-22. [Architecture Patterns](#22-architecture-patterns)
-23. [Build and Deployment](#23-build-and-deployment)
-24. [Customization Guide](#24-customization-guide)
-25. [Roadmap](#25-roadmap)
-26. [Contributing](#26-contributing)
-27. [License](#27-license)
+2. [Tech Stack](#2-tech-stack)
+3. [Quick Start](#3-quick-start)
+4. [Seed Credentials](#4-seed-credentials)
+5. [Project Structure](#5-project-structure)
+6. [Architecture](#6-architecture)
+7. [Modules](#7-modules)
+   - [7.1 Authentication & RBAC](#71-authentication--rbac)
+   - [7.2 Layout & Navigation System](#72-layout--navigation-system)
+   - [7.3 NOC Core](#73-noc-core)
+     - [7.3.1 Map Dashboard](#731-map-dashboard)
+     - [7.3.2 Devices](#732-devices)
+     - [7.3.3 Topology](#733-topology)
+     - [7.3.4 Monitoring](#734-monitoring)
+     - [7.3.5 Tools](#735-tools)
+     - [7.3.6 Analytics](#736-analytics)
+     - [7.3.7 Workflows](#737-workflows)
+     - [7.3.8 AI Assistant](#738-ai-assistant)
+   - [7.4 Enterprise Features](#74-enterprise-features)
+     - [7.4.1 SLA Dashboard](#741-sla-dashboard)
+     - [7.4.2 Predictive Intelligence](#742-predictive-intelligence)
+     - [7.4.3 Capacity Planning](#743-capacity-planning)
+     - [7.4.4 Audit Logs](#744-audit-logs)
+   - [7.5 Fault Visualization Module](#75-fault-visualization-module)
+   - [7.6 SaaS & Billing](#76-saas--billing)
+     - [7.6.1 Billing Dashboard](#761-billing-dashboard)
+     - [7.6.2 Plans & Subscription](#762-plans--subscription)
+     - [7.6.3 Usage Analytics](#763-usage-analytics)
+     - [7.6.4 Integrations](#764-integrations)
+     - [7.6.5 Branding](#765-branding)
+     - [7.6.6 License Management](#766-license-management)
+     - [7.6.7 Multi-Tenant Manager](#767-multi-tenant-manager)
+   - [7.7 Super Admin System](#77-super-admin-system)
+     - [7.7.1 Super Admin Dashboard](#771-super-admin-dashboard)
+     - [7.7.2 Company Management](#772-company-management)
+     - [7.7.3 Global User Management](#773-global-user-management)
+     - [7.7.4 Global Billing](#774-global-billing)
+     - [7.7.5 Orders & Invoices](#775-orders--invoices)
+     - [7.7.6 Platform Audit](#776-platform-audit)
+     - [7.7.7 Access Control](#777-access-control)
+     - [7.7.8 System Alerts](#778-system-alerts)
+     - [7.7.9 Security Dashboard](#779-security-dashboard)
+     - [7.7.10 Global Analytics](#7710-global-analytics)
+     - [7.7.11 Tenant Admin Panel](#7711-tenant-admin-panel)
+   - [7.8 In-App Documentation](#78-in-app-documentation)
+   - [7.9 PWA & Mobile](#79-pwa--mobile)
+8. [Data Models & Fields](#8-data-models--fields)
+9. [State Management (Zustand)](#9-state-management-zustand)
+10. [Mock Data Layer](#10-mock-data-layer)
+11. [Route Table](#11-route-table)
+12. [Subscription Tiers & Feature Gating](#12-subscription-tiers--feature-gating)
+13. [Role-Based Navigation](#13-role-based-navigation)
+14. [Design System](#14-design-system)
+15. [Performance & Optimization](#15-performance--optimization)
+16. [Roadmap](#16-roadmap)
 
 ---
 
 ## 1. Project Overview
 
-FiberNMS delivers the complete operational stack of a telecom Network Operations Center (NOC) in a modern web application. It is designed to compete with enterprise platforms such as **Nokia NetAct**, **Huawei U2000**, **Cisco DNA Center**, and **Zabbix** in scalability, observability, automation, intelligence, and monetization.
+**FiberNMS** is a production-ready, multi-tenant SaaS frontend for optical fiber network operations. It provides a comprehensive NOC (Network Operations Center) platform with:
 
-### Capabilities at a Glance
+- **Real-time monitoring** of fiber devices, routes, and SLAs
+- **AI-powered predictive fault intelligence** with risk scoring and anomaly detection
+- **Interactive GIS map** for network visualization, device placement, and route drawing
+- **Dedicated fault visualization engine** using Leaflet.js for real-time outage detection and customer impact mapping
+- **Enterprise administration** covering 54+ tenants, 1000+ users, and full SaaS lifecycle management
+- **4-tier subscription system** (BASIC → PROFESSIONAL → ENTERPRISE → ULTRA) with plan-based feature gating
+- **Mobile-first design** with PWA support for home screen installation
+- **Role-based access control** supporting 5 distinct user roles
 
-| Category | Capability |
+The platform is optimized for global-scale telecom operations (100K–1M+ devices), multi-region deployments, and mission-critical 24/7 NOC operations.
+
+---
+
+## 2. Tech Stack
+
+| Layer | Technology |
 |---|---|
-| **Network Operations** | GIS fiber map, device CRUD, multi-layer topology (L1/L2/L3), route drawing |
-| **AI and Intelligence** | Predictive fault detection, anomaly risk scoring, AI copilot assistant |
-| **Automation** | Visual workflow builder (n8n-style), AI-generated automation |
-| **SaaS Monetization** | 4-tier plans, feature gating, billing dashboard, white-labeling, API keys |
-| **Enterprise Admin** | Super Admin panel, 54-company management, 1000+ user management |
-| **Security** | RBAC + ABAC, session monitoring, suspicious activity detection, MFA tracking |
-| **Observability** | SLA dashboards, capacity planning, audit logs, predictive intelligence |
-| **Mobile-First** | Bottom nav, swipeable charts, fullscreen map, touch-optimized 44px+ targets |
+| **Framework** | React 19 + Vite (App Router pattern via TanStack Router) |
+| **Language** | TypeScript (strict mode) |
+| **Styling** | Tailwind CSS v4 + OKLCH design tokens |
+| **Component Library** | Shadcn UI (Radix UI primitives) |
+| **State Management** | Zustand (with localStorage persistence) |
+| **Data Fetching** | TanStack React Query v5 |
+| **Routing** | TanStack Router v1 |
+| **Charts** | Recharts v2 |
+| **GIS Map (NOC)** | Mapbox GL JS / React-Leaflet (CARTO Voyager tiles) |
+| **Fault Map** | Leaflet.js |
+| **Animations** | Framer Motion / Motion |
+| **Icons** | Lucide React |
+| **Tables** | TanStack React Table v8 |
+| **Forms** | React Hook Form + Zod |
+| **Backend** | Motoko canister (Internet Computer) |
+| **Package Manager** | pnpm |
+| **Build Tool** | Vite |
 
 ---
 
-## 2. Key Features
+## 3. Quick Start
 
-### NOC Operations
+### Prerequisites
 
-- **GIS Fiber Map** — Interactive map with device markers, fiber route drawing, layer toggles (backbone/distribution/drop), and real-time status overlays. Uses CARTO Voyager light tile layer (no API key needed).
-- **Device Management** — Full CRUD for OLTs, ONTs, Splitters, JJBs, and Switches with virtualized table, bulk actions, and status filtering.
-- **Multi-Layer Topology** — L1 Physical, L2 VLAN switching, and L3 IP topology visualizations with animated data-flow canvas.
-- **Real-Time Monitoring** — Signal strength charts, alert feed, KPI cards, WebSocket-simulated live updates.
-- **SLA Dashboard** — Per-customer service level tracking with breach detection, MTTR, and MTBF metrics.
-- **Predictive Intelligence** — AI risk scores (0–100), failure-type classification, predicted ETA, confidence percentages.
-- **Capacity Planning** — Route utilization trends, 90-day growth forecasts, exhaustion warnings.
-- **Audit Logs** — Full timeline of user/system/workflow actions with severity classification and CSV export.
-- **Tools** — Optical power budget calculator, manual fault trace, OTDR simulation.
-- **Workflows** — Visual drag-and-drop n8n-style automation builder.
-- **AI Assistant** — NL copilot with real-time network context and predictive suggestions.
+- Node.js >= 18
+- pnpm >= 8
+- DFX (Internet Computer SDK) — for backend development
 
-### SaaS and Monetization
-
-- **4-Tier Plans** — BASIC ($9/mo), PROFESSIONAL ($49/mo), ENTERPRISE ($199/mo), ULTRA ($999/mo).
-- **Feature Gating** — Every premium feature wrapped in `FeatureGate` with blur/lock overlay + upgrade CTA.
-- **Billing Dashboard** — Current plan, device/API usage, billing history, upgrade/downgrade flows.
-- **License Validation** — License key input with plan activation and expiry warnings.
-- **Multi-Tenant Management** — Tenant switcher, data isolation, per-tenant branding (ULTRA).
-- **White-Labeling** — Custom logo, theme colors, and domain configuration (ULTRA).
-- **API and Integrations** — API key management, webhook configuration, OSS/BSS/CRM connectors.
-
-### Enterprise Super Admin
-
-- **Global Dashboard** — MRR, ARR, total companies, active subscriptions, total devices, system health.
-- **Company Registry** — Full CRUD for 54+ telecom companies across 5 regions.
-- **Global User Management** — 1000+ users across all tenants with invite, bulk import, session tracking.
-- **Billing and Orders** — MRR/ARR/churn metrics, orders table, invoice PDF export, GST/VAT tax details.
-- **Access Control** — RBAC + ABAC permission matrix with toggleable role/attribute rules.
-- **Platform Audit** — Global timeline across all tenants with CSV export.
-- **Security Dashboard** — Login attempts, IP tracking, suspicious activity detection, MFA status.
-- **System Alerts** — Platform-level outage and API failure notifications.
-- **Global Analytics** — Revenue trends, device growth, usage heatmaps, top customers.
-
-### Mobile-First Responsive Design
-
-- **Bottom Navigation** — Dashboard, Companies, Users, Billing, Alerts tabs on mobile.
-- **Adaptive Layouts** — Card views on mobile, virtualized tables on desktop.
-- **Fullscreen Map** — Floating action buttons, bottom sheet device details on mobile.
-- **Touch UX** — All interactive elements ≥44px, smooth scrolling, swipeable charts.
-- **Map Overlap Fix** — Map constrained between header (56px) and bottom nav (64px) on mobile.
-
----
-
-## 3. Tech Stack
-
-| Layer | Technology | Version | Purpose |
-|---|---|---|---|
-| **Framework** | React | 19 | UI rendering |
-| **Language** | TypeScript | 5 (strict) | Type safety |
-| **Build Tool** | Vite | 6 | Fast dev server + build |
-| **Routing** | TanStack Router | v1 | Type-safe routing + auth guards |
-| **Data Fetching** | TanStack React Query | v5 | Server state + caching |
-| **State Management** | Zustand | v5 | Global client state + localStorage persistence |
-| **Styling** | Tailwind CSS | v4 | Utility-first CSS |
-| **Color System** | OKLCH Design Tokens | — | Perceptually uniform color tokens |
-| **UI Components** | Radix UI + shadcn/ui | — | Accessible headless components |
-| **Icons** | Lucide React + React Icons | — | SVG icon sets |
-| **Charts** | Recharts | v2 | SVG-based responsive charts |
-| **Maps** | React Leaflet + Leaflet | v4/1.9 | Interactive GIS map |
-| **Map Tiles** | CARTO Voyager | — | Light colorful tile layer (no API key) |
-| **Animation** | Motion (Framer Motion v11+) | v11 | Entrance animations and transitions |
-| **Forms** | React Hook Form + Zod | — | Performant form validation |
-| **Theme** | next-themes | — | Dark/light theme switching |
-| **Linting** | Biome | v1 | Fast lint + format |
-| **Backend** | Motoko (Internet Computer) | — | Scaffold (extendable) |
-
----
-
-## 4. Prerequisites
-
-| Tool | Minimum Version | Purpose |
-|---|---|---|
-| **Node.js** | 18+ | JavaScript runtime |
-| **pnpm** | 8+ | Package manager |
-| **Git** | 2.x | Version control |
-
-Install pnpm if needed:
+### Installation
 
 ```bash
-npm install -g pnpm
-```
-
----
-
-## 5. Getting Started
-
-### Clone and Install
-
-```bash
-git clone https://github.com/Mr-fuaaaadh/fibernms.git
-cd fibernms
+# Install all dependencies (frontend + backend)
 pnpm install
-```
 
-### Start Development Server
-
-```bash
+# Start frontend development server
 cd src/frontend
 pnpm dev
-# App available at http://localhost:5173
 ```
 
-### Build for Production
+The app will be available at `http://localhost:5173`.
+
+### Frontend Commands
 
 ```bash
-cd src/frontend
-pnpm build
-# Output: src/frontend/dist/
+# From src/frontend/
+pnpm dev          # Start dev server (hot reload)
+pnpm build        # Production build
+pnpm typecheck    # TypeScript type checking
+pnpm check        # ESLint checks
+pnpm fix          # ESLint auto-fix
 ```
 
-### Type Check
+### Backend Commands
 
 ```bash
-cd src/frontend
-pnpm typecheck
+# From src/backend/
+mops install      # Install Motoko packages
+mops check --fix  # Type check Motoko code
+mops build        # Build backend canister
 ```
 
-### Lint and Auto-Fix
+### Full Stack (root)
 
 ```bash
-cd src/frontend
-pnpm check    # lint check
-pnpm fix      # auto-fix
-```
-
-### Install Dependencies (Offline)
-
-```bash
-cd src/frontend
-pnpm install --prefer-offline
+pnpm install      # Install all workspace packages
+pnpm bindgen      # Generate TypeScript bindings from Motoko backend
 ```
 
 ---
 
-## 6. Seed Credentials
+## 4. Seed Credentials
 
-Use these accounts to explore the platform without registering:
+Use these accounts to explore the platform. Accounts are seeded into localStorage on first load.
 
-| Account | Email | Password | Plan | Role | Access |
-|---|---|---|---|---|---|
-| **Super Admin** | `superadmin@fibernms.com` | `SuperAdmin@123` | ULTRA | `superAdmin` | All 37+ pages including Super Admin control panel |
-| **Company Admin** | `admin@fibernms.com` | `Admin@123` | ENTERPRISE | `admin` | All 23 NOC + SaaS pages |
-| **NOC Operator** | `operator@fibernms.com` | `Operator@123` | PROFESSIONAL | `operator` | NOC pages; ENTERPRISE+ features gated |
+| Email | Password | Role | Access Level |
+|---|---|---|---|
+| `superadmin@fibernms.com` | `SuperAdmin@123` | Super Admin | Full platform access — all admin pages, all companies, global settings |
+| `admin@fibernms.com` | `Admin@123` | Admin (Tenant Admin) | NOC + Enterprise + Billing + Admin (no Super Admin panel) |
+| `operator@fibernms.com` | `Operator@123` | NOC Operator | Core NOC pages only |
 
-### Demo License Keys
-
-Enter these on the `/settings/license` page to switch plan tiers:
-
-| Key | Activates Plan |
-|---|---|
-| `FNMS-BASIC-2026-DEMO` | BASIC (1K devices, $9/mo) |
-| `FNMS-PRO-2026-DEMO` | PROFESSIONAL (10K devices, $49/mo) |
-| `FNMS-ENT-2026-DEMO-XXXXXX` | ENTERPRISE (100K devices, $199/mo) |
-| `FNMS-ULTRA-2026-DEMO` | ULTRA (unlimited, $999/mo) |
+> **Tip:** Log in as `superadmin@fibernms.com` to access the Super Admin control panel at `/super-admin`. Log in as `operator@fibernms.com` to see the restricted NOC-only view.
 
 ---
 
-## 7. Project Directory Tree
+## 5. Project Structure
 
 ```
-app/
-├── src/
-│   ├── frontend/                         # React + TypeScript + Vite frontend
-│   │   ├── public/
-│   │   │   └── assets/
-│   │   │       ├── fonts/                # Self-hosted WOFF2 fonts
-│   │   │       │   ├── GeistMono.woff2
-│   │   │       │   ├── GeneralSans.woff2
-│   │   │       │   └── JetBrainsMono.woff2
-│   │   │       └── images/               # Generated images and placeholders
-│   │   │
-│   │   ├── src/
-│   │   │   ├── config/
-│   │   │   │   └── features.ts           # Feature flags, plan configs, plan-feature map
-│   │   │   │
-│   │   │   ├── store/                    # Zustand global state stores
-│   │   │   │   ├── authStore.ts          # Auth state: login/register/logout, localStorage
-│   │   │   │   ├── subscriptionStore.ts  # Plan, usage quotas, license key, expiry
-│   │   │   │   └── networkStore.ts       # Devices, routes, alerts, SLA, predictive, audit
-│   │   │   │
-│   │   │   ├── types/                    # Shared TypeScript interfaces
-│   │   │   │   ├── network.ts            # Device, FiberRoute, Alert, SLARecord, etc.
-│   │   │   │   ├── superAdmin.ts         # Company, AdminUser, Order, Invoice, etc.
-│   │   │   │   └── subscription.ts       # Plan, FeatureFlag, PlanConfig, BillingRecord
-│   │   │   │
-│   │   │   ├── data/                     # Mock data generators
-│   │   │   │   ├── mockData.ts           # 1000+ devices, 500+ alerts, routes, SLA, audit
-│   │   │   │   ├── superAdminMockData.ts # 54 companies, 1000+ users, orders, invoices
-│   │   │   │   └── billingMockData.ts    # MRR/ARR, churn, revenue trends, tax data
-│   │   │   │
-│   │   │   ├── hooks/                    # Custom React hooks
-│   │   │   │   ├── useFeature.ts         # Feature flag + subscription hooks
-│   │   │   │   ├── useAuth.ts            # Auth helpers (isAuthenticated, isSuperAdmin)
-│   │   │   │   └── use-mobile.tsx        # Responsive breakpoint detection (<=768px)
-│   │   │   │
-│   │   │   ├── lib/
-│   │   │   │   ├── utils.ts              # cn(), formatBytes(), formatCurrency()
-│   │   │   │   └── eventBus.ts           # Real-time event emitter (WebSocket simulation)
-│   │   │   │
-│   │   │   ├── components/               # Shared UI components
-│   │   │   │   ├── Layout.tsx            # Shell: Sidebar+Navbar (desktop) or Header+BottomNav (mobile)
-│   │   │   │   ├── Navbar.tsx            # Top bar: theme toggle, user menu, alert bell
-│   │   │   │   ├── Sidebar.tsx           # Nav links, plan badge, Super Admin section
-│   │   │   │   ├── MobileHeader.tsx      # Sticky 56px mobile header + hamburger
-│   │   │   │   ├── MobileBottomNav.tsx   # Fixed 64px bottom navigation bar
-│   │   │   │   ├── MobileNavDrawer.tsx   # Full-page drawer with all 37+ nav links
-│   │   │   │   ├── CommandPalette.tsx    # Global CMD+K search (devices, alerts, pages)
-│   │   │   │   ├── GlassCard.tsx         # Glassmorphism card primitive
-│   │   │   │   ├── DeviceIcon.tsx        # Device type icon resolver
-│   │   │   │   ├── StatusBadge.tsx       # Colored status badge component
-│   │   │   │   │
-│   │   │   │   ├── subscription/         # Feature gating components
-│   │   │   │   │   ├── FeatureGate.tsx
-│   │   │   │   │   ├── LockedFeatureOverlay.tsx
-│   │   │   │   │   ├── PlanBadge.tsx
-│   │   │   │   │   ├── PlanComparisonModal.tsx
-│   │   │   │   │   ├── UpgradeCTA.tsx
-│   │   │   │   │   └── UsageProgressBar.tsx
-│   │   │   │   │
-│   │   │   │   ├── map/                  # Map-specific components
-│   │   │   │   │   ├── AddDeviceDialog.tsx
-│   │   │   │   │   ├── DeviceDetailPanel.tsx
-│   │   │   │   │   ├── DeviceMarker.tsx
-│   │   │   │   │   ├── DrawToolbar.tsx
-│   │   │   │   │   ├── EditDeviceModal.tsx
-│   │   │   │   │   ├── LayerTogglePanel.tsx
-│   │   │   │   │   └── RouteEditPanel.tsx
-│   │   │   │   │
-│   │   │   │   ├── topology/             # Topology canvas components
-│   │   │   │   │   ├── OLTSectionCard.tsx
-│   │   │   │   │   ├── OLTSectionMiniTree.tsx
-│   │   │   │   │   ├── TopologyGraph.tsx
-│   │   │   │   │   └── TopologyNodePanel.tsx
-│   │   │   │   │
-│   │   │   │   ├── monitoring/           # Monitoring chart components
-│   │   │   │   │   ├── StatCard.tsx
-│   │   │   │   │   ├── StatusPieChart.tsx
-│   │   │   │   │   ├── SignalLineChart.tsx
-│   │   │   │   │   └── AlertsPanel.tsx
-│   │   │   │   │
-│   │   │   │   ├── devices/              # Device management components
-│   │   │   │   │   ├── DeviceTable.tsx
-│   │   │   │   │   ├── DeviceFilters.tsx
-│   │   │   │   │   └── AddDeviceModal.tsx
-│   │   │   │   │
-│   │   │   │   ├── tools/               # NOC tools components
-│   │   │   │   │   ├── PowerCalculator.tsx
-│   │   │   │   │   └── FaultDetectionPanel.tsx
-│   │   │   │   │
-│   │   │   │   └── ui/                  # shadcn/ui base components (do not modify)
-│   │   │   │
-│   │   │   ├── pages/                    # One file per route (all lazy-loaded)
-│   │   │   │   ├── Login.tsx             # /login
-│   │   │   │   ├── Register.tsx          # /register
-│   │   │   │   ├── MapDashboard.tsx      # /
-│   │   │   │   ├── Devices.tsx           # /devices
-│   │   │   │   ├── Topology.tsx          # /topology
-│   │   │   │   ├── Monitoring.tsx        # /monitoring
-│   │   │   │   ├── Tools.tsx             # /tools
-│   │   │   │   ├── Analytics.tsx         # /analytics
-│   │   │   │   ├── Workflows.tsx         # /workflows
-│   │   │   │   ├── AIAssistant.tsx       # /ai
-│   │   │   │   ├── SLADashboard.tsx      # /sla
-│   │   │   │   ├── PredictiveIntelligence.tsx  # /predictive
-│   │   │   │   ├── CapacityPlanning.tsx  # /capacity
-│   │   │   │   ├── AuditLogs.tsx         # /audit
-│   │   │   │   ├── Billing.tsx           # /billing
-│   │   │   │   ├── UsageAnalytics.tsx    # /usage
-│   │   │   │   ├── Plans.tsx             # /plans
-│   │   │   │   ├── Integrations.tsx      # /integrations
-│   │   │   │   ├── Branding.tsx          # /settings/branding
-│   │   │   │   ├── License.tsx           # /settings/license
-│   │   │   │   ├── Tenants.tsx           # /tenants
-│   │   │   │   └── Docs.tsx              # /docs (renders this README)
-│   │   │   │
-│   │   │   └── pages/admin/              # Super Admin only (role: superAdmin)
-│   │   │       ├── SuperAdminDashboard.tsx   # /super-admin
-│   │   │       ├── CompanyManagement.tsx     # /super-admin/companies
-│   │   │       ├── CompanyDetail.tsx         # /super-admin/companies/:companyId
-│   │   │       ├── UsageLimits.tsx           # /super-admin/usage
-│   │   │       ├── GlobalUserManagement.tsx  # /super-admin/users
-│   │   │       ├── GlobalBilling.tsx         # /super-admin/billing
-│   │   │       ├── OrdersInvoices.tsx        # /super-admin/orders
-│   │   │       ├── PlatformAudit.tsx         # /super-admin/audit
-│   │   │       ├── AccessControl.tsx         # /super-admin/access
-│   │   │       ├── SystemAlerts.tsx          # /super-admin/alerts
-│   │   │       ├── SecurityDashboard.tsx     # /super-admin/security
-│   │   │       ├── GlobalAnalytics.tsx       # /super-admin/analytics
-│   │   │       └── TenantAdminPanel.tsx      # /tenant-admin/:companyId
-│   │   │
-│   │   ├── index.css                     # OKLCH tokens, dark/light themes, utilities
-│   │   ├── tailwind.config.js            # Theme extensions, keyframes, animations
-│   │   └── index.html                    # App entry point
-│   │
-│   └── backend/
-│       └── main.mo                       # Motoko backend scaffold (Internet Computer)
+fibernms/
+├── README.md                    # This file (also rendered at /docs in-app)
+├── DESIGN.md                    # Design system tokens and guidelines
+├── AGENTS.md                    # Agent/build configuration
+├── package.json                 # Root workspace configuration
+├── mops.toml                    # Motoko package manager config
+├── caffeine.toml                # Caffeine platform config
 │
-├── DESIGN.md                             # Design system brief
-├── caffeine.toml                         # Caffeine platform config
-├── package.json                          # Workspace root
-├── pnpm-workspace.yaml                   # pnpm workspace config
-├── README.md                             # This file
-└── tsconfig.json                         # TypeScript project references
+├── src/
+│   ├── backend/
+│   │   ├── main.mo              # Motoko backend canister scaffold
+│   │   └── caffeine.toml        # Backend canister config
+│   │
+│   └── frontend/
+│       ├── index.html           # HTML entry with PWA meta tags
+│       ├── public/
+│       │   ├── manifest.json    # PWA manifest (icons, theme, display)
+│       │   └── sw.js            # Service worker (offline caching)
+│       ├── vite.config.js       # Vite build config (path aliases, proxy)
+│       ├── tailwind.config.js   # Tailwind config (OKLCH tokens, keyframes)
+│       ├── tsconfig.json        # TypeScript config (strict, path aliases)
+│       ├── package.json         # Frontend deps (React 19, Recharts, Leaflet...)
+│       └── src/
+│           ├── main.tsx         # React entry (ThemeProvider, QueryClient)
+│           ├── App.tsx          # Router, auth guards, 37 lazy-loaded pages
+│           ├── index.css        # OKLCH design tokens, theme vars, animations
+│           │
+│           ├── pages/
+│           │   ├── Login.tsx
+│           │   ├── Register.tsx
+│           │   ├── MapDashboard.tsx
+│           │   ├── Devices.tsx
+│           │   ├── Topology.tsx
+│           │   ├── Monitoring.tsx
+│           │   ├── Tools.tsx
+│           │   ├── Analytics.tsx
+│           │   ├── Workflows.tsx
+│           │   ├── AIAssistant.tsx
+│           │   ├── SLADashboard.tsx
+│           │   ├── PredictiveIntelligence.tsx
+│           │   ├── CapacityPlanning.tsx
+│           │   ├── AuditLogs.tsx
+│           │   ├── FaultVisualizationPage.tsx
+│           │   ├── Billing.tsx
+│           │   ├── UsageAnalytics.tsx
+│           │   ├── Plans.tsx
+│           │   ├── Integrations.tsx
+│           │   ├── Branding.tsx
+│           │   ├── License.tsx
+│           │   ├── Tenants.tsx
+│           │   ├── Docs.tsx
+│           │   └── admin/
+│           │       ├── SuperAdminDashboard.tsx
+│           │       ├── CompanyManagement.tsx
+│           │       ├── CompanyDetail.tsx
+│           │       ├── UsageLimits.tsx
+│           │       ├── GlobalUserManagement.tsx
+│           │       ├── GlobalBilling.tsx
+│           │       ├── OrdersInvoices.tsx
+│           │       ├── PlatformAudit.tsx
+│           │       ├── AccessControl.tsx
+│           │       ├── SystemAlerts.tsx
+│           │       ├── SecurityDashboard.tsx
+│           │       ├── GlobalAnalytics.tsx
+│           │       └── TenantAdminPanel.tsx
+│           │
+│           ├── components/
+│           │   ├── Layout.tsx            # App shell (desktop + mobile)
+│           │   ├── Sidebar.tsx           # Desktop sidebar nav
+│           │   ├── Navbar.tsx            # Top navbar (desktop)
+│           │   ├── MobileHeader.tsx      # Sticky mobile header
+│           │   ├── MobileBottomNav.tsx   # Bottom navigation bar
+│           │   ├── MobileNavDrawer.tsx   # Hamburger full-page drawer
+│           │   ├── CommandPalette.tsx    # CMD+K global search
+│           │   ├── GlassCard.tsx         # Glassmorphism card wrapper
+│           │   ├── DeviceIcon.tsx        # Device type SVG icons
+│           │   ├── StatusBadge.tsx       # Colored status badge pill
+│           │   ├── map/
+│           │   │   ├── MapDashboard.tsx        # Main map component
+│           │   │   ├── DeviceMarker.tsx         # Device map marker
+│           │   │   ├── DeviceDetailPanel.tsx    # Slide-up device details
+│           │   │   ├── PlaceDeviceToolbar.tsx   # Add device toolbar
+│           │   │   ├── DrawToolbar.tsx          # Fiber draw controls
+│           │   │   ├── EditDeviceModal.tsx      # Edit device form
+│           │   │   ├── RouteEditPanel.tsx       # Route properties panel
+│           │   │   ├── LayerTogglePanel.tsx     # Layer visibility toggles
+│           │   │   └── AddDeviceDialog.tsx      # Device placement dialog
+│           │   ├── topology/
+│           │   │   ├── TopologyGraph.tsx        # Deep-space canvas graph
+│           │   │   ├── OLTSectionCard.tsx       # OLT glassmorphism card
+│           │   │   ├── OLTSectionMiniTree.tsx   # SVG mini-tree
+│           │   │   └── TopologyNodePanel.tsx    # Device detail panel
+│           │   ├── monitoring/
+│           │   │   ├── StatCard.tsx             # KPI metric card
+│           │   │   ├── StatusPieChart.tsx       # Active/warn/fault pie
+│           │   │   ├── SignalLineChart.tsx       # 24h signal line chart
+│           │   │   └── AlertsPanel.tsx          # Live alert feed
+│           │   ├── devices/
+│           │   │   ├── DeviceTable.tsx          # Virtualized table
+│           │   │   ├── DeviceFilters.tsx        # Filter panel
+│           │   │   └── AddDeviceModal.tsx       # Add device form
+│           │   ├── tools/
+│           │   │   ├── PowerCalculator.tsx      # Optical power budget tool
+│           │   │   └── FaultDetectionPanel.tsx  # OTDR fault detector
+│           │   ├── fault/
+│           │   │   ├── FaultDeviceMarker.tsx    # Status-colored marker
+│           │   │   ├── FaultFiberPolyline.tsx   # Blinking fault polyline
+│           │   │   ├── FaultAlertBanner.tsx     # Top alert banner
+│           │   │   ├── FaultStatsPanel.tsx      # Customer stats sidebar
+│           │   │   ├── CustomerMarker.tsx       # Customer location marker
+│           │   │   └── FaultLayerControls.tsx   # Layer toggles
+│           │   └── subscription/
+│           │       ├── FeatureGate.tsx          # Feature access wrapper
+│           │       ├── LockedFeatureOverlay.tsx # Blur + upgrade CTA
+│           │       ├── PlanBadge.tsx            # Plan name badge
+│           │       ├── PlanComparisonModal.tsx  # 4-tier comparison modal
+│           │       ├── UpgradeCTA.tsx           # Upgrade prompt button
+│           │       └── UsageProgressBar.tsx     # Usage meter bar
+│           │
+│           ├── store/
+│           │   ├── authStore.ts          # Auth state + RBAC
+│           │   ├── subscriptionStore.ts  # Plan, quota, license state
+│           │   └── networkStore.ts       # Devices, routes, alerts, undo
+│           │
+│           ├── types/
+│           │   ├── network.ts            # Device, Route, Alert, SLA types
+│           │   ├── subscription.ts       # Plan, FeatureFlag, Billing types
+│           │   └── superAdmin.ts         # Company, AdminUser, Order types
+│           │
+│           ├── config/
+│           │   └── features.ts           # Plan configs, feature flag mappings
+│           │
+│           ├── data/
+│           │   ├── mockData.ts           # 1000+ devices, routes, alerts
+│           │   ├── superAdminMockData.ts # 54 companies, 1000+ users
+│           │   ├── billingMockData.ts    # MRR/ARR, invoices, revenue
+│           │   └── faultMockData.ts      # Fault visualization mock topology
+│           │
+│           ├── hooks/
+│           │   ├── useAuth.ts            # Auth selectors + helpers
+│           │   ├── useFeature.ts         # Feature access + subscription
+│           │   ├── useRoleNav.ts         # Role-filtered navigation
+│           │   ├── useFaultVisualization.ts  # BFS fault cascade logic
+│           │   └── use-mobile.tsx        # Responsive breakpoint hook
+│           │
+│           └── lib/
+│               ├── utils.ts              # cn(), formatBytes(), formatDate()
+│               └── eventBus.ts           # WebSocket simulation event emitter
 ```
 
 ---
 
-## 8. Environment Variables
+## 6. Architecture
 
-FiberNMS runs entirely client-side with mock data — no `.env` file is required for development.
+### How the System Works (End-to-End)
 
-For production integration with a real backend:
+```
+Browser
+  └─► React App (Vite + TanStack Router)
+        ├─► Auth Guard  ──► Login / Register
+        ├─► Layout Shell  ──► Desktop (Sidebar + Navbar)
+        │                 └─► Mobile (Header + BottomNav)
+        │
+        ├─► NOC Pages (protected, role-filtered)
+        │     ├─► Map  ──► React-Leaflet ──► CARTO Voyager tiles
+        │     ├─► Devices  ──► networkStore (Zustand)
+        │     ├─► Topology  ──► SVG canvas + OLT cards
+        │     ├─► Monitoring  ──► eventBus (simulated WebSocket)
+        │     └─► ... (8 total NOC pages)
+        │
+        ├─► Enterprise Pages (plan-gated via FeatureGate)
+        │     ├─► SLA Dashboard
+        │     ├─► Predictive Intelligence
+        │     ├─► Capacity Planning
+        │     └─► Audit Logs
+        │
+        ├─► Fault Map  ──► Leaflet.js ──► useFaultVisualization (BFS cascade)
+        │
+        ├─► SaaS/Billing Pages
+        │     ├─► Billing  ──► subscriptionStore
+        │     ├─► Plans  ──► PLAN_CONFIGS feature matrix
+        │     └─► ...
+        │
+        └─► Super Admin Pages (superAdmin role only)
+              ├─► SuperAdminDashboard  ──► superAdminMockData
+              ├─► CompanyManagement  ──► 54 mock companies
+              └─► ... (11 total admin pages)
 
-```bash
-# src/frontend/.env.local (not committed)
-VITE_API_BASE_URL=https://api.your-nms.com
-VITE_TENANT_ID=your-default-tenant-id
+Zustand Stores (localStorage-persisted):
+  authStore  ──► current user, role, session
+  subscriptionStore  ──► plan, quota, license key
+  networkStore  ──► devices[], routes[], alerts[], undo history[]
+
+Mock API Layer:
+  mockData.ts  ──► Mulberry32 PRNG (seed 42) ──► deterministic data
+  eventBus.ts  ──► emit/on pattern ──► simulates real-time WebSocket
+
+Backend (Motoko canister — ready for integration):
+  main.mo  ──► Scaffold, awaiting CRUD actor methods
 ```
 
-> The current implementation uses **CARTO Voyager** open tile layers which require no API key.
+### Data Flow
+
+1. **Authentication:** User logs in → `authStore.login()` validates against seed users → sets `currentUser` and `role` in Zustand → Router auth guard checks role → redirects to appropriate landing page
+2. **Feature Access:** Any page/component wrapped in `<FeatureGate feature="...">` calls `useFeature()` → checks `subscriptionStore.plan` against `FEATURE_PLAN_MAP` → renders children or `LockedFeatureOverlay`
+3. **Network Data:** `networkStore` holds all devices, routes, alerts, and audit logs → components subscribe via Zustand selectors → `eventBus` emits `device-status-change` and `route-update` events to simulate live updates
+4. **Fault Cascade:** `useFaultVisualization` runs BFS from the failed node/segment → marks all reachable downstream nodes as `affected` → computes `affectedCustomers` count → updates display state in the fault map
+5. **Undo System:** Every destructive action in `networkStore` saves a snapshot (max 20) → `undo()` pops the last snapshot and restores the previous state
 
 ---
 
-## 9. All Pages and Routes
+## 7. Modules
 
-### Public Routes
+### 7.1 Authentication & RBAC
 
-| Route | Page | File | Description |
+**Files:**
+- `src/pages/Login.tsx` — Login form
+- `src/pages/Register.tsx` — 5-step enterprise registration
+- `src/store/authStore.ts` — Auth state store
+- `src/hooks/useAuth.ts` — Auth selectors
+
+**How it works:**
+
+The login form validates credentials against the three seed users stored in the auth store. On success, `currentUser` and `role` are persisted to localStorage. The TanStack Router's `beforeLoad` guard checks `authStore.isAuthenticated` before rendering any protected route. Role-based redirects send Super Admins to `/super-admin`, NOC operators to `/`, and unauthenticated users to `/login`.
+
+**Registration Flow:**
+
+A 5-step wizard collects:
+1. Account type (Individual / Company)
+2. Personal details (name, email, phone)
+3. Company info (name, size, country, telecom type)
+4. Plan selection (BASIC -> ULTRA)
+5. Review and confirmation
+
+**Roles:**
+
+| Role | Key | Description |
+|---|---|---|
+| Super Admin | `superAdmin` | Full platform access, global admin panel |
+| Admin (Tenant Admin) | `admin` | All NOC + enterprise + billing + tenant admin |
+| Network Engineer | `engineer` | NOC + SLA + Capacity + Audit |
+| NOC Operator | `operator` | Core NOC pages only |
+| Viewer | `viewer` | Read-only: Map, Devices, Topology, Monitoring, Analytics |
+
+**RBAC + ABAC:**
+
+The `AccessControl` admin page provides a granular permission matrix. Beyond role-level access, ABAC rules allow device-level and region-level permission overrides (e.g., "Engineer A can only see devices in Region North").
+
+---
+
+### 7.2 Layout & Navigation System
+
+**Files:**
+- `src/components/Layout.tsx` — App shell
+- `src/components/Sidebar.tsx` — Desktop sidebar
+- `src/components/Navbar.tsx` — Desktop top bar
+- `src/components/MobileHeader.tsx` — Mobile sticky header
+- `src/components/MobileBottomNav.tsx` — Mobile bottom tabs
+- `src/components/MobileNavDrawer.tsx` — Hamburger drawer
+- `src/components/CommandPalette.tsx` — Global search
+- `src/hooks/useRoleNav.ts` — Role-filtered nav sections
+
+**How it works:**
+
+`Layout.tsx` detects screen size via `useIsMobile()` and renders the appropriate shell:
+- **Desktop (>=768px):** Fixed left `Sidebar` + top `Navbar` + main content area
+- **Mobile (<768px):** Sticky `MobileHeader` + scrollable content + fixed 64px `MobileBottomNav`
+
+The hamburger button in `MobileHeader` opens `MobileNavDrawer`, a full-page overlay with spring-animated slide-in that lists all navigation sections. Both the sidebar and drawer filter items based on the current user's role via `useRoleNav()`.
+
+**Command Palette:**
+
+`CMD+K` (or `Ctrl+K`) opens a fullscreen search modal. Users can search by device name, alert message, or page name. Results are shown in categorized groups with keyboard navigation.
+
+**Bottom Navigation Tabs (role-based):**
+
+| Role | Tab 1 | Tab 2 | Tab 3 | Tab 4 | Tab 5 |
+|---|---|---|---|---|---|
+| Super Admin | Dashboard | Companies | Users | Billing | Alerts |
+| Admin | Dashboard | Map | Alerts | Billing | Users |
+| Engineer | Dashboard | Map | Devices | Topology | Alerts |
+| Operator | Dashboard | Map | Monitoring | Alerts | Tools |
+| Viewer | Dashboard | Map | Monitoring | — | — |
+
+---
+
+### 7.3 NOC Core
+
+#### 7.3.1 Map Dashboard
+
+**Route:** `/`  
+**Files:** `src/pages/MapDashboard.tsx`, `src/components/map/*`
+
+The primary network operations map. Uses React-Leaflet with CARTO Voyager light tiles for a non-dark, colorful, and legible basemap.
+
+**Features:**
+- **Device markers:** Each device type has a unique icon and color (OLT = blue hexagon, ONT = green square, Splitter = orange diamond, Coupler = purple circle, Router = red star, JJB = yellow cross, Switch = teal triangle)
+- **Fiber polylines:** Drawn routes connecting devices, color-coded by route type (backbone = blue, distribution = orange, drop = green)
+- **Device placement:** Click "Add Device" -> choose device type -> click map -> fill in name/status -> save instantly. Right-click on map also triggers placement mode.
+- **Route drawing:** Desktop toolbar provides draw mode, route type selector, snap-to-device toggle
+- **Root delete:** Right-click an OLT -> "Delete with Children" -> confirmation modal shows count of all connected Splitters, ONTs, and routes -> cascade delete
+- **Undo:** Toolbar "Undo" button and `Ctrl+Z` / `Cmd+Z` keyboard shortcut reverses the last placement, deletion, or route draw
+- **Layer toggles:** Show/hide Devices, Routes, Labels, Coverage layers
+- **Device detail panel:** Click any device marker -> slide-up panel shows device name, type, status, signal levels, coordinates, uptime
+- **Mobile layout:** Map constrained between sticky header and bottom nav — never overlaps navigation
+
+**Supported Device Types:**
+
+| Type | Color | Icon |
+|---|---|---|
+| OLT | Blue (#3B82F6) | Hexagon |
+| ONT | Green (#22C55E) | Square |
+| Splitter | Orange (#F97316) | Diamond |
+| Coupler | Purple (#A855F7) | Circle |
+| Router | Red (#EF4444) | Star |
+| JJB | Yellow (#EAB308) | Cross |
+| Switch | Teal (#14B8A6) | Triangle |
+
+---
+
+#### 7.3.2 Devices
+
+**Route:** `/devices`  
+**Files:** `src/pages/Devices.tsx`, `src/components/devices/*`
+
+Virtualized device management table for bulk operations.
+
+**Features:**
+- TanStack React Table with virtualized row rendering (handles 1000+ devices without lag)
+- Columns: Name, Type, Status, Uptime %, Tx/Rx Signal (dBm), Region, Last Seen, Actions
+- Filter panel: Device type checkboxes, status radio group, region dropdown
+- Sort by any column
+- Bulk actions: Select multiple devices -> Update Status, Export, Delete
+- Add Device modal: Form with type, name, coordinates, status, region, description
+- Mobile: Card-based list view (name, type, status badge, quick action icons); tap to expand full details
+
+---
+
+#### 7.3.3 Topology
+
+**Route:** `/topology`  
+**Files:** `src/pages/Topology.tsx`, `src/components/topology/*`
+
+Multi-layer fiber network visualization with two view modes.
+
+**View 1: OLT Sections (default)**
+
+Grid of glassmorphism cards, one per OLT. Each card shows:
+- OLT name and status badge
+- SVG mini-tree of connected Splitters (diamond nodes) and ONTs (square nodes)
+- Summary bar: Total devices | Online | Faulty
+- Color-coded status (green = healthy, orange = degraded, red = fault)
+
+**View 2: Network Graph**
+
+Deep-space canvas visualization:
+- Neon hexagon OLT nodes with glow effect
+- Diamond Splitter nodes connected by animated fiber edges
+- Square ONT leaf nodes
+- Animated data-flow dots traveling along edges (direction: OLT -> Splitter -> ONT)
+- Minimap in bottom-right corner for navigation on large topologies
+- Hover tooltips showing device name, status, uptime
+- Tabbed device detail panel (Overview | Signal | History | Actions)
+- Overview tab: Uptime ring chart, sparkline signal history
+- Actions tab: Reboot, Mark Maintenance, Set Alert
+
+**Mobile responsiveness:**
+- OLT Section cards: responsive grid (1 col on mobile, 2 on tablet, 3+ on desktop)
+- Mini-trees: fluid SVG sizing, scales to container width
+- Network graph: scrollable canvas, zoom controls remain accessible
+- Device detail: bottom sheet drawer instead of sidebar panel
+- Toolbars: horizontally scrollable, no wrapping
+
+---
+
+#### 7.3.4 Monitoring
+
+**Route:** `/monitoring`  
+**Files:** `src/pages/Monitoring.tsx`, `src/components/monitoring/*`
+
+Real-time network health monitoring with live alert feed.
+
+**Features:**
+- 4 KPI stat cards: Total Devices, Online, Warning, Faulty (with trend arrows)
+- Status pie chart: Active / Warning / Faulty breakdown (Recharts)
+- 24-hour signal strength line chart (Recharts LineChart with 5-minute intervals)
+- Live alert feed: Severity badge (Critical/High/Medium/Low), timestamp, device name, message
+- Alert resolution: Click "Resolve" to mark an alert as cleared
+- `eventBus` simulates incoming WebSocket events every 30 seconds, updating device statuses and triggering new alerts
+- Mobile: stat cards in 2x2 grid, charts in scrollable containers, alert feed in card list
+
+---
+
+#### 7.3.5 Tools
+
+**Route:** `/tools`  
+**Files:** `src/pages/Tools.tsx`, `src/components/tools/*`
+
+Engineering diagnostic tools for field and NOC engineers.
+
+**Tools included:**
+
+1. **Optical Power Budget Calculator**
+   - Inputs: Transmit power (dBm), fiber length (km), splitter ratio, connector loss
+   - Output: Received power, link margin, pass/fail verdict
+
+2. **OTDR Fault Location Simulator**
+   - Inputs: Fiber length, fault distance, loss threshold
+   - Output: Simulated OTDR trace (Recharts area chart), estimated fault location, reflectance values
+
+3. **Wavelength Conversion Table** — Common DWDM channel frequencies and wavelengths
+
+4. **dB/dBm Reference Calculator** — Convert between dB and linear power ratios
+
+---
+
+#### 7.3.6 Analytics
+
+**Route:** `/analytics`  
+**Files:** `src/pages/Analytics.tsx`
+
+Network performance analytics and historical trend analysis.
+
+**Charts:**
+- Device health trend (last 30 days, area chart)
+- Alert volume by severity over time (stacked bar chart)
+- Average signal levels by region (grouped bar chart)
+- Network uptime by region (line chart with 99.9% SLA threshold line)
+- Top 10 most-alerted devices (horizontal bar chart)
+- Traffic throughput trends (area chart, Gbps)
+
+All charts use Recharts and are responsive (ResponsiveContainer). Mobile view shows charts in single-column scrollable layout.
+
+---
+
+#### 7.3.7 Workflows
+
+**Route:** `/workflows`  
+**Files:** `src/pages/Workflows.tsx`  
+**Plan gate:** PROFESSIONAL+
+
+Visual workflow automation builder (n8n-inspired).
+
+**Features:**
+- Drag-and-drop node-based builder
+- Node types: Trigger (Alert, Schedule, API), Action (Send Email, Create Ticket, Reboot Device, Call Webhook), Condition (If/Else, Wait)
+- Pre-built templates: Auto-resolve critical alerts, Nightly device health report, Escalation workflow
+- AI-generated workflows: Describe in natural language -> workflow is generated automatically
+- Workflow list: Name, status (Active/Paused/Draft), last run, success rate
+- Run history with execution logs per node
+
+---
+
+#### 7.3.8 AI Assistant
+
+**Route:** `/ai`  
+**Files:** `src/pages/AIAssistant.tsx`
+
+Natural language copilot for NOC operations.
+
+**Features:**
+- Chat interface with markdown rendering
+- Network-aware context: AI responses reference actual device names, alert counts, and signal data from `networkStore`
+- Session history: Left panel shows previous chat sessions (slide-in drawer on mobile)
+- Network status panel: Right panel shows live device health summary (slide-in drawer on mobile)
+- Suggested prompts: "What devices have critical alerts?", "Show me OLTs with low signal", "Generate a fault report for today"
+- Mobile: Three-column layout (sessions | chat | status) collapses to single chat view with two drawer buttons at top
+
+---
+
+### 7.4 Enterprise Features
+
+> All enterprise pages are gated by `PROFESSIONAL` plan or above. Users on `BASIC` see a `LockedFeatureOverlay` with an upgrade CTA.
+
+#### 7.4.1 SLA Dashboard
+
+**Route:** `/sla`  
+**Files:** `src/pages/SLADashboard.tsx`  
+**Plan gate:** PROFESSIONAL+
+
+Service Level Agreement monitoring per customer circuit.
+
+**Metrics tracked:**
+- Uptime % (target: 99.9%)
+- Mean Time to Repair (MTTR)
+- Mean Time Between Failures (MTBF)
+- SLA breach count (current period)
+- Penalty exposure (currency)
+
+**UI:**
+- Summary cards at top (total circuits, SLA met, breached, at-risk)
+- SLA table with sorting and filtering by customer/region/status
+- Per-circuit SLA detail: uptime history sparkline, incident log
+- Monthly SLA compliance chart (line chart)
+- Export to PDF/CSV
+
+---
+
+#### 7.4.2 Predictive Intelligence
+
+**Route:** `/predictive`  
+**Files:** `src/pages/PredictiveIntelligence.tsx`  
+**Plan gate:** ENTERPRISE+
+
+AI-powered predictive fault detection and risk scoring.
+
+**Features:**
+- Risk score cards per device (0-100, color-coded: green < 30, yellow 30-70, red > 70)
+- Anomaly detection alerts: Unusual signal drop, temperature spike, BER increase
+- Predicted failure timeline: "OLT-Core-03 likely to fail within 48h based on signal degradation trend"
+- Maintenance recommendation engine: Suggests preventive actions ranked by urgency
+- Model confidence scores per prediction
+- Historical accuracy: How many past predictions were accurate (false positive rate)
+
+---
+
+#### 7.4.3 Capacity Planning
+
+**Route:** `/capacity`  
+**Files:** `src/pages/CapacityPlanning.tsx`  
+**Plan gate:** ENTERPRISE+
+
+Network capacity utilization tracking and growth forecasting.
+
+**Features:**
+- Current utilization by region (progress bars, color-coded thresholds)
+- Capacity forecast charts: 6-month and 12-month projections (area charts)
+- OLT port utilization table: Used ports / total ports per OLT
+- Growth rate analysis by region
+- "When will I run out?" — Days to capacity exhaustion per OLT
+- Expansion recommendations with cost estimates
+- Export report
+
+---
+
+#### 7.4.4 Audit Logs
+
+**Route:** `/audit`  
+**Files:** `src/pages/AuditLogs.tsx`
+
+Complete audit trail for all system actions.
+
+**Fields logged per event:**
+- Timestamp
+- Actor (user email + role)
+- Action type (CREATE, UPDATE, DELETE, LOGIN, EXPORT, CONFIG_CHANGE)
+- Resource type (Device, Route, User, Alert, Workflow, Subscription)
+- Resource ID
+- Before / After state snapshot (JSON diff)
+- IP address
+- Session ID
+
+**UI:**
+- Vertical timeline view (mobile) / table view (desktop)
+- Filters: Date range, actor, action type, resource type
+- Dropdown filters on mobile for compact layout
+- Export as CSV
+
+---
+
+### 7.5 Fault Visualization Module
+
+**Route:** `/fault-map`  
+**Files:** `src/pages/FaultVisualizationPage.tsx`, `src/components/fault/*`, `src/hooks/useFaultVisualization.ts`, `src/data/faultMockData.ts`
+
+A dedicated fullscreen Leaflet.js map for real-time outage detection and customer impact visualization. Separate from the main NOC map — focused entirely on fault states and downstream impact.
+
+**Status Color System:**
+
+| Color | Meaning |
+|---|---|
+| Green | Active — device/cable operating normally |
+| Red | Down — device failed or cable cut |
+| Orange | Affected — downstream from a fault |
+
+**Fault Logic (BFS Cascade Algorithm):**
+
+```
+useFaultVisualization (BFS cascade):
+  1. Build adjacency list from network links
+  2. On "Device Down" event for node N:
+     a. Mark N as RED (status = "down")
+     b. BFS from N following directed edges (downstream only)
+     c. Mark all reachable nodes as ORANGE (status = "affected")
+     d. Highlight all fiber segments in the affected subgraph RED/ORANGE
+  3. On "Cable Cut" event for link L:
+     a. Mark segment L as RED with blinking animation
+     b. Find all nodes reachable from L's destination
+     c. Mark them ORANGE
+  4. Compute affected customer count (leaf nodes with type = "customer")
+  5. Update FaultStatsPanel with new counts
+```
+
+**Components:**
+
+| Component | Purpose |
+|---|---|
+| `FaultDeviceMarker` | Leaflet marker with status-based color (green/orange/red), click handler |
+| `FaultFiberPolyline` | Leaflet polyline with blinking CSS animation for cut segments |
+| `FaultAlertBanner` | Top sticky banner: "Cable cut detected - 24 customers affected" |
+| `FaultStatsPanel` | Right sidebar: Total / Active / Affected customers, Down Devices |
+| `CustomerMarker` | Customer location pin with status color, click for customer details |
+| `FaultLayerControls` | Toggle visibility of Customers, Fiber, and Devices layers |
+
+**Simulation Controls:**
+
+- "Simulate Device Down" button — marks a random OLT or Splitter as down, triggers cascade
+- "Simulate Cable Cut" button — marks a random fiber segment as cut, triggers cascade
+- "Clear Faults" button — resets all devices and cables to Active status
+
+**API Integration Points** (ready for real backend):
+
+```
+GET  /network/nodes       -> returns Node[]  (id, type, lat, lng, status)
+GET  /network/links       -> returns Link[]  (from_node, to_node, status)
+POST /mark-device-down    -> { node_id }     -> triggers cascade
+POST /mark-cable-cut      -> { link_id }     -> triggers cascade
+```
+
+---
+
+### 7.6 SaaS & Billing
+
+#### 7.6.1 Billing Dashboard
+
+**Route:** `/billing`  
+**Files:** `src/pages/Billing.tsx`
+
+Tenant-facing billing overview.
+
+**Sections:**
+- Current plan badge + expiry date
+- Device usage bar: Used / Total (e.g., 2,456 / 5,000)
+- API call quota bar
+- Next invoice amount and due date
+- Invoice history table (date, amount, status: Paid/Pending/Overdue, download PDF)
+- Payment method management (card on file, update button)
+- Upgrade / Downgrade plan button -> `PlanComparisonModal`
+
+---
+
+#### 7.6.2 Plans & Subscription
+
+**Route:** `/plans`  
+**Files:** `src/pages/Plans.tsx`, `src/components/subscription/PlanComparisonModal.tsx`, `src/config/features.ts`
+
+4-tier plan comparison and upgrade flow.
+
+**Plan Tiers:**
+
+| Plan | Price | Max Devices | Target |
 |---|---|---|---|
-| `/login` | Login | `pages/Login.tsx` | Username/password login with dark/light theme toggle |
-| `/register` | Register | `pages/Register.tsx` | 5-step enterprise registration form |
-
-### Protected NOC Routes
-
-| Route | Page | File | Min Plan | Description |
-|---|---|---|---|---|
-| `/` | Map Dashboard | `pages/MapDashboard.tsx` | BASIC | GIS fiber map — device markers, route drawing, layer toggles |
-| `/devices` | Devices | `pages/Devices.tsx` | BASIC | Full device CRUD with virtualized table and bulk actions |
-| `/topology` | Topology | `pages/Topology.tsx` | PROFESSIONAL | Multi-layer L1/L2/L3 graph canvas with OLT section view |
-| `/monitoring` | Monitoring | `pages/Monitoring.tsx` | BASIC | Real-time signal metrics, alert feed, KPI charts |
-| `/tools` | Tools | `pages/Tools.tsx` | BASIC | Optical power calculator, OTDR simulation, fault trace |
-| `/analytics` | Analytics | `pages/Analytics.tsx` | PROFESSIONAL | Network performance charts, trend analysis |
-| `/workflows` | Workflows | `pages/Workflows.tsx` | ENTERPRISE | Visual n8n-style automation builder |
-| `/ai` | AI Assistant | `pages/AIAssistant.tsx` | ENTERPRISE | NL copilot with network context |
-| `/sla` | SLA Dashboard | `pages/SLADashboard.tsx` | ENTERPRISE | Per-customer SLA metrics, breach alerts, MTTR/MTBF |
-| `/predictive` | Predictive Intelligence | `pages/PredictiveIntelligence.tsx` | ENTERPRISE | AI risk scores, failure prediction, confidence % |
-| `/capacity` | Capacity Planning | `pages/CapacityPlanning.tsx` | ENTERPRISE | Route utilization, growth forecasts, exhaustion warnings |
-| `/audit` | Audit Logs | `pages/AuditLogs.tsx` | ENTERPRISE | Timeline audit log with filters and CSV export |
-
-### Protected SaaS Routes
-
-| Route | Page | File | Min Plan | Description |
-|---|---|---|---|---|
-| `/billing` | Billing | `pages/Billing.tsx` | BASIC | Current plan, device/API usage bars, billing history |
-| `/plans` | Plans | `pages/Plans.tsx` | BASIC | Side-by-side 4-tier feature comparison with upgrade flow |
-| `/usage` | Usage Analytics | `pages/UsageAnalytics.tsx` | BASIC | Device growth, alert volume, data usage, API call charts |
-| `/integrations` | Integrations | `pages/Integrations.tsx` | ENTERPRISE | API key management, webhook config, OSS/BSS connectors |
-| `/settings/branding` | Branding | `pages/Branding.tsx` | ULTRA | White-label logo, colors, domain |
-| `/settings/license` | License | `pages/License.tsx` | BASIC | License key input, plan activation, expiry warnings |
-| `/tenants` | Tenants | `pages/Tenants.tsx` | ULTRA | Multi-tenant switcher, create tenants, data isolation |
-| `/docs` | Documentation | `pages/Docs.tsx` | BASIC | In-app markdown README renderer |
-| `/tenant-admin/:companyId` | Tenant Admin | `pages/admin/TenantAdminPanel.tsx` | Admin | Per-company operator view: users, usage, billing |
-
-### Super Admin Routes
-
-Requires `role: "superAdmin"`. Non-super-admin users are redirected to `/`.
-
-| Route | Page | File | Description |
-|---|---|---|---|
-| `/super-admin` | Global Dashboard | `admin/SuperAdminDashboard.tsx` | MRR, ARR, companies, subscriptions, devices, system health |
-| `/super-admin/companies` | Company Registry | `admin/CompanyManagement.tsx` | Manage 54+ telecom companies — create, edit, suspend, activate, delete |
-| `/super-admin/companies/:companyId` | Company Detail | `admin/CompanyDetail.tsx` | Company profile, usage stats, billing history, activity timeline |
-| `/super-admin/usage` | Usage and Limits | `admin/UsageLimits.tsx` | Per-company progress bars for devices, API, data, alerts |
-| `/super-admin/users` | Global Users | `admin/GlobalUserManagement.tsx` | 1000+ users, filter, invite, session tracking, force logout |
-| `/super-admin/billing` | Global Billing | `admin/GlobalBilling.tsx` | MRR, ARR, churn rate, revenue by plan and region |
-| `/super-admin/orders` | Orders and Invoices | `admin/OrdersInvoices.tsx` | Full orders table, invoice PDF export, GST/VAT breakdowns |
-| `/super-admin/audit` | Platform Audit | `admin/PlatformAudit.tsx` | Global audit timeline across all tenants, CSV export |
-| `/super-admin/access` | Access Control | `admin/AccessControl.tsx` | RBAC + ABAC permission matrix — toggle per role and attribute |
-| `/super-admin/alerts` | System Alerts | `admin/SystemAlerts.tsx` | Platform-level outage, API failure, error rate notifications |
-| `/super-admin/security` | Security Dashboard | `admin/SecurityDashboard.tsx` | Login attempts, suspicious activity, IP tracking, MFA status |
-| `/super-admin/analytics` | Global Analytics | `admin/GlobalAnalytics.tsx` | Revenue trends, device growth, usage heatmaps, top customers |
-
----
-
-## 10. Data Structures and Fields
-
-### 10.1 Network Types (network.ts)
-
-#### Device
-
-Represents a physical network device in the fiber infrastructure.
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `id` | `string` | Yes | Unique device identifier (e.g., `OLT-IND-001`) |
-| `name` | `string` | Yes | Human-readable device name |
-| `type` | `DeviceType` | Yes | `"OLT" or "ONT" or "Splitter" or "JJB" or "Switch"` |
-| `lat` | `number` | Yes | Latitude coordinate (WGS84) |
-| `lng` | `number` | Yes | Longitude coordinate (WGS84) |
-| `ports` | `number` | Yes | Number of physical ports |
-| `status` | `DeviceStatus` | Yes | `"active" or "faulty" or "warning"` |
-| `connectedTo` | `string[]` | Yes | Array of connected device IDs |
-| `location` | `string` | No | Human-readable location (e.g., "Mumbai, India") |
-| `signalStrength` | `number` | No | Signal strength in dBm (e.g., -14.2) |
-| `uptime` | `number` | No | Uptime percentage (0–100) |
-| `region` | `string` | No | Geographic region label (e.g., "India") |
-
-Device types:
-- `OLT` — Optical Line Terminal: head-end aggregation device
-- `ONT` — Optical Network Terminal: subscriber-side termination
-- `Splitter` — Passive optical splitter (1:2, 1:4, 1:8, 1:16, 1:32)
-- `JJB` — Joint Junction Box: fiber splice point
-- `Switch` — Active Ethernet/MPLS switching node
-
-#### FiberRoute
-
-Represents a fiber cable segment on the map.
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `id` | `string` | Yes | Unique route identifier |
-| `name` | `string` | Yes | Human-readable route name |
-| `type` | `RouteType` | Yes | `"backbone" or "distribution" or "drop"` |
-| `waypoints` | `{ lat: number; lng: number }[]` | Yes | Ordered array of GeoJSON-compatible coordinates |
-| `distanceKm` | `number` | Yes | Total cable length in kilometers |
-| `status` | `DeviceStatus` | Yes | `"active" or "faulty" or "warning"` |
-
-Route type colors on map: backbone = `#00e5ff` (cyan), distribution = `#448aff` (blue), drop = `#69ff47` (green).
-
-#### Alert
-
-Represents a network fault or event notification.
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `id` | `string` | Yes | Unique alert ID |
-| `deviceId` | `string` | Yes | ID of the device that triggered the alert |
-| `deviceName` | `string` | Yes | Name of the affected device |
-| `issueType` | `string` | Yes | Issue category (e.g., "Signal Loss", "Port Failure") |
-| `timestamp` | `number` | Yes | Unix timestamp (ms) when alert was generated |
-| `severity` | `AlertSeverity` | Yes | `"critical" or "warning" or "info"` |
-| `resolved` | `boolean` | No | Whether the alert has been acknowledged |
-
-#### LayerVisibility
-
-Controls which fiber route layers are visible on the map.
-
-| Field | Type | Description |
-|---|---|---|
-| `backbone` | `boolean` | Show/hide backbone routes |
-| `distribution` | `boolean` | Show/hide distribution routes |
-| `drop` | `boolean` | Show/hide drop routes |
-
-#### SLARecord
-
-Per-customer service level agreement tracking.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique SLA record ID |
-| `customerId` | `string` | Customer company ID |
-| `customerName` | `string` | Customer company name |
-| `region` | `string` | Geographic service region |
-| `latency` | `number` | Current latency in ms |
-| `packetLoss` | `number` | Current packet loss percentage |
-| `uptime` | `number` | Measured uptime percentage (0–100) |
-| `status` | `SLAStatus` | `"compliant" or "warning" or "breach"` |
-| `lastChecked` | `number` | Unix timestamp of last SLA evaluation |
-
-#### PredictiveAlert
-
-AI-generated predictive fault intelligence record.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique predictive alert ID |
-| `deviceId` | `string` | Device at risk |
-| `deviceName` | `string` | Human-readable device name |
-| `riskScore` | `number` | Risk score 0–100 (100 = imminent failure) |
-| `failureType` | `string` | `"fiber-cut" or "signal-degradation" or "device-failure"` |
-| `predictedETA` | `number` | Hours until predicted failure |
-| `status` | `string` | `"active" or "resolved"` |
-
-#### AuditLog
-
-Records every action performed in the NOC system.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique audit log ID |
-| `timestamp` | `number` | Unix timestamp (ms) |
-| `userId` | `string` | Actor user ID |
-| `userName` | `string` | Actor display name |
-| `action` | `string` | Action description |
-| `actionType` | `string` | `"device-change" or "user-action" or "workflow-execution" or "system"` |
-| `targetId` | `string` | ID of the affected entity |
-| `targetName` | `string` | Name of the affected entity |
-| `details` | `string` | Additional context or diff |
-| `status` | `string` | `"success" or "failure"` |
-
-#### CapacityRecord
-
-Capacity utilization and forecasting for fiber routes.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique capacity record ID |
-| `routeId` | `string` | Associated fiber route ID |
-| `routeName` | `string` | Human-readable route name |
-| `region` | `string` | Geographic region |
-| `currentUtilization` | `number` | Current utilization percentage (0–100) |
-| `maxCapacity` | `number` | Maximum capacity in Gbps |
-| `forecastData` | `{ month: string; utilization: number }[]` | Monthly utilization forecast |
-| `exhaustionMonths` | `number` | Estimated months until capacity exhaustion |
-
-#### NetworkLayer
-
-Controls multi-layer topology visualization state.
-
-| Field | Type | Description |
-|---|---|---|
-| `type` | `"L1" or "L2" or "L3"` | OSI layer type |
-| `visible` | `boolean` | Whether this layer is rendered |
-| `name` | `string` | Display name (e.g., "Physical (Fiber)") |
-
-#### CommandPaletteItem
-
-Search result item for the global CMD+K command palette.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique item ID |
-| `type` | `string` | `"device" or "alert" or "workflow" or "route" or "sla" or "page"` |
-| `title` | `string` | Primary display label |
-| `subtitle` | `string` | Secondary description |
-| `href` | `string` | Navigation target URL |
-| `icon` | `string` | Icon name identifier |
-
----
-
-### 10.2 Super Admin Types (superAdmin.ts)
-
-#### Company
-
-A telecom company (tenant) registered on the FiberNMS platform.
-
-| Field | Type | Required | Description |
-|---|---|---|---|
-| `id` | `string` | Yes | Unique company ID |
-| `name` | `string` | Yes | Company display name |
-| `domain` | `string` | Yes | Primary domain (e.g., `acmetelecom.com`) |
-| `subdomain` | `string` | Yes | Platform subdomain (e.g., `acme.fibernms.com`) |
-| `region` | `CompanyRegion` | Yes | `"India" or "US" or "EU" or "APAC" or "MENA"` |
-| `plan` | `CompanyPlan` | Yes | `"BASIC" or "PROFESSIONAL" or "ENTERPRISE" or "ULTRA"` |
-| `status` | `CompanyStatus` | Yes | `"active" or "suspended" or "trial" or "expired"` |
-| `createdAt` | `string` | Yes | ISO date string of account creation |
-| `logoUrl` | `string` | No | Company logo URL |
-| `contactEmail` | `string` | Yes | Primary contact email address |
-| `contactPhone` | `string` | Yes | Primary contact phone number |
-| `address` | `string` | No | Physical address |
-| `country` | `string` | Yes | Country name |
-| `devicesUsed` | `number` | Yes | Current device count |
-| `devicesLimit` | `number` | Yes | Maximum allowed devices for current plan |
-| `apiUsed` | `number` | Yes | API calls consumed this billing cycle |
-| `apiLimit` | `number` | Yes | Maximum API calls for current plan |
-| `dataUsedGB` | `number` | Yes | Data storage used in GB |
-| `dataLimitGB` | `number` | Yes | Data storage limit in GB |
-| `alertsUsed` | `number` | Yes | Alerts generated this period |
-| `alertsLimit` | `number` | Yes | Maximum alerts for current plan |
-| `activeUsers` | `number` | Yes | Count of active user accounts |
-| `totalAlerts` | `number` | Yes | All-time alert count |
-| `mrr` | `number` | Yes | Monthly recurring revenue from this company (USD) |
-| `isSoftDeleted` | `boolean` | No | Soft-delete flag |
-| `deletedAt` | `string` | No | Soft-delete timestamp |
-| `lastActiveAt` | `string` | Yes | Last platform activity timestamp |
-| `trialEndsAt` | `string` | No | Trial expiry date |
-
-#### AdminUser
-
-A user account within any company on the platform.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique user ID |
-| `companyId` | `string` | ID of the company this user belongs to |
-| `companyName` | `string` | Company display name |
-| `name` | `string` | Full display name |
-| `email` | `string` | Login email address |
-| `role` | `AdminUserRole` | `"Admin" or "Network Engineer" or "NOC Operator" or "Viewer"` |
-| `status` | `AdminUserStatus` | `"active" or "disabled"` |
-| `lastLogin` | `string` | ISO timestamp of most recent login |
-| `assignedRegion` | `string` | Geographic region this user manages |
-| `mfaEnabled` | `boolean` | Whether MFA is configured for this user |
-| `activeSessions` | `Session[]` | Array of currently active sessions |
-
-#### Session
-
-An active login session for a user.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique session ID |
-| `userId` | `string` | Owner user ID |
-| `loginTime` | `string` | Session start ISO timestamp |
-| `lastActivity` | `string` | Last request ISO timestamp |
-| `deviceInfo` | `string` | User agent / device description |
-| `ipAddress` | `string` | Client IP address |
-| `isActive` | `boolean` | Whether session is currently alive |
-
-#### Order
-
-A subscription order (purchase or renewal).
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique order ID |
-| `companyId` | `string` | Ordering company ID |
-| `companyName` | `string` | Company display name |
-| `plan` | `CompanyPlan` | Plan purchased |
-| `price` | `number` | Order price in USD |
-| `billingCycle` | `BillingCycle` | `"monthly" or "yearly"` |
-| `status` | `OrderStatus` | `"paid" or "pending" or "failed"` |
-| `createdAt` | `string` | Order creation ISO timestamp |
-| `dueDate` | `string` | Payment due date |
-| `nextRenewal` | `string` | Next renewal date |
-| `paidAt` | `string` | Payment confirmation timestamp |
-
-#### InvoiceLineItem
-
-A single line on an invoice.
-
-| Field | Type | Description |
-|---|---|---|
-| `description` | `string` | Service description |
-| `quantity` | `number` | Quantity |
-| `unitPrice` | `number` | Price per unit in USD |
-| `total` | `number` | Line total (quantity times unitPrice) |
-
-#### Invoice
-
-A tax invoice issued to a company.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique invoice ID |
-| `orderId` | `string` | Associated order ID |
-| `companyId` | `string` | Recipient company ID |
-| `companyName` | `string` | Company display name |
-| `invoiceNumber` | `string` | Sequential invoice number (e.g., `INV-2026-00142`) |
-| `amount` | `number` | Subtotal before tax (USD) |
-| `tax` | `number` | Tax amount (USD) |
-| `taxType` | `string` | `"GST" or "VAT" or "NONE"` |
-| `taxRate` | `number` | Tax rate percentage (e.g., 18 for 18% GST) |
-| `subtotal` | `number` | Pre-tax subtotal |
-| `total` | `number` | Final invoice total |
-| `status` | `string` | `"paid" or "pending" or "overdue" or "failed"` |
-| `createdAt` | `string` | Invoice issue ISO timestamp |
-| `dueDate` | `string` | Payment due date |
-| `paidAt` | `string` | Payment confirmation timestamp |
-| `lineItems` | `InvoiceLineItem[]` | Array of invoice line items |
-| `region` | `CompanyRegion` | Company region (determines tax type) |
-
-Tax rules by region: India = GST 18%, EU = VAT 20%, US/APAC/MENA = No tax.
-
-#### AuditEvent
-
-A Super Admin-level audit trail entry.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique audit event ID |
-| `userId` | `string` | Actor user ID |
-| `userEmail` | `string` | Actor email |
-| `companyId` | `string` | Associated company ID |
-| `companyName` | `string` | Company display name |
-| `action` | `string` | Action description |
-| `targetType` | `string` | Entity type (e.g., "User", "Company", "Invoice") |
-| `targetId` | `string` | Affected entity ID |
-| `targetName` | `string` | Affected entity name |
-| `details` | `string` | Additional context |
-| `timestamp` | `string` | ISO timestamp |
-| `severity` | `AuditSeverity` | `"info" or "warning" or "critical"` |
-| `category` | `AuditCategory` | `"user" or "company" or "billing" or "device" or "auth"` |
-| `ipAddress` | `string` | Actor IP address |
-
-#### SecurityEvent
-
-A security-relevant event (login attempt, suspicious activity).
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique security event ID |
-| `userId` | `string` | Associated user ID (if authenticated) |
-| `userEmail` | `string` | Associated email |
-| `companyId` | `string` | Associated company |
-| `ipAddress` | `string` | Source IP address |
-| `geoLocation` | `string` | Geo-resolved location (e.g., "Mumbai, India") |
-| `eventType` | `string` | Type (e.g., "failed_login", "suspicious_ip") |
-| `success` | `boolean` | Whether authentication succeeded |
-| `timestamp` | `string` | ISO timestamp |
-| `failedAttempts` | `number` | Consecutive failed attempts from this IP |
-| `isBlocked` | `boolean` | Whether this IP is currently blocked |
-| `severity` | `AlertSeverity` | `"critical" or "high" or "medium" or "low"` |
-
-#### SystemAlert
-
-A platform-level alert visible only to Super Admins.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique system alert ID |
-| `type` | `string` | Alert type string |
-| `severity` | `AlertSeverity` | `"critical" or "high" or "medium" or "low"` |
-| `title` | `string` | Short alert headline |
-| `message` | `string` | Detailed alert message |
-| `affectedCompanies` | `number` | Count of impacted tenants |
-| `timestamp` | `string` | ISO timestamp when alert triggered |
-| `isResolved` | `boolean` | Whether the issue is resolved |
-| `resolvedAt` | `string` | Resolution ISO timestamp |
-| `category` | `SystemAlertCategory` | `"outage" or "error_rate" or "api" or "resource"` |
-| `affectedService` | `string` | Impacted service name |
-| `status` | `SystemAlertStatus` | `"active" or "resolved"` |
-
-#### UsageMetric
-
-Per-company quota utilization snapshot.
-
-| Field | Type | Description |
-|---|---|---|
-| `companyId` | `string` | Company ID |
-| `companyName` | `string` | Company display name |
-| `plan` | `CompanyPlan` | Current plan |
-| `devices` | `{ used: number; limit: number }` | Device quota usage |
-| `api` | `{ used: number; limit: number }` | API call quota usage |
-| `data` | `{ used: number; limit: number }` | Data quota usage |
-| `alerts` | `{ used: number; limit: number }` | Alert quota usage |
-
-#### RevenueMetrics
-
-Global platform revenue summary.
-
-| Field | Type | Description |
-|---|---|---|
-| `mrr` | `number` | Monthly Recurring Revenue (USD) |
-| `arr` | `number` | Annual Recurring Revenue (USD) |
-| `totalRevenue` | `number` | All-time total revenue |
-| `revenueGrowthPct` | `number` | Month-over-month growth percentage |
-| `churnRate` | `number` | Monthly churn rate percentage |
-| `avgRevenuePerUser` | `number` | Average revenue per paying company |
-| `newMRR` | `number` | New MRR added this period |
-| `expansionMRR` | `number` | MRR from upgrades |
-| `churnedMRR` | `number` | MRR lost to churn |
-| `netNewMRR` | `number` | Net MRR change |
-| `revenueByPlan` | `Record<CompanyPlan, number>` | Revenue split per plan tier |
-| `revenueByRegion` | `Record<string, number>` | Revenue split per region |
-| `monthlyRevenueTrend` | `{ month: string; revenue: number }[]` | 12-month revenue history |
-
-#### PlatformStats
-
-Top-level platform health snapshot for the Super Admin dashboard.
-
-| Field | Type | Description |
-|---|---|---|
-| `totalCompanies` | `number` | Total onboarded companies |
-| `activeCompanies` | `number` | Currently active companies |
-| `trialCompanies` | `number` | Companies in trial period |
-| `suspendedCompanies` | `number` | Suspended companies |
-| `totalUsers` | `number` | Total user accounts across all tenants |
-| `activeSubscriptions` | `number` | Count of paid active subscriptions |
-| `mrr` | `number` | Current MRR (USD) |
-| `arr` | `number` | Current ARR (USD) |
-| `churnRate` | `number` | Current monthly churn rate |
-| `totalDevices` | `number` | Aggregate device count across all tenants |
-| `systemUptime` | `number` | Platform uptime percentage |
-
----
-
-### 10.3 Subscription Types (subscription.ts)
-
-#### Plan (enum)
-
-```typescript
-enum Plan {
-  BASIC        = "BASIC",
-  PROFESSIONAL = "PROFESSIONAL",
-  ENTERPRISE   = "ENTERPRISE",
-  ULTRA        = "ULTRA",
-}
-```
-
-#### FeatureFlag (enum)
-
-```typescript
-enum FeatureFlag {
-  AI_INSIGHTS            = "AI_INSIGHTS",
-  WORKFLOW_AUTOMATION    = "WORKFLOW_AUTOMATION",
-  DIGITAL_TWIN           = "DIGITAL_TWIN",
-  TOPOLOGY_VISUALIZATION = "TOPOLOGY_VISUALIZATION",
-  REAL_TIME_MONITORING   = "REAL_TIME_MONITORING",
-  PREDICTIVE_FAULTS      = "PREDICTIVE_FAULTS",
-  SLA_DASHBOARD          = "SLA_DASHBOARD",
-  CAPACITY_PLANNING      = "CAPACITY_PLANNING",
-  AUDIT_LOGS             = "AUDIT_LOGS",
-  ADVANCED_ALERTING      = "ADVANCED_ALERTING",
-  API_ACCESS             = "API_ACCESS",
-  INTEGRATIONS           = "INTEGRATIONS",
-  WHITE_LABELING         = "WHITE_LABELING",
-  MULTI_TENANT           = "MULTI_TENANT",
-  PLUGIN_SYSTEM          = "PLUGIN_SYSTEM",
-  GIS_ADVANCED           = "GIS_ADVANCED",
-  DEVICE_CLUSTERING      = "DEVICE_CLUSTERING",
-  HISTORICAL_METRICS     = "HISTORICAL_METRICS",
-}
-```
-
-#### PlanConfig
-
-Configuration record for a subscription tier.
-
-| Field | Type | Description |
-|---|---|---|
-| `name` | `Plan` | Plan enum value |
-| `label` | `string` | Display label (e.g., "Professional") |
-| `color` | `string` | Tailwind color segment (e.g., "blue", "violet") |
-| `maxDevices` | `number` | Maximum devices (-1 = unlimited) |
-| `monthlyPrice` | `number` | Monthly price in USD |
-| `annualPrice` | `number` | Annual price per month in USD (discounted) |
-| `features` | `FeatureFlag[]` | Array of feature flags included |
-| `description` | `string` | Marketing copy for the plan |
-| `badge` | `string` | Optional badge (e.g., "Most Popular") |
-
-#### SubscriptionState
-
-The active subscription state for the logged-in tenant.
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `currentPlan` | `Plan` | `ENTERPRISE` | Active plan tier |
-| `tenantId` | `string` | `"tenant-fibernms-demo"` | Tenant/organization identifier |
-| `organizationName` | `string` | Demo org name | Organization display name |
-| `deviceLimit` | `number` | `100,000` | Maximum devices on current plan |
-| `deviceUsed` | `number` | `47,823` | Current device count |
-| `apiQuota` | `number` | `1,000,000` | API calls per month allowed |
-| `apiUsed` | `number` | `284,750` | API calls consumed this cycle |
-| `expiryDate` | `number` | Now + 30 days | Unix timestamp (ms) of plan expiry |
-| `trialDaysLeft` | `number` | `0` | Days remaining in trial |
-| `isLicenseValid` | `boolean` | `true` | Whether the current license key is valid |
-| `licenseKey` | `string` | Enterprise demo key | Current license key string |
-
-#### BillingRecord
-
-A single entry in the billing history.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Unique billing record ID |
-| `date` | `number` | Unix timestamp (ms) |
-| `description` | `string` | Invoice/charge description |
-| `amount` | `number` | Amount in USD |
-| `currency` | `string` | ISO currency code (e.g., "USD") |
-| `status` | `string` | `"paid" or "pending" or "failed"` |
-
-#### TenantInfo
-
-A tenant entry in the multi-tenant management view.
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | Tenant ID |
-| `name` | `string` | Organization name |
-| `plan` | `Plan` | Tenant's subscription plan |
-| `adminEmail` | `string` | Tenant administrator email |
-| `deviceCount` | `number` | Current device count |
-| `deviceLimit` | `number` | Device limit for current plan |
-| `status` | `string` | `"active" or "paused" or "expired"` |
-| `createdAt` | `number` | Creation unix timestamp (ms) |
-
----
-
-## 11. Zustand Stores
-
-### 11.1 authStore.ts
-
-Manages authentication state with localStorage persistence via Zustand's `persist` middleware.
-
-**State fields:**
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `isAuthenticated` | `boolean` | `false` | Whether a user is currently logged in |
-| `currentUser` | `AuthUser or null` | `null` | The logged-in user profile |
-| `isSuperAdmin` | `boolean` | `false` | True when role is "superAdmin" |
-| `isLoading` | `boolean` | `false` | True during async login/register |
-| `error` | `string or null` | `null` | Last authentication error message |
-
-**AuthUser shape:**
-
-| Field | Type | Description |
-|---|---|---|
-| `id` | `string` | User ID |
-| `email` | `string` | Login email |
-| `firstName` | `string` | First name |
-| `lastName` | `string` | Last name |
-| `company` | `string` | Company name |
-| `plan` | `Plan` | Subscription plan |
-| `role` | `UserRole` | `"admin" or "operator" or "viewer" or "engineer" or "superAdmin"` |
-| `department` | `string` | Department name |
-| `country` | `string` | Country |
-
-**Actions:**
-
-| Action | Signature | Description |
-|---|---|---|
-| `login` | `(email, password) => Promise<boolean>` | Validates credentials, sets auth state, 800ms simulated delay |
-| `register` | `(data: RegisterData) => Promise<boolean>` | Creates new user in localStorage, logs in immediately |
-| `logout` | `() => void` | Clears all auth state |
-| `clearError` | `() => void` | Resets error field to null |
-
-**Persistence:** Fields persisted under key `"fibernms:auth"`: `isAuthenticated`, `currentUser`, `isSuperAdmin`.
-
-User accounts created via `register()` are stored under `"fibernms:users"` and survive page refreshes. Seed users always win on email conflict.
-
-### 11.2 networkStore.ts
-
-Manages all real-time network state — devices, routes, alerts, SLA, predictive intelligence, audit, and topology layers. **Not persisted** — initializes from mock data on every page load.
-
-**State fields:**
-
-| Field | Type | Default | Description |
-|---|---|---|---|
-| `devices` | `Device[]` | `mockDevices` | All network devices |
-| `routes` | `FiberRoute[]` | `mockRoutes` | All fiber routes |
-| `alerts` | `Alert[]` | `mockAlerts` | All generated alerts |
-| `selectedDeviceId` | `string or null` | `null` | Currently selected device on map |
-| `selectedRouteId` | `string or null` | `null` | Currently selected route |
-| `layerVisibility` | `LayerVisibility` | all true | Map layer toggle state |
-| `sidebarCollapsed` | `boolean` | `false` | Desktop sidebar collapse state |
-| `searchQuery` | `string` | `""` | Global search input value |
-| `slaRecords` | `SLARecord[]` | `mockSLARecords` | SLA data records |
-| `predictiveAlerts` | `PredictiveAlert[]` | `mockPredictiveAlerts` | AI predictive alerts |
-| `auditLogs` | `AuditLog[]` | `mockAuditLogs` | Network audit logs |
-| `capacityRecords` | `CapacityRecord[]` | `mockCapacityRecords` | Capacity utilization records |
-| `networkLayers` | `NetworkLayer[]` | L1 visible | Multi-layer topology config |
-| `commandPaletteOpen` | `boolean` | `false` | Global search palette state |
-| `simulationMode` | `boolean` | `false` | Live simulation toggle |
-| `activeLayer` | `"L1" or "L2" or "L3"` | `"L1"` | Active topology layer |
-| `mobileSearchOpen` | `boolean` | `false` | Mobile fullscreen search state |
-
-**Device actions:** `addDevice`, `updateDevice`, `deleteDevice`, `setSelectedDevice`
-
-**Route actions:** `addRoute`, `updateRoute`, `deleteRoute`, `setSelectedRoute`
-
-**Alert/Layer actions:** `resolveAlert`, `toggleLayer`, `toggleNetworkLayer`, `setActiveLayer`
-
-**Enterprise actions:** `setSLARecords`, `setPredictiveAlerts`, `resolvePredictiveAlert`, `setAuditLogs`, `setCapacityRecords`, `toggleCommandPalette`, `toggleSimulationMode`, `setMobileSearchOpen`
-
-### 11.3 subscriptionStore.ts
-
-Manages the current tenant's plan, quotas, license key, and expiry state. **Not persisted** — initializes to ENTERPRISE demo on every page load.
-
-**Initial state (ENTERPRISE demo):**
-
-```typescript
-{
-  currentPlan:      Plan.ENTERPRISE,
-  tenantId:         "tenant-fibernms-demo",
-  organizationName: "FiberNMS Demo — Tier-2 Telecom",
-  deviceLimit:      100_000,
-  deviceUsed:       47_823,
-  apiQuota:         1_000_000,
-  apiUsed:          284_750,
-  expiryDate:       Date.now() + 30_days_ms,
-  trialDaysLeft:    0,
-  isLicenseValid:   true,
-  licenseKey:       "FNMS-ENT-2026-DEMO-XXXXXX",
-}
-```
-
-**Actions:**
-
-| Action | Signature | Description |
-|---|---|---|
-| `setCurrentPlan(plan)` | `(Plan) => void` | Switches plan and updates device limit |
-| `updateUsage(deviceUsed, apiUsed)` | `(number, number) => void` | Updates usage counters |
-| `validateLicense(key)` | `(string) => boolean` | Validates key, activates matching plan if valid |
-| `setTenantId(id)` | `(string) => void` | Sets the active tenant ID |
-
----
-
-## 12. Mock Data Layer
-
-All data is generated in three modules under `src/frontend/src/data/`. Data is deterministic and scales per plan tier.
-
-### mockData.ts (Network Data)
-
-Powers all 14 NOC pages.
-
-| Dataset | Volume | Description |
-|---|---|---|
-| `mockDevices` | 1,000+ | OLTs, ONTs, Splitters, JJBs, Switches distributed across 20+ regions. ~70% active, ~15% warning, ~15% faulty |
-| `mockRoutes` | 100+ | GeoJSON polylines for backbone, distribution, and drop cables with distance and status |
-| `mockAlerts` | 500+ | CRITICAL/WARNING/INFO alerts with timestamps and device references |
-| `mockSLARecords` | 200+ | Per-customer SLA snapshots with latency, packet loss, uptime, and breach status |
-| `mockPredictiveAlerts` | 150+ | AI risk scores (0–100), failure type classifications, ETA estimates |
-| `mockAuditLogs` | 300+ | User action logs across device changes, workflow executions, system events |
-| `mockCapacityRecords` | 50+ | Per-route utilization with 12-month forecast arrays |
-
-Data volume slicing per plan:
-
-```typescript
-const planLimits = {
-  BASIC:        { devices: 100,  routes: 10,  alerts: 50  },
-  PROFESSIONAL: { devices: 500,  routes: 50,  alerts: 200 },
-  ENTERPRISE:   { devices: 2000, routes: 100, alerts: 500 },
-  ULTRA:        { devices: 10000, routes: 100, alerts: 500 },
-};
-```
-
-### superAdminMockData.ts (Super Admin Data)
-
-Only loaded when `role === "superAdmin"`.
-
-| Dataset | Volume | Description |
-|---|---|---|
-| `mockCompanies` | 54 | India (20), US (12), EU (10), APAC (8), MENA (4). Mixed plans and statuses |
-| `mockAdminUsers` | 1,000+ | Users distributed across all 54 companies with roles, login history, MFA flag, sessions |
-| `mockOrders` | 500+ | Monthly and yearly subscription orders. ~80% paid, ~12% pending, ~8% failed |
-| `mockInvoices` | 300+ | Tax invoices with GST/VAT/none tax breakdowns and line items |
-| `mockAuditEvents` | 500+ | Platform-level audit events across all tenants |
-| `mockSecurityEvents` | 200+ | Failed logins, suspicious IP activity, MFA bypass attempts |
-| `mockSystemAlerts` | 30+ | Platform-level outages, API degradations, error rate spikes |
-| `platformStats` | 1 | Aggregated PlatformStats object |
-| `revenueMetrics` | 1 | Full RevenueMetrics with 12-month trend |
-
-### billingMockData.ts (Financial Metrics)
-
-| Metric | Value | Description |
-|---|---|---|
-| MRR | $284,750 | Monthly Recurring Revenue |
-| ARR | $3,417,000 | Annual Recurring Revenue |
-| Churn Rate | 2.3% | Monthly churn |
-| Revenue by Plan | BASIC $8,100 / PRO $94,600 / ENT $138,050 / ULTRA $44,000 | Plan split |
-| Revenue by Region | India 42% / US 28% / EU 18% / APAC 8% / MENA 4% | Region split |
-
----
-
-## 13. Feature Gating System
-
-### How It Works
-
-Every premium feature is wrapped in either a `FeatureGate` component or evaluated via the `useFeature` hook. When the user's current plan does not include the required feature, the content is replaced with a blur/lock overlay and an upgrade CTA.
-
-### useFeature Hook
-
-```typescript
-import { useFeature } from "@/hooks/useFeature";
-import { FeatureFlag } from "@/types/subscription";
-
-// Returns: { hasAccess, requiredPlan, currentPlan, isHigherPlan }
-const { hasAccess, requiredPlan } = useFeature(FeatureFlag.SLA_DASHBOARD);
-
-if (!hasAccess) {
-  console.log(`Requires: ${requiredPlan}`); // "ENTERPRISE"
-}
-```
-
-### useSubscription Hook
-
-```typescript
-import { useSubscription } from "@/hooks/useFeature";
-
-const {
-  currentPlan,
-  planLabel,         // "Enterprise"
-  deviceUsed,
-  deviceLimit,
-  daysUntilExpiry,
-  isExpiringSoon,    // true if < 14 days left
-  isExpired,
-} = useSubscription();
-```
-
-### useDeviceQuota Hook
-
-```typescript
-import { useDeviceQuota } from "@/hooks/useFeature";
-
-const {
-  used,          // 47823
-  limit,         // 100000
-  percentUsed,   // 47.8
-  nearLimit,     // true if > 85%
-  atLimit,       // true if >= 100%
-} = useDeviceQuota();
-```
-
-### FeatureGate Component
-
-```tsx
-import { FeatureGate } from "@/components/subscription/FeatureGate";
-import { FeatureFlag } from "@/types/subscription";
-
-<FeatureGate feature={FeatureFlag.AI_INSIGHTS}>
-  {/* Blurred + locked on BASIC and PROFESSIONAL */}
-  <AIInsightsPanel />
-</FeatureGate>
-```
-
-When locked, renders `LockedFeatureOverlay` with: blurred content, lock icon, "Upgrade to [RequiredPlan]" button.
-
-### Feature to Plan Matrix
-
-| Feature Flag | BASIC | PRO | ENT | ULTRA |
-|---|---|---|---|---|
-| `DEVICE_CLUSTERING` | Yes | Yes | Yes | Yes |
-| `GIS_ADVANCED` | No | Yes | Yes | Yes |
-| `HISTORICAL_METRICS` | No | Yes | Yes | Yes |
-| `ADVANCED_ALERTING` | No | Yes | Yes | Yes |
-| `TOPOLOGY_VISUALIZATION` | No | Yes | Yes | Yes |
-| `REAL_TIME_MONITORING` | No | No | Yes | Yes |
-| `SLA_DASHBOARD` | No | No | Yes | Yes |
-| `PREDICTIVE_FAULTS` | No | No | Yes | Yes |
-| `AUDIT_LOGS` | No | No | Yes | Yes |
-| `CAPACITY_PLANNING` | No | No | Yes | Yes |
-| `WORKFLOW_AUTOMATION` | No | No | Yes | Yes |
-| `AI_INSIGHTS` | No | No | Yes | Yes |
-| `API_ACCESS` | No | No | Yes | Yes |
-| `INTEGRATIONS` | No | No | No | Yes |
-| `WHITE_LABELING` | No | No | No | Yes |
-| `MULTI_TENANT` | No | No | No | Yes |
-| `PLUGIN_SYSTEM` | No | No | No | Yes |
-| `DIGITAL_TWIN` | No | No | No | Yes |
-
-### Gating Components Reference
-
-| Component | File | Purpose |
-|---|---|---|
-| `FeatureGate` | `subscription/FeatureGate.tsx` | Wrapper rendering children or locked overlay |
-| `LockedFeatureOverlay` | `subscription/LockedFeatureOverlay.tsx` | Blur + lock icon + upgrade CTA |
-| `UpgradeCTA` | `subscription/UpgradeCTA.tsx` | Inline banner with upgrade button |
-| `PlanBadge` | `subscription/PlanBadge.tsx` | Color-coded plan tier chip |
-| `PlanComparisonModal` | `subscription/PlanComparisonModal.tsx` | Full 4-tier feature matrix modal |
-| `UsageProgressBar` | `subscription/UsageProgressBar.tsx` | Animated bar: green 0-80%, yellow 80-95%, red 95-100% |
-
----
-
-## 14. Authentication and Auth Flow
-
-### Login Flow
-
-```
-User visits any protected route
-        |
-        v
-TanStack Router beforeLoad
-checks context.isAuthenticated
-        |
-   NOT authenticated
-        |
-        v
-Redirect to /login
-
-User enters email + password
-        |
-        v
-useAuthStore.login(email, password)
-  - Sets isLoading: true
-  - Waits 800ms (simulated network delay)
-  - Reads stored users from localStorage ("fibernms:users")
-  - Merges with SEED_USERS (seed users win on conflict)
-  - Finds matching user (case-insensitive email + exact password)
-        |
-   No match found                 Match found
-        |                              |
-        v                              v
-  Sets error message          Sets isAuthenticated: true
-  "Invalid credentials"       Sets currentUser: profile
-                              Sets isSuperAdmin: role === "superAdmin"
-                              Persists to localStorage "fibernms:auth"
-                                        |
-                                        v
-                              Router rebuilds with new context
-                                        |
-                          ┌─────────────┴─────────────┐
-                    isSuperAdmin: false         isSuperAdmin: true
-                          |                            |
-                   Redirect to /               Redirect to /super-admin
-```
-
-### Registration Flow (5 Steps)
-
-1. **Personal Info** — First name, last name, email, phone
-2. **Organization** — Company name, industry, company size, job title, department, country
-3. **Network Planning** — Coverage area, estimated device count, current NMS, planned integrations
-4. **Plan Selection** — Choose BASIC / PROFESSIONAL / ENTERPRISE / ULTRA
-5. **Security** — Password (with strength indicator) + Terms acceptance
-
-On submit: checks for duplicate email, creates new StoredUser in localStorage, logs user in immediately (no email verification in mock mode).
-
-### Session Persistence
-
-```typescript
-persist(storeDefinition, {
-  name: "fibernms:auth",
-  partialize: (s) => ({
-    isAuthenticated: s.isAuthenticated,
-    currentUser:     s.currentUser,
-    isSuperAdmin:    s.isSuperAdmin,
-  }),
-})
-```
-
-Store hydrates synchronously from localStorage on page load. `useAuth().isInitializing` is always `false` — no loading flash.
-
-### Route Guards
-
-```typescript
-// Any authenticated user
-const protectedRoute = createRoute({
-  id: "protected",
-  beforeLoad: ({ context }) => {
-    if (!context.isAuthenticated) throw redirect({ to: "/login" });
-  },
-  component: Layout,
-});
-
-// Must be authenticated AND isSuperAdmin
-const superAdminRoute = createRoute({
-  id: "super-admin",
-  beforeLoad: ({ context }) => {
-    if (!context.isAuthenticated) throw redirect({ to: "/login" });
-    if (!context.isSuperAdmin) throw redirect({ to: "/" });
-  },
-  component: Layout,
-});
-
-// Redirect away if already logged in
-const loginRoute = createRoute({
-  path: "/login",
-  beforeLoad: ({ context }) => {
-    if (context.isAuthenticated) throw redirect({ to: "/" });
-  },
-});
-```
-
----
-
-## 15. Map Module
-
-Built on React Leaflet (v4) with Leaflet.js (v1.9) and CARTO Voyager open tiles.
-
-### Map Tile Configuration
-
-```typescript
-const CARTO_VOYAGER_URL =
-  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
-
-<TileLayer
-  url={CARTO_VOYAGER_URL}
-  attribution="© OpenStreetMap contributors © CARTO"
-  maxZoom={19}
-/>
-```
-
-CARTO Voyager = light, colorful, readable background. No API key required. Previous dark/black theme was replaced with Voyager to avoid visual clashing with neon device markers.
-
-### Device Markers
-
-Each device renders as a `DeviceMarker` with a custom Leaflet `DivIcon`:
-- Color-coded circle: green (active), orange (warning), red (faulty)
-- Pulsing animation ring for faulty/warning devices
-- DeviceIcon SVG inside the circle
-- Click sets `selectedDeviceId` in networkStore
-
-### Fiber Route Rendering
-
-Routes render as Leaflet `Polyline` components:
-
-```typescript
-const ROUTE_COLORS = {
-  backbone:     "#00e5ff", // cyan
-  distribution: "#448aff", // blue
-  drop:         "#69ff47", // green
-};
-```
-
-Route visibility controlled by `layerVisibility` in networkStore. Hidden routes are not rendered (not just CSS-hidden).
-
-### Draw Mode Workflow
-
-1. User clicks "Draw Route" in `DrawToolbar`
-2. `drawMode` state = `true`, cursor changes to crosshair
-3. Each map click appends a `{ lat, lng }` to `currentWaypoints`
-4. A preview Polyline follows the cursor
-5. User clicks "Finish" or presses Escape
-6. `RouteEditPanel` opens to name and categorize the route
-7. `networkStore.addRoute()` saves it
-8. New route appears on map immediately
-
-### Layer Toggle Panel
-
-`LayerTogglePanel` shows three toggles (backbone / distribution / drop) that update `layerVisibility` in networkStore.
-
-### Device Detail Panel
-
-- **Desktop:** Slides in as right sidebar panel
-- **Mobile:** Bottom `<Drawer>` (shadcn/ui Drawer component)
-
-Panel sections: device name, type, status badge; signal dBm, uptime %, ports; connected devices list; recent alerts; quick actions (Edit, Resolve, Open in Devices page).
-
-### Mobile Map Layout
-
-Map is constrained between sticky 56px header and 64px bottom nav:
-
-```typescript
-// Layout.tsx
-<main style={{
-  position: "fixed",
-  top:    "56px",
-  bottom: "64px",
-  left: 0,
-  right: 0,
-  height: "calc(100dvh - 56px - 64px)",
-}}>
-  <Outlet />
-</main>
-```
-
-`MapDashboard` passes `style={{ height: "100%" }}` to `<MapContainer>`. Map cannot overflow onto navigation elements.
-
----
-
-## 16. Topology Module
-
-The Topology page (`/topology`) provides two views toggled via tabs.
-
-### View 1: OLT Sections (Default)
-
-A card-based grid showing every OLT as its own section card (`OLTSectionCard`):
-- OLT name, region, status badge
-- Mini-tree visualization (`OLTSectionMiniTree`) showing connected Splitters and ONTs
-- Port count, active/faulty/warning stats
-- Signal strength and uptime metrics
-
-Each OLT card is independently rendered, allowing operators to scan all OLTs without navigating a complex graph.
-
-### View 2: Network Graph (Canvas)
-
-An SVG canvas in `TopologyGraph.tsx` with:
-
-**Node Types:**
-- OLT — Hexagon, neon cyan (#00e5ff), radius 24px
-- Splitter — Diamond, neon orange (#ff8c00), radius 16px
-- ONT — Circle, green (#69ff47), radius 12px
-
-**Animated Data-Flow:**
-- Dots travel along edges OLT → Splitter → ONT
-- Speed reflects simulated traffic load
-- Faulty paths show red dashed edges, no flow dots
-
-**Interaction:**
-- Hover → tooltip (name, status, signal, uptime)
-- Click → `TopologyNodePanel` drawer opens
-- `TopologyNodePanel` tabs: Overview, Alerts, Signal Chart, Uptime Ring
-
-**Layer Switching:**
-- L1 Physical — Fiber cable topology (OLT-Splitter-ONT hierarchy)
-- L2 Switching — VLAN topology (Switch nodes, trunk/access links)
-- L3 IP — Router/IP layer topology (BGP/OSPF adjacencies)
-
-**Minimap:** Inset corner minimap shows full canvas at reduced scale with viewport rectangle.
-
----
-
-## 17. Monitoring Module
-
-The Monitoring page (`/monitoring`) simulates real-time network telemetry using an event bus pattern.
-
-### Real-Time Simulation
-
-```typescript
-// lib/eventBus.ts
-import { eventBus } from "@/lib/eventBus";
-
-// Emit a new alert
-eventBus.emit("alert:new", {
-  deviceId: "OLT-IND-007",
-  severity: "critical",
-  message: "Signal loss on port 8",
-});
-
-// Subscribe in a component
-useEffect(() => {
-  const unsub = eventBus.on("alert:new", (event) => {
-    setAlerts(prev => [event, ...prev.slice(0, 99)]);
-  });
-  return unsub;
-}, []);
-```
-
-Every 5–15 seconds (randomized), the simulation emits: `alert:new`, `device:status`, `signal:update`.
-
-### Chart Components
-
-| Component | Chart Type | Description |
-|---|---|---|
-| `StatCard` | KPI card | Trend indicator (up/down arrow + delta %) |
-| `StatusPieChart` | Donut | Active/Warning/Faulty/Offline breakdown |
-| `SignalLineChart` | Line | Last 60 data points, rolling window |
-| `AlertsPanel` | List | Severity-colored scrollable alert feed |
-
-### Alert Severity Colors
-
-| Severity | Token | Color |
-|---|---|---|
-| `critical` | `--destructive` | Red ~#ff4040 |
-| `warning` | `--accent` | Orange ~#ff9a00 |
-| `info` | `--muted-foreground` | Grey |
-
----
-
-## 18. Subscription Tiers
-
-### Plan Comparison Table
+| BASIC | $9/mo | 100 | Small ISPs, trials |
+| PROFESSIONAL | $49/mo | 1,000 | Growing ISPs |
+| ENTERPRISE | $299/mo | 10,000 | Mid-size carriers |
+| ULTRA | $999/mo | Unlimited | Tier-1 carriers, multi-tenant |
+
+**Feature Flags per Plan:**
 
 | Feature | BASIC | PROFESSIONAL | ENTERPRISE | ULTRA |
 |---|---|---|---|---|
-| **Monthly Price** | $9/mo | $49/mo | $199/mo | $999/mo |
-| **Annual (per mo)** | $7/mo | $39/mo | $159/mo | $799/mo |
-| **Max Devices** | 1,000 | 10,000 | 100,000 | Unlimited |
-| **API Calls/mo** | 10,000 | 100,000 | 1,000,000 | Unlimited |
-| Device Clustering | Yes | Yes | Yes | Yes |
-| GIS Advanced Map | No | Yes | Yes | Yes |
-| Historical Metrics | No | Yes | Yes | Yes |
-| Advanced Alerting | No | Yes | Yes | Yes |
-| Topology Visualization | No | Yes | Yes | Yes |
-| Real-Time Monitoring | No | No | Yes | Yes |
-| SLA Dashboard | No | No | Yes | Yes |
-| Predictive Fault AI | No | No | Yes | Yes |
-| Audit Logs | No | No | Yes | Yes |
+| Advanced Monitoring | Yes | Yes | Yes | Yes |
+| SLA Dashboard | No | Yes | Yes | Yes |
+| Predictive Intelligence | No | No | Yes | Yes |
 | Capacity Planning | No | No | Yes | Yes |
-| Workflow Automation | No | No | Yes | Yes |
-| AI Insights | No | No | Yes | Yes |
+| Workflow Automation | No | Yes | Yes | Yes |
+| AI Assistant | No | Yes | Yes | Yes |
+| Custom Branding | No | No | Yes | Yes |
 | API Access | No | No | Yes | Yes |
-| Integrations | No | No | No | Yes |
-| White-Labeling | No | No | No | Yes |
 | Multi-Tenant | No | No | No | Yes |
-| Plugin System | No | No | No | Yes |
+| White Labeling | No | No | No | Yes |
 | Digital Twin | No | No | No | Yes |
-| **Target** | Starter ISP | Growing ISP | Tier-2 Telecom | Tier-1 Global |
-| **Badge** | — | Most Popular | Best Value | Carrier Grade |
+| Audit Logs | No | Yes | Yes | Yes |
+| Advanced Analytics | No | No | Yes | Yes |
+| Plugin Marketplace | No | No | No | Yes |
+| Priority Support | No | No | Yes | Yes |
+| Export Tools | No | Yes | Yes | Yes |
+| Integrations | No | Yes | Yes | Yes |
+| Dashboard Builder | No | No | Yes | Yes |
+| Advanced Security | No | No | Yes | Yes |
 
-### Switching the Demo Plan
+---
+
+#### 7.6.3 Usage Analytics
+
+**Route:** `/usage`  
+**Files:** `src/pages/UsageAnalytics.tsx`
+
+Tenant-level usage tracking over time.
+
+**Charts:**
+- Device count growth trend (line chart, 12 months)
+- Alert volume trend (bar chart)
+- API call usage vs quota (area chart)
+- Data throughput (Gbps/day, area chart)
+- Storage usage over time
+
+---
+
+#### 7.6.4 Integrations
+
+**Route:** `/integrations`  
+**Files:** `src/pages/Integrations.tsx`  
+**Plan gate:** ENTERPRISE+
+
+API keys and webhook management.
+
+**Sections:**
+- API key list: Key name, created date, last used, permissions (read/write/admin), revoke button
+- Generate new API key: name + permission scopes
+- Webhook endpoints: URL, events subscribed (device.down, alert.created, sla.breach), status (Active/Inactive), test button
+- Integration catalog: Slack, PagerDuty, Jira, ServiceNow, Grafana, Prometheus — each with connect/disconnect status
+
+---
+
+#### 7.6.5 Branding
+
+**Route:** `/settings/branding`  
+**Files:** `src/pages/Branding.tsx`  
+**Plan gate:** ENTERPRISE+
+
+White-label customization for tenant deployment.
+
+**Configurable:**
+- Platform name (replaces "FiberNMS" in UI)
+- Logo upload (light + dark variants)
+- Primary color (hex picker)
+- Accent color
+- Favicon upload
+- Custom domain configuration
+- Email footer branding
+- Login page background image
+
+---
+
+#### 7.6.6 License Management
+
+**Route:** `/settings/license`  
+**Files:** `src/pages/License.tsx`
+
+License key validation and plan activation.
+
+**Features:**
+- License key input field
+- Validation against 4 valid demo keys in `subscriptionStore`
+- On valid key: updates plan, resets quota, shows success animation
+- Shows current plan, expiry, licensed device limit, feature list
+- License history log
+
+---
+
+#### 7.6.7 Multi-Tenant Manager
+
+**Route:** `/tenants`  
+**Files:** `src/pages/Tenants.tsx`  
+**Plan gate:** ULTRA only
+
+Manage multiple sub-tenants from a single ULTRA account.
+
+**Features:**
+- Tenant list: Name, plan, device count, status, last active
+- Add new tenant: Name, contact email, plan assignment
+- Tenant switcher dropdown (also in Navbar for quick context switching)
+- Per-tenant branding customization
+- Usage isolation: each tenant has its own quota counters
+
+---
+
+### 7.7 Super Admin System
+
+> Accessible only to users with `role = "superAdmin"`. Login with `superadmin@fibernms.com / SuperAdmin@123`.
+
+#### 7.7.1 Super Admin Dashboard
+
+**Route:** `/super-admin`  
+**Files:** `src/pages/admin/SuperAdminDashboard.tsx`
+
+Global platform overview for the SaaS operator.
+
+**KPI Cards:**
+- Total Companies (54 demo companies)
+- Total Users (1,000+)
+- Monthly Recurring Revenue (MRR)
+- Active Subscriptions
+- Platform Uptime %
+- New signups (last 30 days)
+
+**Charts:**
+- Revenue trend (last 12 months, area chart)
+- Signups vs Churn (grouped bar chart)
+- Plan distribution (pie chart: BASIC/PRO/ENTERPRISE/ULTRA)
+- Geographic distribution (companies by region)
+
+**Mobile:** KPI cards stacked 2x2, charts in scrollable containers
+
+---
+
+#### 7.7.2 Company Management
+
+**Route:** `/super-admin/companies`  
+**Files:** `src/pages/admin/CompanyManagement.tsx`, `src/pages/admin/CompanyDetail.tsx`
+
+Full CRUD management for all tenant companies.
+
+**Company Table Columns:**
+- Company name + logo
+- Plan badge
+- Status (Active / Suspended / Trial)
+- Device count
+- Monthly Revenue
+- Region
+- Created date
+- Actions: View, Edit Plan, Suspend, Delete
+
+**Mobile:** Card-based view with company name, plan badge, status pill, and quick action icons.
+
+**Company Detail Page** (`/super-admin/companies/:companyId`):
+- Profile header: name, logo, contact, industry, region
+- Tabs: Overview | Users | Devices | Billing | Audit Logs | Settings
+- Overview: KPI cards (device count, active users, MRR, SLA score), usage progress bars, activity timeline
+- Users tab: list of all users in this company
+- Billing tab: invoice history, next payment, plan change history
+- Audit tab: all events from this company's users
+
+---
+
+#### 7.7.3 Global User Management
+
+**Route:** `/super-admin/users`  
+**Files:** `src/pages/admin/GlobalUserManagement.tsx`
+
+Platform-wide user management across all companies.
+
+**Features:**
+- 1000+ user table with virtual scrolling
+- Filter by company, role, status (Active/Suspended/Pending)
+- Columns: Name, Email, Role, Company, Last Login, MFA Status, Session count, Actions
+- Session tracking: View active sessions, force logout
+- Bulk import: CSV upload with column mapping
+- Invite by email: single or bulk invite with role assignment
+- User status management: Activate, Suspend, Delete
+
+---
+
+#### 7.7.4 Global Billing
+
+**Route:** `/super-admin/billing`  
+**Files:** `src/pages/admin/GlobalBilling.tsx`
+
+Platform revenue overview and financial management.
+
+**Metrics:**
+- MRR (Monthly Recurring Revenue)
+- ARR (Annual Recurring Revenue)
+- Churn rate % (monthly)
+- Average Revenue Per User (ARPU)
+- Lifetime Value (LTV) estimate
+- Revenue by plan tier
+
+**Charts:**
+- MRR growth trend (12 months, area chart)
+- Churn analysis (bar chart)
+- Revenue breakdown by plan (stacked bar)
+- New vs Expansion vs Churned MRR (waterfall concept)
+
+---
+
+#### 7.7.5 Orders & Invoices
+
+**Route:** `/super-admin/orders`  
+**Files:** `src/pages/admin/OrdersInvoices.tsx`
+
+Complete order and invoice management.
+
+**Order fields:**
+- Order ID, Company, Plan, Quantity, Amount, Status (Active/Cancelled/Expired), Start/End date, Proration details
+
+**Invoice fields:**
+- Invoice number, Company, Issue date, Due date, Amount, Tax, Total, Status (Paid/Pending/Overdue)
+- Line items: Plan subscription, setup fee, overage charges, credits
+- PDF export per invoice
+- Bulk export: all invoices as ZIP
+
+**Filters:** Date range, company, status, plan
+
+---
+
+#### 7.7.6 Platform Audit
+
+**Route:** `/super-admin/audit`  
+**Files:** `src/pages/admin/PlatformAudit.tsx`
+
+Global audit trail across all tenants and admin actions.
+
+Identical fields to the tenant-level Audit Logs but shows events from ALL companies plus super admin actions (plan changes, user suspensions, system config updates).
+
+---
+
+#### 7.7.7 Access Control
+
+**Route:** `/super-admin/access`  
+**Files:** `src/pages/admin/AccessControl.tsx`
+
+RBAC + ABAC permission matrix management.
+
+**Features:**
+- Permission matrix: Rows = roles, Columns = resources/actions — toggle individual cells
+- Custom role creation: Name, description, inherit from existing role
+- ABAC rule builder: "Allow [role] to [action] [resource] WHERE [attribute] = [value]"
+- Region-level device access scoping
+- Permission export/import as JSON
+
+---
+
+#### 7.7.8 System Alerts
+
+**Route:** `/super-admin/alerts`  
+**Files:** `src/pages/admin/SystemAlerts.tsx`
+
+Platform-level infrastructure and system health alerts.
+
+**Alert types:**
+- High API latency
+- Canister memory approaching limit
+- Failed payment processing
+- Unusual login patterns detected
+- Certificate expiry warnings
+- Backup job failures
+
+**Features:**
+- Alert feed with severity, timestamp, affected component, description
+- Acknowledge / Resolve / Escalate actions
+- Alert history with resolution notes
+
+---
+
+#### 7.7.9 Security Dashboard
+
+**Route:** `/super-admin/security`  
+**Files:** `src/pages/admin/SecurityDashboard.tsx`
+
+Platform security monitoring and threat detection.
+
+**Sections:**
+- Login attempt heatmap (by hour of day x day of week)
+- Failed login trend chart
+- IP geolocation map of login origins
+- Suspicious activity feed: multiple failed logins, unusual access times, new device logins
+- MFA status overview: % of users with MFA enabled per company
+- Active session count trend
+- Force logout all sessions (emergency button)
+
+---
+
+#### 7.7.10 Global Analytics
+
+**Route:** `/super-admin/analytics`  
+**Files:** `src/pages/admin/GlobalAnalytics.tsx`
+
+Advanced platform-wide analytics for business intelligence.
+
+**Charts:**
+- Usage heatmap by company (device count x time)
+- Churn prediction analysis (risk score per company)
+- Device count growth projections (12 months)
+- Feature adoption rates by plan tier
+- Geographic expansion map (companies by country/region)
+- Support ticket volume trend
+
+---
+
+#### 7.7.11 Tenant Admin Panel
+
+**Route:** `/tenant-admin/:companyId`  
+**Files:** `src/pages/admin/TenantAdminPanel.tsx`
+
+Per-company admin view accessible by Tenant Admins (within their own company) and Super Admins (for any company).
+
+**Tabs:**
+- Overview: company KPIs, usage gauges
+- Users: company user list with invite/manage
+- Billing: plan, invoices, usage
+- Workflows: company-level automations
+- Network Links: fiber assets in this company
+- Settings: contact info, notification preferences
+
+---
+
+### 7.8 In-App Documentation
+
+**Route:** `/docs`  
+**Files:** `src/pages/Docs.tsx`
+
+Renders this README.md directly inside the application.
+
+**Features:**
+- Fetches README.md from the project root at runtime
+- Markdown renderer with syntax-highlighted code blocks
+- Clickable table of contents (auto-generated from headings)
+- Styled tables, badges, and callout blocks matching the app theme
+- Dark/light mode aware (inherits app theme)
+- Smooth scroll to anchor links
+
+---
+
+### 7.9 PWA & Mobile
+
+**Files:** `src/frontend/index.html`, `src/frontend/public/manifest.json`, `src/frontend/public/sw.js`
+
+FiberNMS is installable as a Progressive Web App on any device.
+
+**PWA Manifest fields:**
+- `name`: FiberNMS
+- `short_name`: FiberNMS
+- `display`: `standalone` (fullscreen app, no browser chrome)
+- `start_url`: `/`
+- `theme_color`: matches dark theme primary color
+- `background_color`: dark background
+- `icons`: multiple sizes (192x192, 512x512) for home screen and splash screen
+
+**Service Worker capabilities:**
+- Offline caching of app shell (HTML, JS, CSS, fonts)
+- Background sync for queued actions
+- Cache-first strategy for static assets
+- Network-first strategy for API calls
+
+**Install Banner:**
+- Appears automatically on supported mobile browsers after 2 visits
+- "Add FiberNMS to Home Screen" prompt
+- Custom install button in the mobile header for manual install
+
+---
+
+## 8. Data Models & Fields
+
+### Device
 
 ```typescript
-// Method 1: License key via the UI (/settings/license)
-// Enter a demo key from the table in Section 6
+interface Device {
+  id: string;                    // Unique identifier (e.g., "olt-001")
+  name: string;                  // Display name (e.g., "OLT-Core-North-01")
+  type: DeviceType;              // "OLT" | "ONT" | "Splitter" | "Coupler" | "Router" | "JJB" | "Switch"
+  status: DeviceStatus;          // "active" | "warning" | "faulty" | "offline" | "maintenance"
+  lat: number;                   // GPS latitude
+  lng: number;                   // GPS longitude
+  region: string;                // e.g., "North", "South", "East", "West", "Central"
+  txPower: number;               // Transmit power in dBm
+  rxPower: number;               // Receive power in dBm
+  uptime: number;                // Uptime percentage (0-100)
+  lastSeen: string;              // ISO timestamp of last heartbeat
+  parentId?: string;             // Parent device ID (for tree structure)
+  description?: string;          // Free-text description
+  createdAt: string;             // ISO creation timestamp
+}
+```
 
-// Method 2: Store action (developer console)
-import { useSubscriptionStore } from "@/store/subscriptionStore";
-useSubscriptionStore.getState().setCurrentPlan("ULTRA");
+### FiberRoute
 
-// Method 3: Change the initial state (code change)
-// src/frontend/src/store/subscriptionStore.ts
-const initialState = { currentPlan: Plan.PROFESSIONAL, ... };
+```typescript
+interface FiberRoute {
+  id: string;                    // Unique route identifier
+  name: string;                  // Route name (e.g., "Backbone-North-01")
+  type: RouteType;               // "backbone" | "distribution" | "drop" | "feeder"
+  status: "active" | "degraded" | "cut" | "maintenance";
+  fromDeviceId: string;          // Source device ID
+  toDeviceId: string;            // Destination device ID
+  coordinates: [number, number][]; // Array of [lat, lng] waypoints
+  lengthKm: number;              // Total route length in kilometers
+  fiberCount: number;            // Number of fiber strands
+  attenuation: number;           // Signal attenuation in dB/km
+  installedDate: string;         // ISO date
+  lastInspected: string;         // ISO date of last inspection
+}
+```
+
+### Alert
+
+```typescript
+interface Alert {
+  id: string;
+  severity: "critical" | "high" | "medium" | "low" | "info";
+  title: string;                 // Short summary (e.g., "OLT Signal Degraded")
+  message: string;               // Detailed description
+  deviceId: string;              // Related device ID
+  deviceName: string;            // Denormalized device name
+  region: string;
+  timestamp: string;             // ISO timestamp
+  resolved: boolean;             // Whether alert has been acknowledged
+  resolvedAt?: string;           // ISO timestamp of resolution
+  resolvedBy?: string;           // User email who resolved it
+}
+```
+
+### SLARecord
+
+```typescript
+interface SLARecord {
+  id: string;
+  customerId: string;
+  customerName: string;
+  circuitId: string;
+  region: string;
+  targetUptime: number;          // e.g., 99.9 (percentage)
+  actualUptime: number;          // Measured uptime this period (percentage)
+  mttr: number;                  // Mean Time to Repair (minutes)
+  mtbf: number;                  // Mean Time Between Failures (hours)
+  breachCount: number;           // Number of SLA breaches this period
+  penaltyAmount: number;         // Penalty exposure in USD
+  period: string;                // e.g., "2026-04" (YYYY-MM)
+  status: "met" | "at_risk" | "breached";
+}
+```
+
+### PredictiveAlert
+
+```typescript
+interface PredictiveAlert {
+  id: string;
+  deviceId: string;
+  deviceName: string;
+  riskScore: number;             // 0-100 (higher = more likely to fail)
+  predictedFailureHours: number; // Hours until predicted failure
+  anomalyType: string;           // e.g., "signal_degradation" | "temperature_spike" | "ber_increase"
+  confidence: number;            // Model confidence 0-1
+  recommendedAction: string;     // e.g., "Schedule preventive maintenance within 48h"
+  createdAt: string;
+}
+```
+
+### AuditLog
+
+```typescript
+interface AuditLog {
+  id: string;
+  timestamp: string;
+  actor: string;                 // User email
+  actorRole: string;             // Role at time of action
+  action: "CREATE" | "UPDATE" | "DELETE" | "LOGIN" | "LOGOUT" | "EXPORT" | "CONFIG_CHANGE";
+  resourceType: string;          // "Device" | "Route" | "User" | "Alert" | "Workflow" | "Subscription"
+  resourceId: string;
+  resourceName: string;
+  before?: Record<string, unknown>; // State before change
+  after?: Record<string, unknown>;  // State after change
+  ipAddress: string;
+  sessionId: string;
+  description: string;           // Human-readable summary
+}
+```
+
+### CapacityRecord
+
+```typescript
+interface CapacityRecord {
+  id: string;
+  region: string;
+  oltId: string;
+  oltName: string;
+  totalPorts: number;
+  usedPorts: number;
+  utilizationPercent: number;    // usedPorts / totalPorts * 100
+  forecastedUtilization30d: number;   // Projected 30-day utilization
+  forecastedUtilization90d: number;   // Projected 90-day utilization
+  daysToExhaustion: number;      // Estimated days until 100% utilization
+  recordedAt: string;
+}
+```
+
+### Company (Super Admin)
+
+```typescript
+interface Company {
+  id: string;
+  name: string;
+  logo?: string;                 // URL to logo image
+  domain: string;                // e.g., "acme-isp.com"
+  industry: string;              // e.g., "ISP", "Carrier", "Enterprise"
+  country: string;
+  region: string;
+  contactName: string;
+  contactEmail: string;
+  plan: Plan;                    // "BASIC" | "PROFESSIONAL" | "ENTERPRISE" | "ULTRA"
+  status: "active" | "suspended" | "trial" | "cancelled";
+  deviceCount: number;
+  userCount: number;
+  mrr: number;                   // Monthly Recurring Revenue (USD)
+  createdAt: string;
+  trialEndsAt?: string;
+  subscriptionStart: string;
+  subscriptionEnd: string;
+  notes?: string;
+}
+```
+
+### AdminUser (Super Admin)
+
+```typescript
+interface AdminUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;                // "superAdmin" | "admin" | "engineer" | "operator" | "viewer"
+  companyId: string;
+  companyName: string;
+  status: "active" | "suspended" | "pending" | "invited";
+  mfaEnabled: boolean;
+  lastLogin: string;
+  loginCount: number;
+  sessionCount: number;          // Active sessions
+  createdAt: string;
+  invitedBy?: string;
+}
+```
+
+### Order
+
+```typescript
+interface Order {
+  id: string;
+  companyId: string;
+  companyName: string;
+  plan: Plan;
+  quantity: number;              // Number of seats/licenses
+  unitPrice: number;
+  totalAmount: number;
+  status: "active" | "cancelled" | "expired" | "pending";
+  startDate: string;
+  endDate: string;
+  prorationAmount?: number;      // Credit/debit from mid-cycle changes
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+### Invoice
+
+```typescript
+interface Invoice {
+  id: string;
+  invoiceNumber: string;         // e.g., "INV-2026-001234"
+  companyId: string;
+  companyName: string;
+  orderId: string;
+  issueDate: string;
+  dueDate: string;
+  lineItems: InvoiceLineItem[];
+  subtotal: number;
+  taxRate: number;               // e.g., 0.20 (20%)
+  taxAmount: number;
+  total: number;
+  status: "paid" | "pending" | "overdue" | "draft";
+  paidAt?: string;
+  paymentMethod?: string;
+}
+
+interface InvoiceLineItem {
+  description: string;           // e.g., "ENTERPRISE Plan - April 2026"
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  type: "subscription" | "setup" | "overage" | "credit" | "tax";
+}
+```
+
+### Fault Visualization Nodes
+
+```typescript
+// Used exclusively by the Fault Map module
+interface FaultNode {
+  id: string;
+  type: "OLT" | "Splitter" | "Joint" | "customer";
+  name: string;
+  lat: number;
+  lng: number;
+  status: "active" | "down" | "affected";
+  customerCount?: number;        // Only for customer-type nodes
+}
+
+interface FaultLink {
+  id: string;
+  from_node: string;             // Source node ID
+  to_node: string;               // Destination node ID
+  status: "active" | "cut" | "degraded";
+}
 ```
 
 ---
 
-## 19. Super Admin System
+## 9. State Management (Zustand)
 
-The Super Admin system is a second tier of the platform, accessible only to users with `role: "superAdmin"`. All routes use the `/super-admin` path prefix and are protected by a separate `beforeLoad` guard.
+### `authStore` — Authentication & Session
 
-### Access Flow
+```typescript
+// src/store/authStore.ts
+{
+  currentUser: User | null;
+  isAuthenticated: boolean;
 
-```
-Login: superadmin@fibernms.com / SuperAdmin@123
-    |
-    v
-authStore sets isSuperAdmin: true
-    |
-    v
-Router context: { isSuperAdmin: true }
-    |
-    v
-superAdminRoute.beforeLoad passes (not rejected)
-    |
-    v
-Redirect to /super-admin
-    |
-    v
-Sidebar shows "SUPER ADMIN" section with 12 admin pages
+  // Actions
+  login(email: string, password: string): boolean;
+  register(userData: RegisterPayload): void;
+  logout(): void;
+  updateUser(updates: Partial<User>): void;
+}
 ```
 
-### Company Lifecycle
-
-```
-NEW SIGNUP
-    |
-    v
-  TRIAL  <------- (re-trial or re-activate) ------+
-    |                                              |
-    | (trial expires or manual upgrade)            |
-    v                                              |
-  ACTIVE <---- (re-activation after payment) -----+
-    |                                              |
-    | (payment failure / admin suspension)         |
-    v                                              |
-SUSPENDED ---- (re-activate) ------------------->+
-    |
-    | (non-renewal / admin action)
-    v
-  EXPIRED ---- (plan purchase) ------------------>+
-    |
-    | (soft delete by super admin)
-    v
-  DELETED (isSoftDeleted: true, data retained in DB)
-```
-
-### Per-Page Feature Summary
-
-**`/super-admin` — Global Dashboard**
-- KPI cards: Total Companies, Active Subscriptions, MRR, ARR, Total Devices, System Uptime %
-- Revenue trend chart (12 months, Recharts AreaChart)
-- Plan distribution donut chart
-- Recent company signups timeline
-
-**`/super-admin/companies` — Company Registry**
-- Table/card list of all 54 companies
-- Columns: Name, Domain, Region, Plan badge, Status badge, Devices Used/Limit, MRR
-- Filters: Region, Plan, Status, Search
-- Actions: Edit, Suspend/Activate, View Detail, Soft Delete
-- Create New Company modal
-
-**`/super-admin/companies/:companyId` — Company Detail**
-- Company header: logo, name, domain, region, plan, status
-- Usage cards with progress bars: Devices, API calls, Data, Alerts
-- Active Users list
-- Billing History table (last 12 invoices)
-- Company Activity timeline
-- Admin actions: Change Plan, Suspend, Force Logout All, Delete
-
-**`/super-admin/usage` — Usage and Limits**
-- Per-company usage progress bars in 2-column grid
-- Color-coded: green < 80%, yellow 80–95%, red > 95%
-- Summary: companies at >90% usage, companies at limit
-
-**`/super-admin/users` — Global User Management**
-- Virtualized table of 1000+ users
-- Filters: Company, Role, Status; Search by name or email
-- Actions: Invite user, Bulk import CSV, View sessions, Force logout, Disable user
-
-**`/super-admin/billing` — Global Billing**
-- Revenue metrics: MRR, ARR, Churn Rate, ARPU
-- Monthly revenue area chart (12 months)
-- Revenue by plan donut, revenue by region bar chart
-- Recent invoices with download links
-
-**`/super-admin/orders` — Orders and Invoices**
-- Full orders table with status filters
-- Invoice viewer with PDF download
-- Tax breakdown: GST/VAT/None by region
-- Subscription lifecycle timeline
-
-**`/super-admin/audit` — Platform Audit**
-- Chronological timeline of all cross-tenant events
-- Color-coded by category (user/billing/device/company/auth)
-- Filters: Company, User, Action type, Severity, Date range
-- CSV export
-
-**`/super-admin/access` — Access Control**
-- RBAC matrix: Roles x Permissions with toggle checkboxes
-- ABAC section: Attribute rules (region-based, device-level)
-- Permission groups: Read, Write, Delete, Admin, Super
-
-**`/super-admin/alerts` — System Alerts**
-- Platform-level alert cards with severity, affected companies, status
-- Categories: Outage, Error Rate, API, Resource
-- Resolve/Acknowledge actions, alert history timeline
-
-**`/super-admin/security` — Security Dashboard**
-- Login attempts chart (24h, success vs failed)
-- IP Tracking table: IP, User/Company, Success/Fail counts, Geo, Blocked status
-- Suspicious Activity list with severity
-- MFA Status table per user
-- Block IP action
-
-**`/super-admin/analytics` — Global Analytics**
-- Top customers by MRR with growth indicators
-- Device growth trend chart (90-day per region)
-- Alert volume heatmap (hour x day of week grid)
-- Churn analysis chart
-
-**`/tenant-admin/:companyId` — Tenant Admin Panel**
-- Accessible to both Super Admins and Company Admins (for their own company)
-- Internal user management, company usage overview, billing history
-- Workflow configuration, quick links to network dashboards
+Persisted to `localStorage` under key `fibernms-auth`. Contains 3 seed users inline. Role determines which navigation sections are visible.
 
 ---
 
-## 20. Design System
+### `subscriptionStore` — Plan & Quota
 
-### OKLCH Color Tokens
+```typescript
+// src/store/subscriptionStore.ts
+{
+  plan: Plan;                    // "BASIC" | "PROFESSIONAL" | "ENTERPRISE" | "ULTRA"
+  deviceUsed: number;
+  deviceLimit: number;           // -1 = unlimited (ULTRA)
+  apiCallsUsed: number;
+  apiCallsQuota: number;
+  expiryDate: string;
+  licenseKey: string | null;
+  isLicenseValid: boolean;
 
-All colors defined as OKLCH values in `src/frontend/src/index.css`. Both light and dark themes are supported.
+  // Actions
+  setPlan(plan: Plan): void;
+  validateLicenseKey(key: string): boolean;
+  incrementDeviceUsage(): void;
+  resetQuota(): void;
+}
+```
 
-#### Dark Theme Tokens
+Demo plan: `ENTERPRISE`. Valid license keys are stored in the store for demo activation.
 
-| Token | OKLCH | Usage |
+---
+
+### `networkStore` — Devices, Routes, Alerts
+
+```typescript
+// src/store/networkStore.ts
+{
+  devices: Device[];
+  routes: FiberRoute[];
+  alerts: Alert[];
+  slaRecords: SLARecord[];
+  predictiveAlerts: PredictiveAlert[];
+  auditLogs: AuditLog[];
+  capacityRecords: CapacityRecord[];
+  layerVisibility: LayerVisibility;
+  undoHistory: NetworkSnapshot[];  // Max 20 snapshots
+
+  // Device actions
+  addDevice(device: Device): void;
+  updateDevice(id: string, updates: Partial<Device>): void;
+  deleteDevice(id: string): void;
+  deleteDeviceWithChildren(id: string): void;  // Cascade BFS delete
+
+  // Route actions
+  addRoute(route: FiberRoute): void;
+  updateRoute(id: string, updates: Partial<FiberRoute>): void;
+  deleteRoute(id: string): void;
+
+  // Alert actions
+  resolveAlert(id: string, resolvedBy: string): void;
+
+  // Undo
+  undo(): void;
+
+  // Layer visibility
+  toggleLayer(layer: keyof LayerVisibility): void;
+}
+```
+
+Not persisted to localStorage (reloads from `mockData.ts` on every page load to ensure a clean demo state). The undo history stores full deep clones of `{ devices, routes }` as snapshots.
+
+---
+
+## 10. Mock Data Layer
+
+All data is deterministic — generated from a Mulberry32 PRNG seeded with `42`, ensuring consistent device names, coordinates, and signal values across reloads.
+
+### `mockData.ts`
+
+| Dataset | Count | Generation method |
 |---|---|---|
-| `--background` | `0.11 0.005 260` | Page background (~#191a21) |
-| `--foreground` | `0.92 0.005 260` | Body text (~#e8e9f0) |
-| `--card` | `0.155 0.008 265` | Card surfaces (~#22232d) |
-| `--muted` | `0.22 0.005 260` | Muted backgrounds (~#30313d) |
-| `--muted-foreground` | `0.52 0.008 260` | Subtle text (~#7f8099) |
-| `--primary` | `0.72 0.22 210` | Neon cyan CTAs, active nav (~#00d4ff) |
-| `--accent` | `0.68 0.25 55` | Neon orange warnings, highlights (~#ff9a00) |
-| `--destructive` | `0.62 0.28 22` | Neon red errors, critical alerts (~#ff4040) |
-| `--border` | `0.26 0.01 265` | Borders and dividers (~#383a47) |
-| `--admin-primary` | `0.65 0.2 280` | Violet Super Admin accents (~#9b6bff) |
+| Devices | 1,000+ | PRNG-distributed across 5 regions, 7 types |
+| FiberRoutes | 100+ | Connecting adjacent devices in topology tree |
+| Alerts | 500+ | Mixed severities, some resolved |
+| SLARecords | 200+ | Per customer circuit, realistic uptime values |
+| PredictiveAlerts | 150+ | Risk scores 0-100, anomaly types |
+| AuditLogs | 300+ | Mixed action types, all roles |
+| CapacityRecords | 50+ | Per OLT, utilization trends |
 
-#### Risk Scale Tokens
+### `superAdminMockData.ts`
 
-| Token | OKLCH | Threshold | Usage |
-|---|---|---|---|
-| `--risk-ok` / `--risk-low` | `0.62 0.22 142` | 0–30 | Green — healthy |
-| `--risk-medium` | `0.7 0.25 55` | 31–60 | Yellow-orange |
-| `--risk-high` | `0.65 0.25 40` | 61–80 | Orange |
-| `--risk-critical` | `0.62 0.28 22` | 81–100 | Red |
+| Dataset | Count |
+|---|---|
+| Companies | 54 (across 5 regions, all 4 plan tiers) |
+| Users | 1,000+ (2-50 users per company) |
+| Orders | 500+ (active, cancelled, expired) |
+| Invoices | 300+ (paid, pending, overdue) |
+| Audit Events | 500+ (platform-wide, all action types) |
+| Security Events | 200+ (login attempts, suspicious activity) |
+| System Alerts | 30+ (infra alerts, certificate warnings) |
+| Revenue Metrics | 12 months of MRR/ARR/churn data |
 
-#### Capacity Utilization Tokens
+### `faultMockData.ts`
 
-| Token | Threshold | Color |
+Smaller dataset representing a realistic ISP topology for the fault visualization module:
+- 1 OLT (root)
+- 5 Splitters (second level)
+- 20 Joint nodes (distribution)
+- 200 Customer nodes (leaf)
+- 230 fiber links connecting the tree
+
+### `billingMockData.ts`
+
+- Monthly MRR/ARR figures (12 months)
+- Churn rates, expansion MRR, new MRR
+- Revenue by plan tier breakdown
+- Tax details by jurisdiction
+- Invoice templates
+
+---
+
+## 11. Route Table
+
+### Public Routes
+
+| Path | Page | Description |
 |---|---|---|
-| `--capacity-healthy` | 0–79% | Green |
-| `--capacity-warning` | 80–94% | Yellow |
-| `--capacity-critical` | 95–100% | Red |
+| `/login` | Login | Username/password login |
+| `/register` | Register | 5-step enterprise registration |
+
+### Core NOC Routes (all roles)
+
+| Path | Page | Description |
+|---|---|---|
+| `/` | MapDashboard | GIS fiber network map |
+| `/fault-map` | FaultVisualizationPage | Leaflet fault visualization |
+| `/devices` | Devices | Device CRUD table |
+| `/topology` | Topology | Multi-layer network graph |
+| `/monitoring` | Monitoring | Real-time alerts and metrics |
+| `/tools` | Tools | Power calculator, OTDR |
+| `/analytics` | Analytics | Network performance charts |
+| `/workflows` | Workflows | Visual automation builder |
+| `/ai` | AIAssistant | Natural language NOC copilot |
+
+### Enterprise Routes (PROFESSIONAL+ plan)
+
+| Path | Page | Plan gate |
+|---|---|---|
+| `/sla` | SLADashboard | PROFESSIONAL+ |
+| `/predictive` | PredictiveIntelligence | ENTERPRISE+ |
+| `/capacity` | CapacityPlanning | ENTERPRISE+ |
+| `/audit` | AuditLogs | PROFESSIONAL+ |
+
+### SaaS & Billing Routes
+
+| Path | Page | Plan gate |
+|---|---|---|
+| `/billing` | Billing | All plans |
+| `/plans` | Plans | All plans |
+| `/usage` | UsageAnalytics | All plans |
+| `/integrations` | Integrations | ENTERPRISE+ |
+| `/settings/branding` | Branding | ENTERPRISE+ |
+| `/settings/license` | License | All plans |
+| `/tenants` | MultiTenantManager | ULTRA |
+| `/docs` | InAppDocs | All plans |
+
+### Super Admin Routes (superAdmin role only)
+
+| Path | Page | Description |
+|---|---|---|
+| `/super-admin` | SuperAdminDashboard | Global overview |
+| `/super-admin/companies` | CompanyManagement | 54 companies CRUD |
+| `/super-admin/companies/:id` | CompanyDetail | Company profile + tabs |
+| `/super-admin/usage` | UsageLimits | Per-company usage bars |
+| `/super-admin/users` | GlobalUserManagement | 1000+ users |
+| `/super-admin/billing` | GlobalBilling | MRR/ARR/churn |
+| `/super-admin/orders` | OrdersInvoices | Orders + PDF invoices |
+| `/super-admin/audit` | PlatformAudit | Global audit trail |
+| `/super-admin/access` | AccessControl | RBAC+ABAC matrix |
+| `/super-admin/alerts` | SystemAlerts | Platform infra alerts |
+| `/super-admin/security` | SecurityDashboard | Login threats, MFA |
+| `/super-admin/analytics` | GlobalAnalytics | Business intelligence |
+| `/tenant-admin/:id` | TenantAdminPanel | Per-company admin view |
+
+---
+
+## 12. Subscription Tiers & Feature Gating
+
+### How Feature Gating Works
+
+Every feature-gated page or component is wrapped with `<FeatureGate feature={FeatureFlag.XYZ}>`. The gate checks:
+
+```typescript
+// src/hooks/useFeature.ts
+function useFeature(feature: FeatureFlag): { hasAccess: boolean; requiredPlan: Plan } {
+  const { plan } = useSubscriptionStore();
+  const requiredPlan = FEATURE_PLAN_MAP[feature];
+  const hasAccess = PLAN_ORDER.indexOf(plan) >= PLAN_ORDER.indexOf(requiredPlan);
+  return { hasAccess, requiredPlan };
+}
+```
+
+If `hasAccess` is `false`, `FeatureGate` renders `LockedFeatureOverlay` over the child component:
+- Blurred preview of the underlying content
+- Lock icon + "Available on [PLAN_NAME]" text
+- "Upgrade Now" button opens `PlanComparisonModal`
+
+### Plan Hierarchy
+
+```
+BASIC < PROFESSIONAL < ENTERPRISE < ULTRA
+```
+
+A user on ENTERPRISE has access to all BASIC and PROFESSIONAL features automatically.
+
+### Changing Plans (Demo)
+
+1. Navigate to `/settings/license`
+2. Enter a valid demo license key
+3. The store updates the plan immediately, unlocking all gated features
+
+---
+
+## 13. Role-Based Navigation
+
+Navigation sections visible per role are controlled by `useRoleNav()` in `src/hooks/useRoleNav.ts`.
+
+### Desktop Sidebar Sections
+
+| Section | Super Admin | Admin | Engineer | Operator | Viewer |
+|---|---|---|---|---|---|
+| **Core NOC** (Map, Devices, Topology, Monitoring, Tools, Analytics, Workflows, AI) | Yes | Yes | Yes | Yes | Partial |
+| **Enterprise** (SLA, Predictive, Capacity, Audit) | Yes | Yes | Yes | No | No |
+| **Billing & Plans** (Billing, Plans, Usage, Integrations) | Yes | Yes | No | No | No |
+| **Admin** (Branding, License, Tenants) | Yes | Yes | No | No | No |
+| **Super Admin Panel** (all 11 pages) | Yes | No | No | No | No |
+
+**Viewer** sees only: Map, Devices, Topology, Monitoring, Analytics (read-only)
+
+### Mobile Bottom Navigation
+
+Bottom tabs adapt per role. See section 7.2 for the full tab mapping per role.
+
+---
+
+## 14. Design System
+
+FiberNMS uses an OKLCH-based design token system for perceptually uniform colors.
+
+### Themes
+
+- **Dark** (default): Deep navy backgrounds, neon accents, glassmorphism cards
+- **Light**: Clean white backgrounds, muted accents, subtle shadows
+
+Theme toggle is in the top-right corner of the Navbar.
+
+### Core Color Tokens (CSS Variables)
+
+```css
+/* OKLCH primary palette */
+--color-primary:     oklch(0.65 0.2 250);   /* Brand blue */
+--color-accent:      oklch(0.70 0.25 140);  /* Neon green */
+--color-warning:     oklch(0.75 0.20 60);   /* Amber */
+--color-danger:      oklch(0.60 0.25 20);   /* Red */
+--color-success:     oklch(0.68 0.20 145);  /* Green */
+
+/* Surfaces (dark theme) */
+--color-bg:          oklch(0.10 0.02 250);  /* Deep navy */
+--color-surface:     oklch(0.15 0.03 250);  /* Card background */
+--color-border:      oklch(0.25 0.04 250);  /* Subtle border */
+```
 
 ### Typography
 
-| Role | Font | Variable | Fallback |
-|---|---|---|---|
-| Display / Headings | Geist Mono | `--font-display` | monospace |
-| Body / UI Text | General Sans | `--font-body` | sans-serif |
-| Code / Metrics | JetBrains Mono | `--font-mono` | monospace |
+- **Font:** System font stack (Inter / SF Pro / Segoe UI)
+- **Scale:** 12px (caption) to 14px (body) to 16px (medium) to 20px (heading) to 32px (display)
+- **Weights:** 400 (normal), 500 (medium), 600 (semibold), 700 (bold)
 
-All fonts self-hosted as WOFF2 in `public/assets/fonts/`.
+### Component Patterns
 
-### Utility Classes
+- **GlassCard:** `backdrop-blur-md bg-white/5 border border-white/10 rounded-xl`
+- **StatusBadge:** Colored pill with status dot (green/yellow/red/gray)
+- **Stat cards:** Icon + value + label + trend percentage
 
-| Class | Effect |
+### Custom Animations (Tailwind keyframes)
+
+| Name | Usage |
 |---|---|
-| `transition-smooth` | `transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1)` |
-| `noc-glow` | Cyan neon box-shadow (primary) |
-| `noc-glow-active` | Orange neon glow (accent) |
-| `noc-glow-fault` | Red neon glow (destructive) |
-| `noc-glow-warn` | Orange neon glow (warning) |
-| `noc-glow-ok` | Green neon glow (healthy) |
-| `text-metric` | `font-mono text-sm tracking-tight tabular-nums` |
-| `glass-card` | `backdrop-blur(4px) + bg-card/75 + border/40` |
+| `topology-glow` | Neon glow pulse on OLT nodes in the deep-space canvas |
+| `blink-fault` | Red blink on cut fiber segments in fault visualization |
+| `slide-in` | Drawer slide-in animation |
+| `data-flow` | Moving dots along topology graph edges |
+| `accordion-down/up` | Shadcn UI accordion expand/collapse |
 
-### Glassmorphism Pattern
+### Breakpoints
 
-```tsx
-// GlassCard.tsx
-<div className={cn(
-  "rounded-xl border border-border/50 bg-card/80 backdrop-blur-sm",
-  glow && "noc-glow",
-  className
-)}>
-  {children}
-</div>
-```
-
-### Theme Toggle
-
-Dark/light theme managed by `next-themes`. Toggle available in: Desktop Navbar, Mobile Header, Login page, Register page. Default: **dark** (NOC operators work in low-light environments).
-
----
-
-## 21. Component Architecture
-
-### Layout System
-
-```
-Layout.tsx
- |-- useIsMobile() → decides layout
- |
- |-- MOBILE (<=768px)
- |   |-- MobileHeader (56px sticky top)
- |   |   |-- Logo, Page title, Hamburger
- |   |-- <main> (fixed: top=56px, bottom=64px)
- |   |   |-- <Outlet /> (current page)
- |   |-- MobileBottomNav (64px fixed bottom)
- |   |   |-- Dashboard, Companies, Users, Billing, Alerts
- |   |-- CommandPalette
- |
- |-- DESKTOP (>768px)
-     |-- Sidebar (collapsible)
-     |   |-- Logo + version
-     |   |-- NOC navigation links
-     |   |-- SaaS navigation links
-     |   |-- Super Admin section (if isSuperAdmin)
-     |   |-- PlanBadge at bottom
-     |-- <div flex flex-col flex-1>
-     |   |-- Navbar (top bar: search, notifications, theme, user menu)
-     |   |-- <main> (overflow-auto)
-     |       |-- <Outlet />
-     |-- CommandPalette
-```
-
-### Adding a New Page
-
-```typescript
-// 1. Create src/frontend/src/pages/MyPage.tsx
-// 2. Lazy-import in App.tsx
-const MyPage = lazy(() => import("@/pages/MyPage"));
-
-// 3. Create a route
-const myRoute = makeProtectedPage("/my-page", MyPage);
-
-// 4. Add to routeTree in protectedRoute.addChildren([...])
-
-// 5. Add nav link in Sidebar.tsx and MobileNavDrawer.tsx
-```
-
----
-
-## 22. Architecture Patterns
-
-### Lazy Loading with Suspense
-
-```typescript
-const MapDashboard = lazy(() => import("@/pages/MapDashboard"));
-
-function withSuspense(Page) {
-  return function SuspensePage() {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <Page />
-      </Suspense>
-    );
-  };
-}
-```
-
-`PageLoader` shows a skeleton grid while the bundle chunk loads.
-
-### Plan-Aware Mock Data
-
-```typescript
-export function getDevices(): Device[] {
-  const { currentPlan } = useSubscriptionStore.getState();
-  const limits = {
-    BASIC: 100, PROFESSIONAL: 500, ENTERPRISE: 2000, ULTRA: 10000
-  };
-  return ALL_DEVICES.slice(0, limits[currentPlan]);
-}
-```
-
-### Event Bus Real-Time Simulation
-
-```typescript
-// Typed pub/sub event emitter
-type EventMap = {
-  "alert:new": Alert;
-  "device:status": { id: string; status: DeviceStatus };
-  "signal:update": { deviceId: string; value: number };
-};
-
-// Subscribe (returns unsubscribe function)
-const unsub = eventBus.on("alert:new", (data) => { ... });
-return unsub; // cleanup in useEffect
-
-// Emit
-eventBus.emit("alert:new", alertData);
-```
-
-### Feature Gate Pattern
-
-```tsx
-function PredictiveFaultPanel() {
-  return (
-    <FeatureGate feature={FeatureFlag.PREDICTIVE_FAULTS}>
-      <div className="grid grid-cols-3 gap-4">
-        {alerts.map(a => <RiskCard key={a.id} alert={a} />)}
-      </div>
-    </FeatureGate>
-  );
-}
-```
-
-### TanStack Router with Context
-
-```typescript
-// Router context carries auth state for synchronous route guards
-type RouterContext = { isAuthenticated: boolean; isSuperAdmin: boolean };
-
-// Router recreated on auth state change
-const router = useMemo(
-  () => createRouter({ routeTree, context: { isAuthenticated, isSuperAdmin } }),
-  [isAuthenticated, isSuperAdmin]
-);
-```
-
-### Virtualized Tables
-
-Heavy tables (devices, users, orders) use windowing — only 10–20 rows in DOM regardless of dataset size. Implemented via `@tanstack/react-virtual` internally.
-
----
-
-## 23. Build and Deployment
-
-### Command Reference
-
-| Command | Directory | Output |
+| Breakpoint | Width | Layout |
 |---|---|---|
-| `pnpm install` | `/app` | Installs all workspace dependencies |
-| `pnpm dev` | `/app/src/frontend` | Dev server at http://localhost:5173 |
-| `pnpm build` | `/app/src/frontend` | Production build in `dist/` |
-| `pnpm typecheck` | `/app/src/frontend` | TypeScript type check (no emit) |
-| `pnpm check` | `/app/src/frontend` | Biome lint check |
-| `pnpm fix` | `/app/src/frontend` | Biome auto-fix |
-
-### Static Hosting
-
-```bash
-# Vercel
-vercel --prod
-
-# Netlify
-netlify deploy --prod --dir=src/frontend/dist
-
-# AWS S3
-aws s3 sync src/frontend/dist/ s3://your-bucket --delete
-
-# GitHub Pages
-gh-pages -d src/frontend/dist
-```
-
-### Docker
-
-```dockerfile
-FROM node:20-alpine AS builder
-WORKDIR /app
-RUN npm install -g pnpm
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY src/frontend/package.json ./src/frontend/
-RUN pnpm install --prefer-offline
-COPY . .
-RUN cd src/frontend && pnpm build
-
-FROM nginx:1.25-alpine
-COPY --from=builder /app/src/frontend/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-```nginx
-# nginx.conf — SPA routing
-server {
-  listen 80;
-  root /usr/share/nginx/html;
-  index index.html;
-
-  gzip on;
-
-  location / {
-    try_files $uri $uri/ /index.html;
-  }
-
-  location ~* \.(js|css|woff2|png|jpg|svg)$ {
-    expires 1y;
-    add_header Cache-Control "public, immutable";
-  }
-}
-```
-
-### Backend Activation (Motoko / Internet Computer)
-
-```bash
-# 1. Implement methods in src/backend/main.mo
-# 2. Regenerate TypeScript bindings
-pnpm bindgen
-
-# 3. Replace mock data in pages with useActor() hooks
-# 4. Deploy to Internet Computer
-sh -ci "$(curl -fsSL https://internetcomputer.org/install.sh)"
-dfx start --background
-dfx deploy
-```
+| `sm` | 640px | Stack charts vertically, hide secondary columns |
+| `md` | 768px | Switch from bottom nav to sidebar |
+| `lg` | 1024px | Full 3-column layouts |
+| `xl` | 1280px | Extended sidebars, wider tables |
+| `2xl` | 1536px | Max content width, centred layout |
 
 ---
 
-## 24. Customization Guide
+## 15. Performance & Optimization
 
-### Change the Default Demo Plan
-
-```typescript
-// src/frontend/src/store/subscriptionStore.ts
-const initialState: SubscriptionState = {
-  currentPlan: Plan.PROFESSIONAL, // change here
-  deviceUsed: 4_500,
-  deviceLimit: 10_000,
-  ...
-};
-```
-
-### Add a New Feature Flag
-
-```typescript
-// 1. Add to FeatureFlag enum (types/subscription.ts)
-SATELLITE_OVERLAY = "SATELLITE_OVERLAY",
-
-// 2. Add to FEATURE_PLAN_MAP (config/features.ts)
-[FeatureFlag.SATELLITE_OVERLAY]: [Plan.ENTERPRISE, Plan.ULTRA],
-
-// 3. Add to PLAN_CONFIGS features arrays (config/features.ts)
-[Plan.ENTERPRISE]: { features: [...existing, FeatureFlag.SATELLITE_OVERLAY] }
-
-// 4. Use in a component
-const { hasAccess } = useFeature(FeatureFlag.SATELLITE_OVERLAY);
-
-// Or wrap with FeatureGate
-<FeatureGate feature={FeatureFlag.SATELLITE_OVERLAY}>
-  <SatelliteLayerToggle />
-</FeatureGate>
-```
-
-### Add a New Seed User
-
-```typescript
-// src/frontend/src/store/authStore.ts
-const SEED_USERS: StoredUser[] = [
-  ...existingSeedUsers,
-  {
-    email: "engineer@acmetelecom.com",
-    passwordHash: "Engineer@2026",
-    profile: {
-      id: "eng-001",
-      email: "engineer@acmetelecom.com",
-      firstName: "Jane",
-      lastName: "Smith",
-      company: "Acme Telecom",
-      plan: Plan.PROFESSIONAL,
-      role: "engineer",
-      department: "Network Engineering",
-      country: "India",
-    },
-  },
-];
-```
-
-### Customize OKLCH Color Palette
-
-```css
-/* src/frontend/src/index.css */
-.dark {
-  /* Change primary from cyan to green */
-  --primary: 0.72 0.22 142;
-
-  /* Change accent from orange to pink */
-  --accent: 0.7 0.25 320;
-
-  /* Change background to a warmer dark */
-  --background: 0.10 0.01 30;
-}
-```
-
-### Swap Map Tile Provider
-
-```typescript
-// pages/MapDashboard.tsx
-<TileLayer
-  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-  attribution="© OpenStreetMap contributors © CARTO"
-  maxZoom={19}
-/>
-```
-
-Available CARTO styles (no API key): `voyager` (default), `dark_all`, `light_all`, `rastertiles/voyager_labels_under`.
-
----
-
-## 25. Roadmap
-
-### Authentication and Security
-- [ ] Forgot Password — email-based password reset flow
-- [ ] Two-Factor Authentication (MFA) — TOTP app support
-- [ ] SSO / SAML Integration — Okta, Azure AD, Google Workspace
-- [ ] Session Expiry Warnings — notify users before auto-logout
-
-### SaaS and Billing
-- [ ] Usage-Based Billing Alerts — notify when approaching device/API quotas
-- [ ] Stripe Payment Integration — real payment processing
-- [ ] Proration Calculator — show cost delta before plan upgrade
-- [ ] Trial-to-Paid Conversion Flow — guided upgrade wizard
-
-### NOC Features
-- [ ] Satellite and Weather Map Overlays — real satellite imagery and weather layers
-- [ ] Real-Time Alert Feeds in AI Chat — AI assistant receives live alert context
-- [ ] Digital Twin Simulation — full L1–L3 digital twin with scenario modeling
-- [ ] OTDR Integration — real OTDR trace file parsing and visualization
-- [ ] Network Health Score — composite health index per region/company
-
-### Platform
-- [ ] Tenant Onboarding Wizard — guided ISP setup (plan → devices → first alert)
-- [ ] Plugin Marketplace UI — install/manage community-built NOC extensions
-- [ ] Mobile Companion App — PWA manifest + offline support
-- [ ] Dashboard Builder — drag-and-drop custom KPI dashboard designer
-- [ ] Report Scheduler — automated PDF report delivery
-
-### Developer Experience
-- [ ] Storybook Component Library — isolated component documentation
-- [ ] E2E Testing (Playwright) — critical path test coverage
-- [ ] CI/CD Pipeline — GitHub Actions for type check + lint + build
-
----
-
-## 26. Contributing
-
-### Setup
-
-```bash
-git clone https://github.com/Mr-fuaaaadh/fibernms.git
-cd fibernms
-pnpm install
-cd src/frontend && pnpm dev
-```
-
-### Workflow
-
-```bash
-# Type check before committing
-pnpm typecheck
-
-# Auto-fix lint issues
-pnpm fix
-```
-
-### Commit Message Convention
-
-This project follows [Conventional Commits](https://www.conventionalcommits.org/):
-
-| Prefix | Use For |
+| Technique | Applied To |
 |---|---|
-| `feat:` | New feature or page |
-| `fix:` | Bug fix |
-| `refactor:` | Code restructuring (no behavior change) |
-| `docs:` | Documentation changes |
-| `style:` | Formatting, whitespace |
-| `perf:` | Performance improvement |
-| `test:` | Tests added or updated |
-| `chore:` | Build tooling, deps, config |
-
-### Pull Request Guidelines
-
-- One feature or fix per PR
-- Run `pnpm typecheck` and `pnpm fix` before opening PR
-- Add a screenshot for UI changes
-- Target the `main` branch
-- Reference related issues: `Closes #42`
-
-### Code Style
-
-- TypeScript strict mode — no `any`, no `@ts-ignore`
-- Functional components only — no class components
-- Global state via Zustand, local UI state via `useState`
-- Tailwind utility classes only — no raw hex colors, use design tokens
-- Absolute imports via `@/` alias
+| **Virtualized tables** (TanStack Table + windowing) | Devices table (1000+ rows), User management, Company list |
+| **Lazy loading** (React.lazy + Suspense) | All 37 pages (code-split per route) |
+| **Dynamic imports** | Map components (Leaflet, Mapbox) |
+| **Seeded PRNG** (no random() calls at render) | All mock data generators |
+| **Memoization** (useMemo, useCallback) | Chart data transforms, filter functions |
+| **CSS animations** (no JS for transitions) | Status pulses, data-flow dots, fault blinks |
+| **Responsive images** | Logo, icons use SVG |
+| **Web Workers** (planned) | OTDR simulation, BFS fault computation |
+| **Offscreen canvas** (planned) | Topology graph for very large networks |
+| **PWA offline caching** | App shell and static assets |
 
 ---
 
-## 27. License
+## 16. Roadmap
 
-**Proprietary.** All rights reserved. Copyright FiberNMS 2026.
+### Near-term
+- [ ] Forgot password / email recovery flow
+- [ ] Two-factor authentication (TOTP)
+- [ ] SSO / SAML integration
+- [ ] User profile panel (avatar, notification settings)
+- [ ] Tenant onboarding wizard
+- [ ] Usage-based billing alerts
+- [ ] Redo/history panel for map actions (undo is live; redo planned)
 
-For support, billing inquiries, or account help, contact [Caffeine](https://caffeine.ai).
+### Mid-term
+- [ ] Real Motoko backend integration (replace mock data)
+- [ ] Real-time WebSocket feed (replace eventBus simulation)
+- [ ] Plugin marketplace (dynamic module injection)
+- [ ] Dashboard builder (drag-and-drop KPI widget layout)
+- [ ] Satellite and weather map overlays
+- [ ] PDF fault report export from fault visualization
+- [ ] Enhanced drag-and-drop workflow builder
+
+### Long-term
+- [ ] Digital twin simulation (side-by-side before/after view)
+- [ ] AI alert correlation and root cause analysis
+- [ ] Multi-region failover monitoring
+- [ ] Mobile field engineer app (camera + QR scanner for device tagging)
+- [ ] OTDR trace import and analysis
+- [ ] Hardware integration APIs (SNMP, NETCONF, OpenConfig)
 
 ---
 
-*Last updated: April 2026 — FiberNMS v2.0*
+*Last updated: April 2026*  
+*GitHub: https://github.com/Mr-fuaaaadh/fibernms*  
+*Support: Caffeine support channels at https://caffeine.ai*

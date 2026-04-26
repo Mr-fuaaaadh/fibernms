@@ -50,6 +50,11 @@
     --sidebar-border: 0.87 0.012 240;
     --sidebar-ring: 0.62 0.18 210;
 
+    /* Fault Visualization Page */
+    --fault-active: 0.55 0.2 142;
+    --fault-affected: 0.58 0.22 55;
+    --fault-down: 0.52 0.24 22;
+
     /* Enterprise Risk Scale */
     --risk-ok: 0.55 0.2 142;
     --risk-low: 0.55 0.2 142;
@@ -169,6 +174,11 @@
     --admin-status-active: 0.65 0.2 280;
     --admin-status-pending: 0.7 0.25 55;
     --admin-status-inactive: 0.38 0.008 260;
+
+    /* Fault Visualization Page */
+    --fault-active: 0.62 0.22 142;
+    --fault-affected: 0.68 0.25 55;
+    --fault-down: 0.62 0.28 22;
   }
 
   * {
@@ -548,6 +558,72 @@
 
   .admin-switch-off {
     @apply bg-muted;
+  }
+
+  /* ─── Fault Visualization Styles ─── */
+  .fault-status-active {
+    color: oklch(var(--fault-active));
+    background-color: oklch(var(--fault-active) / 0.15);
+  }
+
+  .fault-status-affected {
+    color: oklch(var(--fault-affected));
+    background-color: oklch(var(--fault-affected) / 0.15);
+  }
+
+  .fault-status-down {
+    color: oklch(var(--fault-down));
+    background-color: oklch(var(--fault-down) / 0.15);
+  }
+
+  .fault-marker-active {
+    box-shadow: 0 0 0 2px oklch(var(--fault-active) / 0.5), 0 0 12px
+      oklch(var(--fault-active) / 0.6);
+  }
+
+  .fault-marker-affected {
+    box-shadow: 0 0 0 2px oklch(var(--fault-affected) / 0.5), 0 0 12px
+      oklch(var(--fault-affected) / 0.6);
+  }
+
+  .fault-marker-down {
+    box-shadow: 0 0 0 2px oklch(var(--fault-down) / 0.6), 0 0 14px
+      oklch(var(--fault-down) / 0.7);
+  }
+
+  .fault-alert-banner {
+    @apply glass-elevated px-4 py-3 rounded-lg border border-l-4;
+    border-left-color: oklch(var(--fault-down));
+    background-color: oklch(var(--card) / 0.85);
+  }
+
+  .fault-alert-banner-warning {
+    border-left-color: oklch(var(--fault-affected));
+  }
+
+  .fault-stats-panel {
+    @apply glass-elevated rounded-lg p-4 space-y-3;
+  }
+
+  .fault-stat-row {
+    @apply flex items-center justify-between pb-2 border-b;
+    border-color: oklch(var(--border) / 0.3);
+  }
+
+  .fault-stat-row:last-child {
+    @apply border-b-0;
+  }
+
+  .fault-stat-label {
+    @apply text-sm text-muted-foreground font-medium;
+  }
+
+  .fault-stat-value {
+    @apply font-mono text-lg font-bold;
+  }
+
+  .fault-blink {
+    animation: blink-fault 1.2s ease-in-out infinite;
   }
 
   /* ─── Map containment — prevent Leaflet canvas from overflowing mobile layout ─── */

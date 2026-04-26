@@ -94,7 +94,7 @@ const ALL_SECTIONS = {
     label: "NOC Platform",
     accent: "text-primary/80",
     items: [
-      { label: "Map Dashboard", icon: MapIcon, to: "/" },
+      { label: "Network Map", icon: MapIcon, to: "/" },
       { label: "Devices", icon: Server, to: "/devices" },
       { label: "Topology", icon: GitFork, to: "/topology" },
       { label: "Monitoring", icon: Activity, to: "/monitoring" },
@@ -110,7 +110,7 @@ const ALL_SECTIONS = {
     label: "NOC Platform",
     accent: "text-primary/80",
     items: [
-      { label: "Map Dashboard", icon: MapIcon, to: "/" },
+      { label: "Network Map", icon: MapIcon, to: "/" },
       { label: "Devices", icon: Server, to: "/devices" },
       { label: "Topology", icon: GitFork, to: "/topology" },
       { label: "Monitoring", icon: Activity, to: "/monitoring" },

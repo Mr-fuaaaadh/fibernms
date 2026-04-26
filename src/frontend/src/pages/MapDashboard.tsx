@@ -1,7 +1,19 @@
+/**
+ * MapDashboard.tsx — Unified Network Map
+ * Combines device management (placement, drawing, editing) with fault
+ * visualization (cascade logic, customer markers, stats panel, alert banner).
+ * Single map page — all features in one view.
+ */
 import "leaflet/dist/leaflet.css";
 import { DeviceIcon } from "@/components/DeviceIcon";
 import { GlassCard } from "@/components/GlassCard";
 import { StatusBadge } from "@/components/StatusBadge";
+import { CustomerMarker } from "@/components/fault/CustomerMarker";
+import { FaultAlertBanner } from "@/components/fault/FaultAlertBanner";
+import { FaultDeviceMarker } from "@/components/fault/FaultDeviceMarker";
+import { FaultFiberPolyline } from "@/components/fault/FaultFiberPolyline";
+import { FaultLayerControls } from "@/components/fault/FaultLayerControls";
+import { FaultStatsPanel } from "@/components/fault/FaultStatsPanel";
 import { AddDeviceDialog } from "@/components/map/AddDeviceDialog";
 import { DeviceDetailPanel } from "@/components/map/DeviceDetailPanel";
 import { DeviceMarker } from "@/components/map/DeviceMarker";
@@ -29,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useFaultVisualization } from "@/hooks/useFaultVisualization";
 import { useNetworkStore } from "@/store/networkStore";
 import type {
   Device,
@@ -76,13 +89,19 @@ const ROUTE_COLORS: Record<string, string> = {
   drop: "#69ff47",
 };
 
-// ── Map event handler (inside MapContainer) ───────────────────────────────────
+const TILE_URL =
+  "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+const TILE_ATTR =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
+// ── Map event handler ─────────────────────────────────────────────────────────
 interface MapEventHandlerProps {
   drawMode: boolean;
   isPlacing: boolean;
   onMapClick: (lat: number, lng: number) => void;
   onMapDblClick: (lat: number, lng: number) => void;
   onRightClick: (lat: number, lng: number) => void;
+  onClearSelection: () => void;
 }
 
 function MapEventHandler({
@@ -91,12 +110,11 @@ function MapEventHandler({
   onMapClick,
   onMapDblClick,
   onRightClick,
+  onClearSelection,
 }: MapEventHandlerProps) {
   const map = useMap();
-
   useEffect(() => {
-    const cursor = drawMode || isPlacing ? "crosshair" : "";
-    map.getContainer().style.cursor = cursor;
+    map.getContainer().style.cursor = drawMode || isPlacing ? "crosshair" : "";
   }, [drawMode, isPlacing, map]);
 
   useMapEvents({
@@ -105,6 +123,8 @@ function MapEventHandler({
         onMapClick(e.latlng.lat, e.latlng.lng);
       } else if (isPlacing) {
         onMapClick(e.latlng.lat, e.latlng.lng);
+      } else {
+        onClearSelection();
       }
     },
     dblclick(e) {
@@ -121,28 +141,50 @@ function MapEventHandler({
 }
 
 // ── Re-center controller ──────────────────────────────────────────────────────
-interface RecenterControllerProps {
+function RecenterController({
+  trigger,
+  center,
+}: {
   trigger: number;
   center: [number, number];
-}
-
-function RecenterController({ trigger, center }: RecenterControllerProps) {
+}) {
   const map = useMap();
   useEffect(() => {
-    if (trigger > 0) {
-      map.flyTo(center, 13, { duration: 1.2 });
-    }
+    if (trigger > 0) map.flyTo(center, 13, { duration: 1.2 });
   }, [trigger, map, center]);
   return null;
 }
 
+// ── Auto-zoom to affected area ────────────────────────────────────────────────
+function AutoZoom({
+  affectedNodes,
+  allDevices,
+  cutPoint,
+}: {
+  affectedNodes: Set<string>;
+  allDevices: { id: string; lat: number; lng: number }[];
+  cutPoint: { lat: number; lng: number } | null;
+}) {
+  const map = useMapEvents({});
+  useEffect(() => {
+    const points: [number, number][] = [];
+    if (cutPoint) points.push([cutPoint.lat, cutPoint.lng]);
+    for (const d of allDevices) {
+      if (affectedNodes.has(d.id)) points.push([d.lat, d.lng]);
+    }
+    if (points.length > 0) {
+      map.flyToBounds(L.latLngBounds(points), {
+        padding: [60, 60],
+        maxZoom: 10,
+        duration: 1.2,
+      });
+    }
+  }, [affectedNodes, allDevices, cutPoint, map]);
+  return null;
+}
+
 // ── Distance helpers ──────────────────────────────────────────────────────────
-function haversineKm(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number,
-): number {
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
   const R = 6371;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLng = ((lng2 - lng1) * Math.PI) / 180;
@@ -154,7 +196,7 @@ function haversineKm(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function totalDistance(pts: { lat: number; lng: number }[]): number {
+function totalDistance(pts: { lat: number; lng: number }[]) {
   let d = 0;
   for (let i = 1; i < pts.length; i++) {
     d += haversineKm(pts[i - 1].lat, pts[i - 1].lng, pts[i].lat, pts[i].lng);
@@ -162,22 +204,20 @@ function totalDistance(pts: { lat: number; lng: number }[]): number {
   return Math.round(d * 100) / 100;
 }
 
-// ── Mobile FAB button ─────────────────────────────────────────────────────────
-interface FabButtonProps {
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-  badge?: number;
-  "data-ocid"?: string;
-}
-
+// ── Mobile FAB ────────────────────────────────────────────────────────────────
 function FabButton({
   onClick,
   icon,
   label,
   badge,
   "data-ocid": ocid,
-}: FabButtonProps) {
+}: {
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  badge?: number;
+  "data-ocid"?: string;
+}) {
   return (
     <button
       type="button"
@@ -197,12 +237,13 @@ function FabButton({
 }
 
 // ── Mobile layer overlay ──────────────────────────────────────────────────────
-interface MobileLayerOverlayProps {
+function MobileLayerOverlay({
+  open,
+  onClose,
+}: {
   open: boolean;
   onClose: () => void;
-}
-
-function MobileLayerOverlay({ open, onClose }: MobileLayerOverlayProps) {
+}) {
   if (!open) return null;
   return (
     <div
@@ -238,17 +279,15 @@ function MobileLayerOverlay({ open, onClose }: MobileLayerOverlayProps) {
 }
 
 // ── Mobile device drawer ──────────────────────────────────────────────────────
-interface MobileDeviceDrawerProps {
-  open: boolean;
-  onClose: () => void;
-  deviceId: string | null;
-}
-
 function MobileDeviceDrawer({
   open,
   onClose,
   deviceId,
-}: MobileDeviceDrawerProps) {
+}: {
+  open: boolean;
+  onClose: () => void;
+  deviceId: string | null;
+}) {
   const { devices } = useNetworkStore();
   const device = devices.find((d) => d.id === deviceId) ?? null;
 
@@ -409,16 +448,7 @@ function MobileDeviceDrawer({
   );
 }
 
-// ── Inline placement form (shown after clicking map in place mode) ─────────────
-interface PlaceDevicePopupProps {
-  lat: number;
-  lng: number;
-  initialType: DeviceType;
-  deviceCount: number;
-  onConfirm: (device: Device) => void;
-  onCancel: () => void;
-}
-
+// ── Inline placement popup ────────────────────────────────────────────────────
 function PlaceDevicePopup({
   lat,
   lng,
@@ -426,7 +456,14 @@ function PlaceDevicePopup({
   deviceCount,
   onConfirm,
   onCancel,
-}: PlaceDevicePopupProps) {
+}: {
+  lat: number;
+  lng: number;
+  initialType: DeviceType;
+  deviceCount: number;
+  onConfirm: (device: Device) => void;
+  onCancel: () => void;
+}) {
   const meta =
     DEVICE_TYPE_META.find((m) => m.type === initialType) ?? DEVICE_TYPE_META[0];
   const [name, setName] = useState(meta.defaultName(deviceCount + 1));
@@ -461,9 +498,7 @@ function PlaceDevicePopup({
       onKeyDown={(e) => e.key === "Escape" && onCancel()}
       aria-hidden="true"
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-
       <section
         className="relative w-full max-w-sm mx-4 rounded-2xl glass-elevated shadow-noc-elevated p-5"
         style={{ zIndex: 10001 }}
@@ -504,7 +539,6 @@ function PlaceDevicePopup({
         </p>
 
         <div className="space-y-3">
-          {/* Name */}
           <div className="space-y-1">
             <Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
               Device Name *
@@ -524,7 +558,6 @@ function PlaceDevicePopup({
             )}
           </div>
 
-          {/* Type + Status */}
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
@@ -584,7 +617,6 @@ function PlaceDevicePopup({
             </div>
           </div>
 
-          {/* Ports */}
           <div className="space-y-1">
             <Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
               Ports
@@ -625,7 +657,7 @@ function PlaceDevicePopup({
   );
 }
 
-// ── Main MapDashboard component ───────────────────────────────────────────────
+// ── Main unified map page ─────────────────────────────────────────────────────
 export default function MapDashboard() {
   const {
     devices,
@@ -643,9 +675,36 @@ export default function MapDashboard() {
     history,
   } = useNetworkStore();
 
+  const resolveAlert = useNetworkStore((s) => s.resolveAlert);
   const isMobile = useIsMobile();
 
-  // ── Draw route state ──────────────────────────────────────────────────────
+  // Fault visualization hook
+  const {
+    allDevices: faultAllDevices,
+    customerNodes,
+    activeAlerts,
+    stats,
+    simulatedFault,
+    deviceDisplayStatuses,
+    routeDisplayStatuses,
+    selection: faultSelection,
+    setSelection: setFaultSelection,
+    clearSelection: clearFaultSelection,
+    highlightedNodeIds,
+    highlightedRouteIds,
+    selectedAffectedCount,
+    layers: faultLayers,
+    toggleLayer: toggleFaultLayer,
+    statusFilter,
+    setStatusFilter,
+    simulateDeviceDown,
+    simulateCableCut,
+    clearFaults,
+    getCutPoint,
+    getUpstreamFaultSource,
+  } = useFaultVisualization();
+
+  // ── Draw route state ────────────────────────────────────────────────────────
   const [drawMode, setDrawMode] = useState(false);
   const [drawWaypoints, setDrawWaypoints] = useState<
     { lat: number; lng: number }[]
@@ -654,7 +713,7 @@ export default function MapDashboard() {
     "backbone" | "distribution" | "drop"
   >("distribution");
 
-  // ── Place device state ────────────────────────────────────────────────────
+  // ── Place device state ──────────────────────────────────────────────────────
   const [isPlacing, setIsPlacing] = useState(false);
   const [placingType, setPlacingType] = useState<DeviceType>("ONT");
   const [pendingPlacement, setPendingPlacement] = useState<{
@@ -662,7 +721,7 @@ export default function MapDashboard() {
     lng: number;
   } | null>(null);
 
-  // ── Right-click / context menu ────────────────────────────────────────────
+  // ── Context menu / right click ──────────────────────────────────────────────
   const [contextMenu, setContextMenu] = useState<{
     lat: number;
     lng: number;
@@ -672,36 +731,48 @@ export default function MapDashboard() {
     lng: number;
   } | null>(null);
 
-  // ── UI state ──────────────────────────────────────────────────────────────
+  // ── UI state ────────────────────────────────────────────────────────────────
   const [layerOverlayOpen, setLayerOverlayOpen] = useState(false);
   const [recenterTrigger, setRecenterTrigger] = useState(0);
 
   const canUndo = history.length > 0;
+  const routeIdCounter = useRef(Date.now());
 
-  // Keyboard shortcut: Ctrl+Z / Cmd+Z → undo
+  // Fault state
+  const hasFault =
+    !!simulatedFault.deviceDownId || !!simulatedFault.cableCutRouteId;
+  const cutPoint = simulatedFault.cableCutRouteId
+    ? getCutPoint(simulatedFault.cableCutRouteId)
+    : null;
+
+  const affectedForZoom = new Set<string>();
+  if (simulatedFault.deviceDownId) {
+    deviceDisplayStatuses.forEach((status, id) => {
+      if (status === "affected" || status === "faulty") affectedForZoom.add(id);
+    });
+  }
+
+  // Keyboard shortcuts
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
         if (history.length > 0) undo();
       }
+      if (e.key === "Escape") clearFaultSelection();
     }
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, history.length]);
+  }, [undo, history.length, clearFaultSelection]);
 
   const mobileDrawerOpen = isMobile && !!selectedDeviceId;
   const alertCount = devices.filter((d) => d.status === "faulty").length;
-  const routeIdCounter = useRef(Date.now());
 
-  // ── Draw handlers ─────────────────────────────────────────────────────────
+  // ── Draw handlers ───────────────────────────────────────────────────────────
   const handleMapClick = useCallback(
     (lat: number, lng: number) => {
       if (isPlacing) {
-        // Only open popup if not already showing one
-        if (!pendingPlacement) {
-          setPendingPlacement({ lat, lng });
-        }
+        if (!pendingPlacement) setPendingPlacement({ lat, lng });
         return;
       }
       if (drawMode) {
@@ -759,19 +830,16 @@ export default function MapDashboard() {
     setAddDeviceCoords({ lat, lng });
   }, []);
 
-  // ── Placement handlers ────────────────────────────────────────────────────
   const handlePlacementConfirm = useCallback(
     (device: Device) => {
       addDevice(device);
       setPendingPlacement(null);
-      // Keep placement mode active so user can place more
     },
     [addDevice],
   );
 
   const handlePlacementCancel = useCallback(() => {
     setPendingPlacement(null);
-    // Keep placement mode active, just remove the pending popup
   }, []);
 
   const handleExitPlacing = useCallback(() => {
@@ -779,318 +847,467 @@ export default function MapDashboard() {
     setPendingPlacement(null);
   }, []);
 
+  const handleClearSelection = useCallback(() => {
+    clearFaultSelection();
+    setSelectedDevice(null);
+    setSelectedRoute(null);
+  }, [clearFaultSelection, setSelectedDevice, setSelectedRoute]);
+
   const selectedDevice = devices.find((d) => d.id === selectedDeviceId) ?? null;
   const selectedRoute = routes.find((r) => r.id === selectedRouteId) ?? null;
   const desktopRightPanelOpen =
     !isMobile && (!!selectedDevice || !!selectedRoute);
 
+  // Filter fault devices (non-customer devices)
+  const faultFilteredDevices = faultAllDevices.filter((d) => {
+    if (d.type === "ONT") return false;
+    const status = deviceDisplayStatuses.get(d.id) ?? "active";
+    if (statusFilter === "all") return true;
+    if (statusFilter === "down") return status === "faulty";
+    if (statusFilter === "affected") return status === "affected";
+    if (statusFilter === "active")
+      return status === "active" || status === "warning";
+    return true;
+  });
+
   return (
     <div
-      className="relative flex w-full overflow-hidden"
+      className="relative flex flex-col w-full overflow-hidden"
       style={{ height: "100%" }}
+      data-ocid="network-map.page"
     >
-      {/* ── Map area ───────────────────────────────────────────────────────── */}
-      <div
-        className={`relative flex-1 transition-all duration-300 ${desktopRightPanelOpen ? "mr-[360px]" : ""}`}
-      >
-        {/* Leaflet MapContainer */}
-        <MapContainer
-          center={[40.7128, -74.006]}
-          zoom={13}
-          className="h-full w-full"
-          zoomControl={false}
-          doubleClickZoom={false}
-          data-ocid="map.canvas_target"
+      {/* Alert banner — top of page */}
+      <FaultAlertBanner alerts={activeAlerts} onDismiss={resolveAlert} />
+
+      {/* Fault layer + filter controls — below alert banner */}
+      <div className="relative" style={{ zIndex: 490 }}>
+        <FaultLayerControls
+          layers={faultLayers}
+          onToggleLayer={toggleFaultLayer}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          onSimulateDeviceDown={() => simulateDeviceDown()}
+          onSimulateCableCut={() => simulateCableCut()}
+          onClearFaults={clearFaults}
+          hasFault={hasFault}
+        />
+      </div>
+
+      {/* Map + panels row */}
+      <div className="relative flex flex-1 overflow-hidden">
+        {/* Map area */}
+        <div
+          className={`relative flex-1 transition-all duration-300 ${desktopRightPanelOpen ? "mr-[360px]" : ""}`}
         >
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-          />
+          <MapContainer
+            center={[20, 0]}
+            zoom={3}
+            className="h-full w-full"
+            zoomControl={false}
+            doubleClickZoom={false}
+            data-ocid="map.canvas_target"
+          >
+            <TileLayer url={TILE_URL} attribution={TILE_ATTR} />
 
-          <MapEventHandler
-            drawMode={drawMode}
-            isPlacing={isPlacing && !pendingPlacement}
-            onMapClick={handleMapClick}
-            onMapDblClick={handleMapDblClick}
-            onRightClick={handleRightClick}
-          />
+            <MapEventHandler
+              drawMode={drawMode}
+              isPlacing={isPlacing && !pendingPlacement}
+              onMapClick={handleMapClick}
+              onMapDblClick={handleMapDblClick}
+              onRightClick={handleRightClick}
+              onClearSelection={handleClearSelection}
+            />
 
-          <RecenterController
-            trigger={recenterTrigger}
-            center={[40.7128, -74.006]}
-          />
+            <RecenterController trigger={recenterTrigger} center={[20, 0]} />
 
-          {/* Fiber routes */}
-          {routes.map((route) => {
-            if (!layerVisibility[route.type]) return null;
-            const color =
-              route.status === "faulty"
-                ? "#ff1744"
-                : (ROUTE_COLORS[route.type] ?? "#fff");
-            const positions = route.waypoints.map(
-              (wp) => [wp.lat, wp.lng] as [number, number],
-            );
-            return (
+            {/* Auto-zoom to affected area when fault active */}
+            {hasFault && (
+              <AutoZoom
+                affectedNodes={affectedForZoom}
+                allDevices={faultAllDevices}
+                cutPoint={cutPoint}
+              />
+            )}
+
+            {/* Fault fiber routes layer (fault visualization) */}
+            {faultLayers.fiber &&
+              routes.map((route) => {
+                const displayStatus =
+                  routeDisplayStatuses.get(route.id) ?? "active";
+                const isHighlighted =
+                  highlightedRouteIds.has(route.id) ||
+                  (hasFault && displayStatus !== "active");
+                const isCut = route.id === simulatedFault.cableCutRouteId;
+
+                if (statusFilter === "down" && displayStatus !== "faulty")
+                  return null;
+                if (statusFilter === "affected" && displayStatus !== "warning")
+                  return null;
+                if (statusFilter === "active" && displayStatus !== "active")
+                  return null;
+
+                return (
+                  <FaultFiberPolyline
+                    key={`fault-${route.id}`}
+                    route={route}
+                    displayStatus={displayStatus}
+                    isHighlighted={isHighlighted}
+                    isCut={isCut}
+                    affectedCount={
+                      isCut || isHighlighted ? stats.affectedCustomers : 0
+                    }
+                    onClick={() => {
+                      setFaultSelection({ type: "route", id: route.id });
+                      setSelectedRoute(route.id);
+                    }}
+                  />
+                );
+              })}
+
+            {/* Standard fiber routes (device management layer, only when not in fault layer mode) */}
+            {!faultLayers.fiber &&
+              routes.map((route) => {
+                if (!layerVisibility[route.type]) return null;
+                const color =
+                  route.status === "faulty"
+                    ? "#ff1744"
+                    : (ROUTE_COLORS[route.type] ?? "#fff");
+                const positions = route.waypoints.map(
+                  (wp) => [wp.lat, wp.lng] as [number, number],
+                );
+                return (
+                  <Polyline
+                    key={route.id}
+                    positions={positions}
+                    pathOptions={{
+                      color,
+                      weight: route.type === "backbone" ? 4 : 2.5,
+                      opacity: 0.9,
+                      dashArray: route.status === "faulty" ? "8 4" : undefined,
+                    }}
+                    eventHandlers={{
+                      click: () => {
+                        setSelectedRoute(route.id);
+                        setSelectedDevice(null);
+                      },
+                    }}
+                  />
+                );
+              })}
+
+            {/* Draw preview line */}
+            {drawWaypoints.length >= 2 && (
               <Polyline
-                key={route.id}
-                positions={positions}
+                positions={drawWaypoints.map(
+                  (wp) => [wp.lat, wp.lng] as [number, number],
+                )}
                 pathOptions={{
-                  color,
-                  weight: route.type === "backbone" ? 4 : 2.5,
-                  opacity: 0.9,
-                  dashArray: route.status === "faulty" ? "8 4" : undefined,
-                  className:
-                    route.status === "faulty" ? "fault-route-anim" : undefined,
-                }}
-                eventHandlers={{
-                  click: () => {
-                    setSelectedRoute(route.id);
-                    setSelectedDevice(null);
-                  },
+                  color: ROUTE_COLORS[drawRouteType],
+                  weight: 2,
+                  opacity: 0.6,
+                  dashArray: "6 4",
                 }}
               />
-            );
-          })}
+            )}
 
-          {/* Draw preview line */}
-          {drawWaypoints.length >= 2 && (
-            <Polyline
-              positions={drawWaypoints.map(
-                (wp) => [wp.lat, wp.lng] as [number, number],
-              )}
-              pathOptions={{
-                color: ROUTE_COLORS[drawRouteType],
-                weight: 2,
-                opacity: 0.6,
-                dashArray: "6 4",
+            {/* Fault device markers (with cascade status colors) */}
+            {faultLayers.devices &&
+              faultFilteredDevices.map((device) => {
+                const displayStatus =
+                  deviceDisplayStatuses.get(device.id) ?? "active";
+                const isHighlighted =
+                  highlightedNodeIds.has(device.id) ||
+                  faultSelection.id === device.id;
+                const affectedCount =
+                  faultSelection.id === device.id ? selectedAffectedCount : 0;
+
+                return (
+                  <FaultDeviceMarker
+                    key={`fault-dev-${device.id}`}
+                    device={device}
+                    displayStatus={displayStatus}
+                    isHighlighted={isHighlighted}
+                    affectedCount={affectedCount}
+                    onClick={() => {
+                      setFaultSelection({ type: "device", id: device.id });
+                      const storeDevice = devices.find(
+                        (d) => d.id === device.id,
+                      );
+                      if (storeDevice && !isPlacing) {
+                        setSelectedDevice(device.id);
+                        setSelectedRoute(null);
+                      }
+                    }}
+                  />
+                );
+              })}
+
+            {/* Standard device markers (when fault layer off) */}
+            {!faultLayers.devices &&
+              devices.map((device) => (
+                <DeviceMarker
+                  key={device.id}
+                  device={device}
+                  isSelected={device.id === selectedDeviceId}
+                  onSelect={() => {
+                    if (!isPlacing) {
+                      setSelectedDevice(device.id);
+                      setSelectedRoute(null);
+                    }
+                  }}
+                  onPositionChange={(lat, lng) =>
+                    updateDevice(device.id, { lat, lng })
+                  }
+                />
+              ))}
+
+            {/* Customer markers */}
+            {faultLayers.customers &&
+              customerNodes.map((customer) => {
+                const rawStatus = deviceDisplayStatuses.get(customer.id);
+                const displayStatus: "active" | "affected" | "faulty" =
+                  rawStatus === "faulty"
+                    ? "faulty"
+                    : rawStatus === "affected"
+                      ? "affected"
+                      : "active";
+
+                if (statusFilter === "down" && displayStatus !== "faulty")
+                  return null;
+                if (statusFilter === "affected" && displayStatus !== "affected")
+                  return null;
+                if (statusFilter === "active" && displayStatus !== "active")
+                  return null;
+
+                const isHighlighted = highlightedNodeIds.has(customer.id);
+                const upstreamFaultSource =
+                  displayStatus !== "active"
+                    ? getUpstreamFaultSource(customer.id)
+                    : null;
+
+                return (
+                  <CustomerMarker
+                    key={customer.id}
+                    customer={customer}
+                    displayStatus={displayStatus}
+                    isHighlighted={isHighlighted}
+                    upstreamFaultSource={upstreamFaultSource}
+                    onClick={() =>
+                      setFaultSelection({ type: "customer", id: customer.id })
+                    }
+                  />
+                );
+              })}
+          </MapContainer>
+
+          {/* ═══ OVERLAY PANELS — outside MapContainer ═══════════════════════ */}
+
+          {/* Layer toggle panel — desktop only, top-left */}
+          {!isMobile && (
+            <div
+              className="absolute left-4 top-4 pointer-events-auto"
+              style={{ zIndex: 1000 }}
+              data-ocid="map.layer-panel"
+            >
+              <LayerTogglePanel />
+            </div>
+          )}
+
+          {/* Draw toolbar — centered top */}
+          <div
+            className="absolute top-4 pointer-events-auto"
+            style={{ zIndex: 1000, left: "50%", transform: "translateX(-50%)" }}
+            data-ocid="map.draw-toolbar-wrapper"
+          >
+            <DrawToolbar
+              drawMode={drawMode}
+              routeType={drawRouteType}
+              waypointCount={drawWaypoints.length}
+              onToggleDrawMode={() => {
+                setDrawMode((v) => !v);
+                setDrawWaypoints([]);
+                if (isPlacing) handleExitPlacing();
               }}
+              onRouteTypeChange={setDrawRouteType}
+              onFinish={finishDraw}
+              onCancel={() => {
+                setDrawMode(false);
+                setDrawWaypoints([]);
+              }}
+            />
+          </div>
+
+          {/* Undo button */}
+          <div
+            className={`absolute pointer-events-auto ${isMobile ? "left-4 top-4" : "left-4 top-16"}`}
+            style={{ zIndex: 1000 }}
+            data-ocid="map.undo-wrapper"
+          >
+            <button
+              type="button"
+              onClick={() => canUndo && undo()}
+              disabled={!canUndo}
+              title="Undo last action (Ctrl+Z)"
+              aria-label="Undo last action"
+              data-ocid="map.undo_button"
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-mono border backdrop-blur-sm shadow-md transition-all duration-150 ${
+                canUndo
+                  ? "bg-card/90 border-border/60 text-foreground hover:bg-card hover:border-primary/50 hover:text-primary active:scale-95 cursor-pointer"
+                  : "bg-card/40 border-border/30 text-muted-foreground/40 cursor-not-allowed"
+              }`}
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Undo</span>
+            </button>
+          </div>
+
+          {/* Place Device toolbar */}
+          <div
+            className={`absolute pointer-events-auto ${isMobile ? "top-20 right-4" : "top-4 right-4"}`}
+            style={{ zIndex: 1000 }}
+            data-ocid="map.place-toolbar-wrapper"
+          >
+            <PlaceDeviceToolbar
+              isPlacing={isPlacing}
+              selectedType={placingType}
+              onTogglePlacing={() => {
+                setIsPlacing(true);
+                if (drawMode) {
+                  setDrawMode(false);
+                  setDrawWaypoints([]);
+                }
+              }}
+              onSelectType={(t) => setPlacingType(t)}
+              onCancel={handleExitPlacing}
+            />
+          </div>
+
+          {/* Fault stats panel */}
+          <FaultStatsPanel
+            stats={stats}
+            alerts={activeAlerts}
+            onResolveAlert={resolveAlert}
+            isMobile={isMobile}
+          />
+
+          {/* Draw instruction hint */}
+          {drawMode && (
+            <div
+              className="absolute bottom-6 pointer-events-none"
+              style={{
+                zIndex: 1000,
+                left: "50%",
+                transform: "translateX(-50%)",
+              }}
+            >
+              <GlassCard className="px-4 py-2">
+                <p className="font-mono text-xs text-primary whitespace-nowrap">
+                  {drawWaypoints.length === 0
+                    ? "Click to place waypoints · Double-click or Finish to complete"
+                    : `${drawWaypoints.length} waypoints · ${totalDistance(drawWaypoints).toFixed(2)} km · Double-click or Finish`}
+                </p>
+              </GlassCard>
+            </div>
+          )}
+
+          {/* Placement hint */}
+          {isPlacing && !pendingPlacement && (
+            <div
+              className="absolute bottom-6 pointer-events-none"
+              style={{
+                zIndex: 1000,
+                left: "50%",
+                transform: "translateX(-50%)",
+              }}
+            >
+              <GlassCard className="px-4 py-2">
+                <p
+                  className="font-mono text-xs whitespace-nowrap"
+                  style={{ color: "#10b981" }}
+                >
+                  Click on the map to place a {placingType}
+                </p>
+              </GlassCard>
+            </div>
+          )}
+
+          {/* Context menu dismiss overlay */}
+          {contextMenu && (
+            <div
+              className="absolute inset-0"
+              style={{ zIndex: 1050 }}
+              onClick={() => setContextMenu(null)}
+              onKeyDown={(e) => e.key === "Escape" && setContextMenu(null)}
+              role="presentation"
             />
           )}
 
-          {/* Device markers */}
-          {devices.map((device) => (
-            <DeviceMarker
-              key={device.id}
-              device={device}
-              isSelected={device.id === selectedDeviceId}
-              onSelect={() => {
-                if (!isPlacing) {
-                  setSelectedDevice(device.id);
-                  setSelectedRoute(null);
-                }
-              }}
-              onPositionChange={(lat, lng) =>
-                updateDevice(device.id, { lat, lng })
-              }
+          {/* Mobile FABs */}
+          {isMobile && (
+            <div
+              className="absolute right-4 bottom-4 flex flex-col gap-3 pointer-events-auto"
+              style={{ zIndex: 1000 }}
+              data-ocid="map.fab-stack"
+            >
+              <FabButton
+                onClick={() => setLayerOverlayOpen((v) => !v)}
+                icon={<Layers className="w-5 h-5" />}
+                label="Toggle layer selector"
+                data-ocid="map.fab.layers_toggle"
+              />
+              <FabButton
+                onClick={() => setRecenterTrigger((n) => n + 1)}
+                icon={<Locate className="w-5 h-5" />}
+                label="Re-center map"
+                data-ocid="map.fab.recenter_button"
+              />
+              <FabButton
+                onClick={() => {}}
+                icon={<Bell className="w-5 h-5" />}
+                label="View alerts"
+                badge={alertCount}
+                data-ocid="map.fab.alerts_button"
+              />
+            </div>
+          )}
+
+          {/* Mobile layer overlay */}
+          {isMobile && (
+            <MobileLayerOverlay
+              open={layerOverlayOpen}
+              onClose={() => setLayerOverlayOpen(false)}
             />
-          ))}
-        </MapContainer>
+          )}
+        </div>
 
-        {/* ═══════════════════════════════════════════════════════════════════
-            OVERLAY PANELS — all outside MapContainer, z-index >= 1000
-            CRITICAL: Never nest these inside MapContainer, or Leaflet will
-            capture pointer events before they reach our UI.
-        ════════════════════════════════════════════════════════════════════ */}
-
-        {/* Layer toggle panel — desktop only, top-left */}
-        {!isMobile && (
+        {/* Desktop right panel — device detail or route edit */}
+        {desktopRightPanelOpen && (
           <div
-            className="absolute left-4 top-4 pointer-events-auto"
+            className="absolute right-0 top-0 h-full w-[360px] border-l border-border/40 bg-card/95 backdrop-blur-sm overflow-y-auto noc-scrollbar pointer-events-auto"
             style={{ zIndex: 1000 }}
-            data-ocid="map.layer-panel"
+            data-ocid="map.right-panel"
           >
-            <LayerTogglePanel />
+            {selectedDevice && (
+              <DeviceDetailPanel
+                device={selectedDevice}
+                onClose={() => setSelectedDevice(null)}
+                onDelete={() => {
+                  deleteDevice(selectedDevice.id);
+                  setSelectedDevice(null);
+                }}
+              />
+            )}
+            {selectedRoute && !selectedDevice && (
+              <RouteEditPanel
+                route={selectedRoute}
+                onClose={() => setSelectedRoute(null)}
+              />
+            )}
           </div>
-        )}
-
-        {/* Draw toolbar — centered top */}
-        <div
-          className="absolute top-4 pointer-events-auto"
-          style={{
-            zIndex: 1000,
-            left: "50%",
-            transform: "translateX(-50%)",
-          }}
-          data-ocid="map.draw-toolbar-wrapper"
-        >
-          <DrawToolbar
-            drawMode={drawMode}
-            routeType={drawRouteType}
-            waypointCount={drawWaypoints.length}
-            onToggleDrawMode={() => {
-              setDrawMode((v) => !v);
-              setDrawWaypoints([]);
-              // Exit place mode if entering draw mode
-              if (isPlacing) handleExitPlacing();
-            }}
-            onRouteTypeChange={setDrawRouteType}
-            onFinish={finishDraw}
-            onCancel={() => {
-              setDrawMode(false);
-              setDrawWaypoints([]);
-            }}
-          />
-        </div>
-
-        {/* Undo button — top-left on desktop, top-left below layers on mobile */}
-        <div
-          className={`absolute pointer-events-auto ${
-            isMobile ? "left-4 top-4" : "left-4 top-16"
-          }`}
-          style={{ zIndex: 1000 }}
-          data-ocid="map.undo-wrapper"
-        >
-          <button
-            type="button"
-            onClick={() => canUndo && undo()}
-            disabled={!canUndo}
-            title="Undo last action (Ctrl+Z)"
-            aria-label="Undo last action"
-            data-ocid="map.undo_button"
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-mono border backdrop-blur-sm shadow-md transition-all duration-150 ${
-              canUndo
-                ? "bg-card/90 border-border/60 text-foreground hover:bg-card hover:border-primary/50 hover:text-primary active:scale-95 cursor-pointer"
-                : "bg-card/40 border-border/30 text-muted-foreground/40 cursor-not-allowed"
-            }`}
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Undo</span>
-          </button>
-        </div>
-
-        {/* Place Device toolbar — right of draw toolbar, or below on mobile */}
-        <div
-          className={`absolute pointer-events-auto ${
-            isMobile ? "top-20 right-4" : "top-4 right-4"
-          }`}
-          style={{ zIndex: 1000 }}
-          data-ocid="map.place-toolbar-wrapper"
-        >
-          <PlaceDeviceToolbar
-            isPlacing={isPlacing}
-            selectedType={placingType}
-            onTogglePlacing={() => {
-              setIsPlacing(true);
-              // Exit draw mode if entering place mode
-              if (drawMode) {
-                setDrawMode(false);
-                setDrawWaypoints([]);
-              }
-            }}
-            onSelectType={(t) => setPlacingType(t)}
-            onCancel={handleExitPlacing}
-          />
-        </div>
-
-        {/* Draw instruction hint */}
-        {drawMode && (
-          <div
-            className="absolute bottom-6 pointer-events-none"
-            style={{ zIndex: 1000, left: "50%", transform: "translateX(-50%)" }}
-          >
-            <GlassCard className="px-4 py-2">
-              <p className="font-mono text-xs text-primary whitespace-nowrap">
-                {drawWaypoints.length === 0
-                  ? "Click to place waypoints · Double-click or Finish to complete"
-                  : `${drawWaypoints.length} waypoints · ${totalDistance(drawWaypoints).toFixed(2)} km · Double-click or Finish`}
-              </p>
-            </GlassCard>
-          </div>
-        )}
-
-        {/* Placement hint */}
-        {isPlacing && !pendingPlacement && (
-          <div
-            className="absolute bottom-6 pointer-events-none"
-            style={{ zIndex: 1000, left: "50%", transform: "translateX(-50%)" }}
-          >
-            <GlassCard className="px-4 py-2">
-              <p
-                className="font-mono text-xs whitespace-nowrap"
-                style={{ color: "#10b981" }}
-              >
-                Click on the map to place a {placingType}
-              </p>
-            </GlassCard>
-          </div>
-        )}
-
-        {/* Dismiss overlay for context menu */}
-        {contextMenu && (
-          <div
-            className="absolute inset-0"
-            style={{ zIndex: 1050 }}
-            onClick={() => setContextMenu(null)}
-            onKeyDown={(e) => e.key === "Escape" && setContextMenu(null)}
-            role="presentation"
-          />
-        )}
-
-        {/* Mobile FABs */}
-        {isMobile && (
-          <div
-            className="absolute right-4 bottom-4 flex flex-col gap-3 pointer-events-auto"
-            style={{ zIndex: 1000 }}
-            data-ocid="map.fab-stack"
-          >
-            <FabButton
-              onClick={() => setLayerOverlayOpen((v) => !v)}
-              icon={<Layers className="w-5 h-5" />}
-              label="Toggle layer selector"
-              data-ocid="map.fab.layers_toggle"
-            />
-            <FabButton
-              onClick={() => setRecenterTrigger((n) => n + 1)}
-              icon={<Locate className="w-5 h-5" />}
-              label="Re-center map"
-              data-ocid="map.fab.recenter_button"
-            />
-            <FabButton
-              onClick={() => {}}
-              icon={<Bell className="w-5 h-5" />}
-              label="View alerts"
-              badge={alertCount}
-              data-ocid="map.fab.alerts_button"
-            />
-          </div>
-        )}
-
-        {/* Mobile layer overlay */}
-        {isMobile && (
-          <MobileLayerOverlay
-            open={layerOverlayOpen}
-            onClose={() => setLayerOverlayOpen(false)}
-          />
         )}
       </div>
 
-      {/* ── Desktop right panel ─────────────────────────────────────────────── */}
-      {desktopRightPanelOpen && (
-        <div
-          className="absolute right-0 top-0 h-full w-[360px] border-l border-border/40 bg-card/95 backdrop-blur-sm overflow-y-auto noc-scrollbar pointer-events-auto"
-          style={{ zIndex: 1000 }}
-          data-ocid="map.right-panel"
-        >
-          {selectedDevice && (
-            <DeviceDetailPanel
-              device={selectedDevice}
-              onClose={() => setSelectedDevice(null)}
-              onDelete={() => {
-                deleteDevice(selectedDevice.id);
-                setSelectedDevice(null);
-              }}
-            />
-          )}
-          {selectedRoute && !selectedDevice && (
-            <RouteEditPanel
-              route={selectedRoute}
-              onClose={() => setSelectedRoute(null)}
-            />
-          )}
-        </div>
-      )}
-
-      {/* ── Mobile device bottom drawer ──────────────────────────────────────── */}
+      {/* Mobile device bottom drawer */}
       {isMobile && (
         <MobileDeviceDrawer
           open={mobileDrawerOpen}
@@ -1099,7 +1316,7 @@ export default function MapDashboard() {
         />
       )}
 
-      {/* ── Right-click Add Device Dialog — portal, always on top ──────────── */}
+      {/* Right-click Add Device Dialog */}
       {addDeviceCoords && (
         <AddDeviceDialog
           lat={addDeviceCoords.lat}
@@ -1111,7 +1328,7 @@ export default function MapDashboard() {
         />
       )}
 
-      {/* ── Placement popup — rendered as portal above everything ──────────── */}
+      {/* Placement popup */}
       {pendingPlacement && (
         <PlaceDevicePopup
           lat={pendingPlacement.lat}
@@ -1134,7 +1351,6 @@ export default function MapDashboard() {
         .leaflet-container {
           background: #e8e0d8;
         }
-        /* Leaflet pane z-indexes must stay below our overlays */
         .leaflet-map-pane { z-index: 400 !important; }
         .leaflet-tile-pane { z-index: 200 !important; }
         .leaflet-overlay-pane { z-index: 400 !important; }

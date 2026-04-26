@@ -119,4 +119,20 @@
 
 **Anti-Pattern Avoided:** No generic AI-safe pastels, no flat card designs, no timid animations. Instead: bold neon glows, theatrical motion, high-contrast dark UI with clear visual hierarchy.
 
+## Fault Visualization Page
+
+**Purpose:** Real-time network fault cascade detection — show affected customers, fiber routes, and fault locations with high-alert visual language.
+
+**Tone:** Mission-critical operational dashboard. Urgent but not panicked. Green = healthy, Orange = affected, Red = critical fault.
+
+**Visual Structure:** Fullscreen Leaflet map (center), top alert banner (red/orange), right collapsible stats panel (glassmorphic), layer toggles (top-left), device markers with status glows, fiber polylines color-coded by status.
+
+**Status Colors:** Green (0.62 L fault-active), Orange (0.68 L fault-affected), Red (0.62 L fault-down).
+
+**Motion:** Blinking/pulsing effect (`blink-fault` 1.2s) on cut cable indicators, smooth state transitions (220ms) on device/fiber status changes, fade-in on alert banner.
+
+**Key Interactions:** Click device → show popup with name, status, affected customers. Click fiber → highlight downstream impact. Layer toggles to show/hide Customers/Fiber/Devices. Zoom to affected area on fault detection.
+
+**Density:** High-information right panel with live stats (Total Customers, Active, Affected, Down Devices, Cut Routes).
+
 
