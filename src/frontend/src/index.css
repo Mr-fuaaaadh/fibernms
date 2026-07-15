@@ -1,0 +1,894 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-display: "Geist Mono", monospace;
+    --font-body: "General Sans", sans-serif;
+    --font-mono: "JetBrains Mono", monospace;
+    --radius: 0.5rem;
+
+    /* Light theme — enterprise clean with warm off-white */
+    --background: 0.975 0.004 240;
+    --foreground: 0.16 0.012 255;
+    --card: 0.995 0.002 240;
+    --card-foreground: 0.16 0.012 255;
+    --popover: 0.995 0.002 240;
+    --popover-foreground: 0.16 0.012 255;
+
+    --primary: 0.62 0.18 210;
+    --primary-foreground: 0.99 0 0;
+
+    --secondary: 0.93 0.012 240;
+    --secondary-foreground: 0.22 0.01 255;
+    --muted: 0.93 0.008 240;
+    --muted-foreground: 0.46 0.012 240;
+
+    --accent: 0.62 0.22 50;
+    --accent-foreground: 0.99 0 0;
+
+    --destructive: 0.52 0.24 22;
+    --destructive-foreground: 0.99 0 0;
+
+    --border: 0.87 0.012 240;
+    --input: 0.9 0.008 240;
+    --ring: 0.62 0.18 210;
+
+    --chart-1: 0.62 0.2 210;
+    --chart-2: 0.58 0.2 160;
+    --chart-3: 0.55 0.18 142;
+    --chart-4: 0.62 0.22 50;
+    --chart-5: 0.52 0.24 22;
+
+    --sidebar: 0.955 0.008 240;
+    --sidebar-foreground: 0.16 0.012 255;
+    --sidebar-primary: 0.62 0.18 210;
+    --sidebar-primary-foreground: 0.99 0 0;
+    --sidebar-accent: 0.93 0.012 240;
+    --sidebar-accent-foreground: 0.22 0.01 255;
+    --sidebar-border: 0.87 0.012 240;
+    --sidebar-ring: 0.62 0.18 210;
+
+    /* Fault Visualization Page */
+    --fault-active: 0.55 0.2 142;
+    --fault-affected: 0.58 0.22 55;
+    --fault-down: 0.52 0.24 22;
+
+    /* Enterprise Risk Scale */
+    --risk-ok: 0.55 0.2 142;
+    --risk-low: 0.55 0.2 142;
+    --risk-medium: 0.58 0.22 55;
+    --risk-high: 0.58 0.22 40;
+    --risk-critical: 0.52 0.24 22;
+
+    /* SLA Status */
+    --sla-pass: 0.55 0.2 142;
+    --sla-warning: 0.58 0.22 55;
+    --sla-breach: 0.52 0.24 22;
+
+    /* Multi-Layer Visualization */
+    --layer-l1: 0.62 0.18 210;
+    --layer-l2: 0.62 0.22 50;
+    --layer-l3: 0.58 0.2 290;
+
+    /* Audit Event Types */
+    --audit-device: 0.62 0.18 210;
+    --audit-user: 0.62 0.22 50;
+    --audit-workflow: 0.58 0.2 290;
+    --audit-system: 0.46 0.012 240;
+
+    /* Capacity Utilization Gradient */
+    --capacity-healthy: 0.55 0.2 142;
+    --capacity-warning: 0.58 0.22 55;
+    --capacity-critical: 0.52 0.24 22;
+
+    /* Super Admin Control Panel Layer */
+    --admin-primary: 0.55 0.2 280;
+    --admin-accent: 0.65 0.18 280;
+    --admin-surface: 0.88 0.01 280;
+    --admin-surface-alt: 0.92 0.008 280;
+    --admin-table-alt: 0.985 0.003 240;
+    --admin-border-accent: 0.85 0.01 280;
+    --admin-status-active: 0.55 0.2 280;
+    --admin-status-pending: 0.58 0.22 55;
+    --admin-status-inactive: 0.46 0.012 240;
+
+    /* Topology Light Theme (Light Section Only) */
+    --topology-bg: 0.98 0.002 240;
+    --topology-card: 0.99 0 0;
+    --topology-foreground: 0.14 0.015 240;
+    --topology-primary: 0.5 0.18 210;
+    --topology-secondary: 0.9 0.01 260;
+    --topology-accent: 0.65 0.2 50;
+    --topology-border: 0.85 0.012 240;
+    --topology-muted: 0.92 0.008 240;
+    --topology-muted-foreground: 0.48 0.01 240;
+    --topology-success: 0.55 0.18 142;
+    --topology-warning: 0.65 0.2 50;
+    --topology-critical: 0.52 0.24 22;
+  }
+
+  .dark {
+    --background: 0.11 0.005 260;
+    --foreground: 0.92 0.005 260;
+    --card: 0.155 0.008 265;
+    --card-foreground: 0.92 0.005 260;
+    --popover: 0.18 0.008 265;
+    --popover-foreground: 0.92 0.005 260;
+
+    --primary: 0.72 0.22 210;
+    --primary-foreground: 0.1 0.01 210;
+
+    --secondary: 0.2 0.005 260;
+    --secondary-foreground: 0.85 0.005 260;
+    --muted: 0.22 0.005 260;
+    --muted-foreground: 0.52 0.008 260;
+
+    --accent: 0.68 0.25 55;
+    --accent-foreground: 0.1 0.01 55;
+
+    --destructive: 0.62 0.28 22;
+    --destructive-foreground: 0.98 0 0;
+
+    --border: 0.26 0.01 265;
+    --input: 0.26 0.01 265;
+    --ring: 0.72 0.22 210;
+
+    --chart-1: 0.72 0.22 210;
+    --chart-2: 0.68 0.22 160;
+    --chart-3: 0.62 0.22 142;
+    --chart-4: 0.7 0.25 55;
+    --chart-5: 0.62 0.28 22;
+
+    --sidebar: 0.135 0.008 265;
+    --sidebar-foreground: 0.92 0.005 260;
+    --sidebar-primary: 0.72 0.22 210;
+    --sidebar-primary-foreground: 0.1 0.01 210;
+    --sidebar-accent: 0.2 0.005 260;
+    --sidebar-accent-foreground: 0.85 0.005 260;
+    --sidebar-border: 0.26 0.01 265;
+    --sidebar-ring: 0.72 0.22 210;
+
+    /* Enterprise Risk Scale (0-100) */
+    --risk-ok: 0.62 0.22 142;
+    --risk-low: 0.62 0.22 142;
+    --risk-medium: 0.7 0.25 55;
+    --risk-high: 0.65 0.25 40;
+    --risk-critical: 0.62 0.28 22;
+
+    /* SLA Status */
+    --sla-pass: 0.62 0.22 142;
+    --sla-warning: 0.7 0.25 55;
+    --sla-breach: 0.62 0.28 22;
+
+    /* Multi-Layer Visualization */
+    --layer-l1: 0.72 0.22 210;
+    --layer-l2: 0.68 0.25 55;
+    --layer-l3: 0.65 0.22 290;
+
+    /* Audit Event Types */
+    --audit-device: 0.72 0.22 210;
+    --audit-user: 0.68 0.25 55;
+    --audit-workflow: 0.65 0.22 290;
+    --audit-system: 0.52 0.008 260;
+
+    /* Capacity Utilization Gradient */
+    --capacity-healthy: 0.62 0.22 142;
+    --capacity-warning: 0.7 0.25 55;
+    --capacity-critical: 0.62 0.28 22;
+
+    /* Super Admin Control Panel Layer */
+    --admin-primary: 0.65 0.2 280;
+    --admin-accent: 0.72 0.18 280;
+    --admin-surface: 0.2 0.008 280;
+    --admin-surface-alt: 0.24 0.006 280;
+    --admin-table-alt: 0.175 0.01 265;
+    --admin-border-accent: 0.32 0.01 280;
+    --admin-status-active: 0.65 0.2 280;
+    --admin-status-pending: 0.7 0.25 55;
+    --admin-status-inactive: 0.38 0.008 260;
+
+    /* Fault Visualization Page */
+    --fault-active: 0.62 0.22 142;
+    --fault-affected: 0.68 0.25 55;
+    --fault-down: 0.62 0.28 22;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-body antialiased;
+    color-scheme: light dark;
+  }
+  .dark body {
+    color-scheme: dark;
+  }
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("/assets/fonts/GeistMono.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "General Sans";
+  src: url("/assets/fonts/GeneralSans.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("/assets/fonts/JetBrainsMono.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("/assets/fonts/SpaceGrotesk.woff2") format("woff2");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Figtree";
+  src: url("/assets/fonts/Figtree.woff2") format("woff2");
+  font-display: swap;
+}
+
+@layer utilities {
+  /* ─── Topology Section (Light Theme Isolation) ─────────────────────────── */
+  /* Wrap the entire topology page in .topology-light to override dark app shell */
+  .topology-light {
+    background: #f8fafc;
+    color: #0f172a;
+    color-scheme: light;
+  }
+
+  .topology-light .topology-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Status badges — light theme */
+  .topology-badge-online {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #86efac;
+  }
+  .topology-badge-warning {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+  }
+  .topology-badge-critical {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+  .topology-badge-offline {
+    background: #f8fafc;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }
+
+  /* Scrollbar overrides for light topology */
+  .topology-light ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .topology-light ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+  .topology-light ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+  }
+  .topology-light ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* ─── End Topology Light Theme ──────────────────────────────────────────── */
+
+  .transition-smooth {
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Neon glow variants — primary (cyan) */
+  .noc-glow {
+    box-shadow: 0 0 0 1px oklch(var(--primary) / 0.18), 0 0 16px
+      oklch(var(--primary) / 0.22);
+  }
+
+  /* Active glow — accent (orange) */
+  .noc-glow-active {
+    box-shadow: 0 0 0 1px oklch(var(--accent) / 0.25), 0 0 20px
+      oklch(var(--accent) / 0.3);
+  }
+
+  /* Status-specific glows */
+  .noc-glow-fault {
+    box-shadow: 0 0 0 1px oklch(var(--destructive) / 0.3), 0 0 18px
+      oklch(var(--destructive) / 0.35);
+  }
+
+  .noc-glow-warn {
+    box-shadow: 0 0 0 1px oklch(var(--accent) / 0.3), 0 0 18px
+      oklch(var(--accent) / 0.3);
+  }
+
+  .noc-glow-ok {
+    box-shadow: 0 0 0 1px oklch(var(--risk-ok) / 0.3), 0 0 18px
+      oklch(var(--risk-ok) / 0.3);
+  }
+
+  /* Terminal metric text */
+  .text-metric {
+    @apply font-mono text-sm tracking-tight tabular-nums;
+  }
+
+  /* Glassmorphism layers */
+  .glass-card {
+    backdrop-filter: blur(4px);
+    background-color: oklch(var(--card) / 0.75);
+    border: 1px solid oklch(var(--border) / 0.4);
+  }
+
+  .glass-elevated {
+    backdrop-filter: blur(8px);
+    background-color: oklch(var(--card) / 0.9);
+    border: 1px solid oklch(var(--border) / 0.55);
+  }
+
+  /* Status badge */
+  .status-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium;
+  }
+
+  /* Risk severity badges (0-100 scale) */
+  .risk-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold;
+  }
+
+  .risk-ok {
+    background-color: oklch(var(--risk-ok) / 0.15);
+    color: oklch(var(--risk-ok));
+  }
+
+  .risk-low {
+    background-color: oklch(var(--risk-low) / 0.15);
+    color: oklch(var(--risk-low));
+  }
+
+  .risk-medium {
+    background-color: oklch(var(--risk-medium) / 0.15);
+    color: oklch(var(--risk-medium));
+  }
+
+  .risk-high {
+    background-color: oklch(var(--risk-high) / 0.15);
+    color: oklch(var(--risk-high));
+  }
+
+  .risk-critical {
+    background-color: oklch(var(--risk-critical) / 0.15);
+    color: oklch(var(--risk-critical));
+  }
+
+  /* SLA Status Card */
+  .sla-status {
+    @apply glass-card p-4 rounded-lg;
+  }
+
+  .sla-pass {
+    border-left: 4px solid oklch(var(--sla-pass));
+  }
+
+  .sla-warning {
+    border-left: 4px solid oklch(var(--sla-warning));
+  }
+
+  .sla-breach {
+    border-left: 4px solid oklch(var(--sla-breach));
+  }
+
+  /* Multi-Layer Visualization */
+  .layer-l1 {
+    color: oklch(var(--layer-l1));
+  }
+
+  .layer-l2 {
+    color: oklch(var(--layer-l2));
+  }
+
+  .layer-l3 {
+    color: oklch(var(--layer-l3));
+  }
+
+  .layer-button {
+    @apply px-3 py-1.5 rounded-md text-xs font-medium transition-smooth;
+  }
+
+  /* ─── Topology Visualization Enhancements ─── */
+  .topology-node-glow-active {
+    box-shadow: 0 0 0 2px oklch(var(--layer-l1) / 0.4), 0 0 12px
+      oklch(var(--layer-l1) / 0.6), 0 0 24px oklch(var(--layer-l1) / 0.3);
+  }
+
+  .topology-node-glow-warning {
+    box-shadow: 0 0 0 2px oklch(var(--layer-l2) / 0.5), 0 0 14px
+      oklch(var(--layer-l2) / 0.7), 0 0 28px oklch(var(--layer-l2) / 0.4);
+  }
+
+  .topology-node-glow-critical {
+    box-shadow: 0 0 0 2px oklch(var(--destructive) / 0.5), 0 0 16px
+      oklch(var(--destructive) / 0.8), 0 0 32px oklch(var(--destructive) / 0.5);
+  }
+
+  .topology-canvas {
+    backdrop-filter: blur(6px);
+    background: linear-gradient(
+      135deg,
+      oklch(var(--card) / 0.95) 0%,
+      oklch(var(--background) / 0.98) 100%
+    );
+    border: 1px solid oklch(var(--border) / 0.5);
+    position: relative;
+  }
+
+  .topology-stat-pill {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-mono;
+    background-color: oklch(var(--card) / 0.7);
+    border-color: oklch(var(--border) / 0.4);
+    box-shadow: 0 2px 8px oklch(0 0 0 / 0.08);
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .topology-stat-pill:hover {
+    @apply shadow-md;
+    background-color: oklch(var(--card) / 0.9);
+    border-color: oklch(var(--border) / 0.6);
+  }
+
+  .topology-layer-toggle {
+    @apply relative px-3 py-1.5 rounded-lg border text-xs font-mono transition-smooth flex items-center gap-1.5;
+  }
+
+  .topology-layer-toggle-active {
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2), 0 0 12px currentColor;
+  }
+
+  .topology-panel-card {
+    @apply glass-elevated p-4 rounded-lg;
+    backdrop-filter: blur(10px);
+  }
+
+  .topology-status-bar {
+    @apply flex items-center justify-between px-4 py-2.5 border-b;
+    border-color: oklch(var(--border) / 0.3);
+    background: linear-gradient(
+      90deg,
+      oklch(var(--background) / 0.5) 0%,
+      oklch(var(--card) / 0.3) 100%
+    );
+  }
+
+  /* Audit Event Timeline */
+  .audit-timeline-item {
+    @apply relative pl-6 py-2;
+  }
+
+  .audit-device {
+    color: oklch(var(--audit-device));
+  }
+
+  .audit-user {
+    color: oklch(var(--audit-user));
+  }
+
+  .audit-workflow {
+    color: oklch(var(--audit-workflow));
+  }
+
+  .audit-system {
+    color: oklch(var(--audit-system));
+  }
+
+  /* Capacity Utilization Gradient */
+  .capacity-bar {
+    @apply h-2 rounded-full overflow-hidden;
+  }
+
+  .capacity-fill-healthy {
+    background: linear-gradient(
+      to right,
+      oklch(var(--capacity-healthy)),
+      oklch(var(--capacity-healthy))
+    );
+  }
+
+  .capacity-fill-warning {
+    background: linear-gradient(
+      to right,
+      oklch(var(--capacity-healthy)),
+      oklch(var(--capacity-warning)),
+      oklch(var(--capacity-warning))
+    );
+  }
+
+  .capacity-fill-critical {
+    background: linear-gradient(
+      to right,
+      oklch(var(--capacity-healthy)),
+      oklch(var(--capacity-warning)),
+      oklch(var(--capacity-critical))
+    );
+  }
+
+  /* Command Palette Overlay */
+  .command-palette {
+    @apply glass-elevated fixed inset-0 m-auto max-w-2xl rounded-lg shadow-noc-elevated;
+  }
+
+  .command-palette-input {
+    @apply w-full bg-transparent px-4 py-3 text-foreground placeholder-muted-foreground focus:outline-none;
+  }
+
+  .command-palette-item {
+    @apply px-4 py-2 cursor-pointer transition-smooth;
+  }
+  .command-palette-item:hover {
+    background-color: oklch(var(--accent) / 0.1);
+  }
+
+  /* NOC scan-line overlay */
+  .noc-scanlines::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      oklch(0 0 0 / 0.04) 2px,
+      oklch(0 0 0 / 0.04) 4px
+    );
+    pointer-events: none;
+  }
+
+  /* Admin Control Panel Glasscard */
+  .admin-card {
+    backdrop-filter: blur(8px);
+    background-color: oklch(var(--admin-surface) / 0.5);
+    border: 1px solid oklch(var(--admin-border-accent) / 0.3);
+    border-left: 3px solid oklch(var(--admin-primary) / 0.6);
+  }
+
+  .admin-card-elevated {
+    backdrop-filter: blur(12px);
+    background-color: oklch(var(--admin-surface-alt) / 0.7);
+    border: 1px solid oklch(var(--admin-border-accent) / 0.4);
+  }
+
+  /* Admin Table Styles */
+  .admin-table {
+    @apply w-full text-sm;
+  }
+
+  .admin-table-header {
+    @apply text-foreground font-semibold;
+    background-color: oklch(var(--muted) / 0.3);
+  }
+
+  .admin-table-row {
+    @apply border-b transition-smooth;
+    border-color: oklch(var(--border));
+  }
+  .admin-table-row:hover {
+    background-color: oklch(var(--muted) / 0.4);
+  }
+
+  .admin-table-row-alt {
+    background-color: oklch(var(--muted) / 0.1);
+  }
+
+  /* Admin Status Badges */
+  .admin-badge {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .admin-badge-active {
+    @apply text-emerald-400;
+    background-color: rgb(16 185 129 / 0.15);
+  }
+
+  .admin-badge-pending {
+    @apply text-amber-400;
+    background-color: rgb(245 158 11 / 0.15);
+  }
+
+  .admin-badge-inactive {
+    @apply text-muted-foreground;
+    background-color: oklch(var(--muted) / 0.3);
+  }
+
+  /* Admin Stat Card */
+  .admin-stat-card {
+    @apply admin-card p-6 rounded-lg;
+  }
+
+  .admin-stat-value {
+    @apply text-3xl font-bold text-foreground font-display;
+  }
+
+  .admin-stat-label {
+    @apply text-sm text-muted-foreground;
+  }
+
+  /* Admin Toggle/Switch styling */
+  .admin-switch {
+    @apply relative inline-flex items-center h-5 w-9 rounded-full transition-smooth;
+  }
+
+  .admin-switch-on {
+    @apply bg-emerald-500;
+  }
+
+  .admin-switch-off {
+    @apply bg-muted;
+  }
+
+  /* ─── Fault Visualization Styles ─── */
+  .fault-status-active {
+    color: oklch(var(--fault-active));
+    background-color: oklch(var(--fault-active) / 0.15);
+  }
+
+  .fault-status-affected {
+    color: oklch(var(--fault-affected));
+    background-color: oklch(var(--fault-affected) / 0.15);
+  }
+
+  .fault-status-down {
+    color: oklch(var(--fault-down));
+    background-color: oklch(var(--fault-down) / 0.15);
+  }
+
+  .fault-marker-active {
+    box-shadow: 0 0 0 2px oklch(var(--fault-active) / 0.5), 0 0 12px
+      oklch(var(--fault-active) / 0.6);
+  }
+
+  .fault-marker-affected {
+    box-shadow: 0 0 0 2px oklch(var(--fault-affected) / 0.5), 0 0 12px
+      oklch(var(--fault-affected) / 0.6);
+  }
+
+  .fault-marker-down {
+    box-shadow: 0 0 0 2px oklch(var(--fault-down) / 0.6), 0 0 14px
+      oklch(var(--fault-down) / 0.7);
+  }
+
+  .fault-alert-banner {
+    @apply glass-elevated px-4 py-3 rounded-lg border border-l-4;
+    border-left-color: oklch(var(--fault-down));
+    background-color: oklch(var(--card) / 0.85);
+  }
+
+  .fault-alert-banner-warning {
+    border-left-color: oklch(var(--fault-affected));
+  }
+
+  .fault-stats-panel {
+    @apply glass-elevated rounded-lg p-4 space-y-3;
+  }
+
+  .fault-stat-row {
+    @apply flex items-center justify-between pb-2 border-b;
+    border-color: oklch(var(--border) / 0.3);
+  }
+
+  .fault-stat-row:last-child {
+    @apply border-b-0;
+  }
+
+  .fault-stat-label {
+    @apply text-sm text-muted-foreground font-medium;
+  }
+
+  .fault-stat-value {
+    @apply font-mono text-lg font-bold;
+  }
+
+  .fault-blink {
+    animation: blink-fault 1.2s ease-in-out infinite;
+  }
+
+  /* ─── Leaflet map — fill container, never collapse ─── */
+  .leaflet-container {
+    width: 100% !important;
+    height: 100% !important;
+    /* Leaflet needs a non-transparent tile background while tiles load */
+    background: #e8e0d8;
+  }
+
+  /* Do NOT touch .leaflet-tile-pane, .leaflet-overlay-pane, .leaflet-map-pane,
+     .leaflet-shadow-pane, .leaflet-marker-pane, .leaflet-tooltip-pane,
+     .leaflet-popup-pane — Leaflet manages those z-indexes internally.
+     Any z-index override on those panes breaks the tile rendering stack. */
+
+  /* ─── Fault Visualization — Enhanced Marker Animations ─── */
+  @keyframes pulse-ring-orange {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2.2);
+      opacity: 0;
+    }
+  }
+  @keyframes pulse-ring-red {
+    0% {
+      transform: scale(1);
+      opacity: 0.9;
+    }
+    100% {
+      transform: scale(1.8);
+      opacity: 0;
+    }
+  }
+  @keyframes marching-ants {
+    0% {
+      stroke-dashoffset: 0;
+    }
+    100% {
+      stroke-dashoffset: -24;
+    }
+  }
+  @keyframes customer-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.3);
+      opacity: 0.85;
+    }
+  }
+
+  .fault-device-pulse-orange {
+    animation: pulse-ring-orange 0.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .fault-device-pulse-red {
+    animation: pulse-ring-red 0.7s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  .fault-customer-pulse {
+    animation: customer-pulse 2s ease-in-out infinite;
+  }
+  .fault-fiber-marching {
+    stroke-dasharray: 12 6;
+    animation: marching-ants 0.2s linear infinite;
+  }
+
+  /* Pill toggle switch */
+  .fault-pill-toggle {
+    @apply relative inline-flex h-5 w-10 items-center rounded-full transition-smooth cursor-pointer;
+  }
+  .fault-pill-toggle-thumb {
+    @apply absolute left-0.5 h-4 w-4 rounded-full bg-card shadow transition-transform duration-200;
+  }
+  .fault-pill-toggle[data-active="true"] .fault-pill-toggle-thumb {
+    @apply translate-x-5;
+  }
+
+  /* Scrollbar styling */
+  .noc-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .noc-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .noc-scrollbar::-webkit-scrollbar-thumb {
+    background: oklch(var(--border));
+    border-radius: 2px;
+  }
+  .noc-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: oklch(var(--muted-foreground) / 0.5);
+  }
+
+  /* Topology Light Theme Utilities */
+  .topology-light {
+    --bg: oklch(var(--topology-bg));
+    --fg: oklch(var(--topology-foreground));
+    --card-bg: oklch(var(--topology-card));
+    --primary-col: oklch(var(--topology-primary));
+    --accent-col: oklch(var(--topology-accent));
+    --border-col: oklch(var(--topology-border));
+    --muted-col: oklch(var(--topology-muted));
+  }
+
+  .topology-light-section {
+    background-color: oklch(var(--topology-bg));
+    color: oklch(var(--topology-foreground));
+  }
+
+  .topology-light-card {
+    background-color: oklch(var(--topology-card));
+    border: 1px solid oklch(var(--topology-border));
+  }
+
+  .topology-light-glass {
+    backdrop-filter: blur(6px);
+    background-color: oklch(var(--topology-card) / 0.85);
+    border: 1px solid oklch(var(--topology-border) / 0.5);
+  }
+
+  .topology-light-primary {
+    color: oklch(var(--topology-primary));
+  }
+
+  .topology-light-accent {
+    color: oklch(var(--topology-accent));
+  }
+
+  .topology-light-badge-success {
+    background-color: oklch(var(--topology-success) / 0.12);
+    color: oklch(var(--topology-success));
+    border: 1px solid oklch(var(--topology-success) / 0.3);
+  }
+
+  .topology-light-badge-warning {
+    background-color: oklch(var(--topology-warning) / 0.12);
+    color: oklch(var(--topology-warning));
+    border: 1px solid oklch(var(--topology-warning) / 0.3);
+  }
+
+  .topology-light-badge-critical {
+    background-color: oklch(var(--topology-critical) / 0.12);
+    color: oklch(var(--topology-critical));
+    border: 1px solid oklch(var(--topology-critical) / 0.3);
+  }
+
+  .topology-light-node-glow {
+    box-shadow: 0 0 0 2px oklch(var(--topology-primary) / 0.3), 0 0 12px
+      oklch(var(--topology-primary) / 0.4);
+  }
+
+  .topology-light-node-glow-warning {
+    box-shadow: 0 0 0 2px oklch(var(--topology-accent) / 0.3), 0 0 12px
+      oklch(var(--topology-accent) / 0.4);
+  }
+
+  .topology-light-node-glow-critical {
+    box-shadow: 0 0 0 2px oklch(var(--topology-critical) / 0.4), 0 0 14px
+      oklch(var(--topology-critical) / 0.5);
+  }
+
+  .topology-light-button {
+    @apply transition-smooth;
+    background-color: oklch(var(--topology-card));
+    border: 1px solid oklch(var(--topology-border));
+    color: oklch(var(--topology-foreground));
+  }
+
+  .topology-light-button:hover {
+    background-color: oklch(var(--topology-muted));
+    border-color: oklch(var(--topology-primary));
+    color: oklch(var(--topology-primary));
+  }
+
+  .topology-light-button-active {
+    background-color: oklch(var(--topology-primary) / 0.12);
+    border-color: oklch(var(--topology-primary));
+    color: oklch(var(--topology-primary));
+  }
+
+  .topology-light-text-secondary {
+    color: oklch(var(--topology-muted-foreground));
+  }
+}

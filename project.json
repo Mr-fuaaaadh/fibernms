@@ -1,0 +1,29 @@
+{
+  "overview": "FiberNMS is a carrier-grade, SaaS-based Optical Fiber Network Management System (OFNMS) frontend for telecom operators, ISPs, and large infrastructure providers. It includes a Network Auto Design module for AI-assisted network planning with interactive map drawing, parameter configuration, and automated OLT→Splitter→Subscriber topology generation.",
+  "features": [
+    "Network Auto Design — draw polygon, configure parameters, generate optimized fiber topology",
+    "Interactive Leaflet map with polygon drawing, OLT/Splitter/Subscriber visualization",
+    "Real-time fault visualization with cascade logic",
+    "Enterprise role-based navigation (Super Admin, Tenant Admin, Engineer, Operator, Viewer)",
+    "Multi-tenant SaaS with 4-tier subscription plans (Basic/Professional/Enterprise/Ultra)",
+    "Mobile-first responsive design with PWA support",
+    "Zustand state management with undo/redo",
+    "React Query API integration with mock data",
+    "Framer Motion animations throughout",
+    "Topology section with OLT section views and deep space canvas"
+  ],
+  "category": "enterprise-saas-telecom-network-management",
+  "tags": [
+    "fiber-network",
+    "telecom",
+    "saas",
+    "noc",
+    "network-planning",
+    "auto-design",
+    "gis",
+    "leaflet",
+    "enterprise",
+    "real-time-monitoring"
+  ],
+  "last_updated": "2026-04-28T18:27:26.874Z"
+}
